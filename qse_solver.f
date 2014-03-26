@@ -593,29 +593,29 @@
          doing_jacobian = .false.
       end subroutine failed_in_setmatrix
 
-  	 function io_failure(ierr,message)
-      integer, intent(in) :: ierr
-      character(len=*), intent(in) :: message
-      logical :: io_failure
+  	  function io_failure(ierr,message)
+       integer, intent(in) :: ierr
+       character(len=*), intent(in) :: message
+       logical :: io_failure
       
-      if (ierr == 0) then
+       if (ierr == 0) then
          io_failure = .FALSE.
          return
-      end if
-      write (error_unit,'(a,i0)') 'ERROR: '//trim(message)//'; ierr = ',ierr
-      io_failure = .TRUE.
- 	 end function io_failure
+       end if
+       write (error_unit,'(a,i0)') 'ERROR: '//trim(message)//'; ierr = ',ierr
+       io_failure = .TRUE.
+ 	  end function io_failure
   
-   function electron_chemical_potential(k) result(mu)
+     function electron_chemical_potential(k) result(mu)
       use phys_constants
       real, intent(in) :: k
       real :: mu
       real :: x   
       x = k*hbarc_n/me_n      
       mu = me_n*(sqrt(1.0+x**2)-1.0)     
-   end function electron_chemical_potential
+     end function electron_chemical_potential
 
-	function neutron_chemical_potential(k) result(mu)
+	 function neutron_chemical_potential(k) result(mu)
 		use phys_constants
 		real, intent(in) :: k	! (fm**-3)
 		real :: mu	! MeV
@@ -625,18 +625,18 @@
 		W = k*(cw0(0) + k*(cw0(1) + k*(cw0(2) + k*cw0(3))))
 		mu = W + onethird*  &
 				& k*(cw0(0) + k*(2.0*cw0(1) + k*(3.0*cw0(2) + 4.0*k*cw0(3))))
-	end function neutron_chemical_potential            
+	 end function neutron_chemical_potential            
  
-    function kn_solve(x)
+     function kn_solve(x)
       real, intent(in) :: x
       real :: kn_solve    
       kn_solve = neutron_chemical_potential(x) - mu_n   
-    end function kn_solve
+     end function kn_solve
 
-   function ke_solve(x)
+     function ke_solve(x)
       real, intent(in) :: x
       real :: ke_solve    
       ke_solve = electron_chemical_potential(x) - mu_e  
     end function ke_solve  
       
-      end module qse_solver
+    end module qse_solver
