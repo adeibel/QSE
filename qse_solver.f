@@ -366,12 +366,10 @@
          integer, intent(inout) :: ipar(lipar)
          integer, intent(out) :: ierr            
 		 !for loop over nuclei abundances
-         real*8 :: Zsum, Asum, m_term
          real, parameter :: g=2.0d0
-         real :: exponent
-		 real :: ni_sum
-		 real :: m_star
-		 real :: m_nuc		 
+		 real :: m_star 
+		 real :: m_nuc
+		 real :: m_term		 
 		 !for analytical jacobian
 	     real, dimension(0:3), parameter :: cw0 = [ 1.2974, 15.0298, -15.2343, 7.4663 ]		
 		 real :: dmudk_n, dmudk_e, dkdn_n, dkdn_e
