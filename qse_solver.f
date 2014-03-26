@@ -357,7 +357,6 @@
          use nucchem_def, only: composition_info_type
          use phys_constants, only: ln10,avogadro,boltzmann
          use electron_eos
-		 use helm
 
          integer, intent(in) :: nvar, nz
          real*8, pointer, dimension(:,:) :: equ
@@ -367,59 +366,59 @@
          real*8, intent(inout) :: rpar(lrpar)
          integer, intent(inout) :: ipar(lipar)
          integer, intent(out) :: ierr            
+		 !for loop over nuclei abundances
          real*8 :: Zsum, Asum, m_term
          real, parameter :: g=2.0d0
          real :: exponent
+		 real :: ni_sum
+		 real :: m_star
+		 real :: m_nuc		 
+		 !for analytical jacobian
+	     real, dimension(0:3), parameter :: cw0 = [ 1.2974, 15.0298, -15.2343, 7.4663 ]		
+		 real :: dmudk_n, dmudk_e, dkdn_n, dkdn_e
+		 !for equations in log space
+		 real :: sum_lnZ(5549), sum_lnA(5549) 
+		 real :: sum_lnZ_total, sum_lnZ_final 
+		 real :: sum_lnA_total, sum_lnA_final
 
-	    real, dimension(0:3), parameter :: cw0 = [ 1.2974, 15.0298, -15.2343, 7.4663 ]		
-		real :: dmudk_n, dmudk_e, dkdn_n, dkdn_e
-		real :: ni_sum
-		real :: m_star
-		real :: m_nuc
-		real :: mu_e_drip, norm, norm_sum, norm_term, norm_exponent, rho_drip
-		real :: m_term_Kr
-		real :: sum_lnZ(5549), sum_lnA(5549) 
-		real :: sum_lnZ_total, sum_lnZ_final 
-		real :: sum_lnA_total, sum_lnA_final
+         if (Y_e .le. 0.0 .or. Y_e .gt. 1.0) then
+         write(*,*) 'nonphysical value of Y_e'
+  		 end if
 
-        if (Y_e .le. 0.0 .or. Y_e .gt. 1.0) then
-        write(*,*) 'nonphysical value of Y_e'
-		end if
+         ierr = 0
+         call set_sec(0, skip_partials, lrpar, rpar, lipar, ipar, ierr); if (ierr /= 0) return
+         if (io_failure(ierr,'setting secondaries')) stop
+		 Zsum=0.0 ; Asum=0.0 ; ni_sum = 0. ; norm_sum = 0.
 
-        ierr = 0
-        call set_sec(0, skip_partials, lrpar, rpar, lipar, ipar, ierr); if (ierr /= 0) return
-        if (io_failure(ierr,'setting secondaries')) stop
-		Zsum=0.0 ; Asum=0.0 ; ni_sum = 0. ; norm_sum = 0.
+	     chi = use_default_nuclear_size
+         rho = (n_b*amu_n)*(mev_to_ergs/clight2)/(1.d-39) ! cgs
 
-	    chi = use_default_nuclear_size
-        rho = (n_b*amu_n)*(mev_to_ergs/clight2)/(1.d-39) ! cgs
+		 n_n = Y_n*n_b/(1.0-chi) 
+		 n_e = Y_e*n_b	
 
-		n_n = Y_n*n_b/(1.0-chi) 
-		n_e = Y_e*n_b	
+		 ke = (n_e*threepisquare)**onethird
+		 mu_e = electron_chemical_potential(ke) 
 
-		ke = (n_e*threepisquare)**onethird
-		mu_e = electron_chemical_potential(ke) 
+		 if (Y_n .lt. 0.) then
+		 Y_n = abs(Y_n)	
+		 n_n = Y_n*n_b/(1.0-chi) 		
+		 kn = (0.5*n_n*threepisquare)**onethird
+		 mu_n = neutron_chemical_potential(kn)
+		 !Y_n = -Y_n
+		 end if
 
-		if (Y_n .lt. 0.) then
-		Y_n = abs(Y_n)	
-		n_n = Y_n*n_b/(1.0-chi) 		
-		kn = (0.5*n_n*threepisquare)**onethird
-		mu_n = neutron_chemical_potential(kn)
-		!Y_n = -Y_n
-		end if
-
-		kn = (0.5*n_n*threepisquare)**onethird
-		mu_n = neutron_chemical_potential(kn)
+		 kn = (0.5*n_n*threepisquare)**onethird
+		 mu_n = neutron_chemical_potential(kn)
 		
-		!nearly converges in outer crust with
-		! Y_n free and mu_n = 0 forced
- 		if (rho < 4.11d11) then
- 		Y_n = 0.
- 		mu_n = -abs(mu_n)
- 		end if
+		 !nearly converges in outer crust with
+		 ! Y_n free and mu_n = 0 forced
+ 		 if (rho < 4.11d11) then
+ 		 Y_n = 0.
+ 		 mu_n = -abs(mu_n)
+ 		 end if
 	
-		sum_lnA = 0. ; sum_lnA_total = 0. ; sum_lnA_final = 0. 
-		sum_lnZ = 0. ; sum_lnZ_total = 0. ; sum_lnZ_final = 0. 
+		 sum_lnA = 0. ; sum_lnA_total = 0. ; sum_lnA_final = 0. 
+		 sum_lnZ = 0. ; sum_lnZ_total = 0. ; sum_lnZ_final = 0. 
 
 		 do i = 2, mt% Ntable
           !number density of isotopes
