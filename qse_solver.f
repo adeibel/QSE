@@ -112,7 +112,6 @@
        infile = default_infile
       end if
  
- 
 	  ! load eos table 
 	  call crust_eos_startup(data_dir)
 	  write(*,*) 'Loaded HELM EOS table'     
@@ -386,8 +385,8 @@
   		 end if
 
          ierr = 0
-         call set_sec(0, skip_partials, lrpar, rpar, lipar, ipar, ierr); if (ierr /= 0) return
-         if (io_failure(ierr,'setting secondaries')) stop
+         !call set_sec(0, skip_partials, lrpar, rpar, lipar, ipar, ierr); if (ierr /= 0) return
+         !if (io_failure(ierr,'setting secondaries')) stop
 		 Zsum=0.0 ; Asum=0.0 ; ni_sum = 0. ; norm_sum = 0.
 
 	     chi = use_default_nuclear_size
@@ -425,20 +424,16 @@
 		  m_star = mn_n-mp_n !does not contain m_e because mu_e has rest mass in definition 
 		  m_nuc = real(mt% Z(i))*mp_n + real(mt% N(i))*mn_n         
      	  m_term = g*(twopi*hbarc_n**2/(m_nuc*kT))**(-3.0/2.0)
-
 		  !for baryon conservation
 		  sum_lnA(i) = log(real(mt%A(i))*m_term) + (-mu_i(i)+abs(mt%BE(i)))/kT
 		  sum_lnA(1) = log(real(mt%A(1))*m_term) + (-mu_i(1)+abs(mt%BE(1)))/kT
 		  sum_lnA(i) = exp(sum_lnA(i)-sum_lnA(1))
-
 		  !for charge conservation
 		  sum_lnZ(i) = log(real(mt%Z(i))*m_term) + (-mu_i(i)+abs(mt%BE(i)))/kT
  		  sum_lnZ(1) = log(real(mt%Z(1))*m_term) + (-mu_i(1)+abs(mt%BE(1)))/kT		
 		  sum_lnZ(i) = exp(sum_lnZ(i)-sum_lnZ(1))
-
 		  sum_lnA_total = sum_lnA(i) + sum_lnA_total
 		  sum_lnZ_total = sum_lnZ(i) + sum_lnZ_total
-
 		  !detailed balance
 		  equ(i,1) = real(mt% Z(i))*(mu_n-mu_e+m_star)+real(mt% N(i))*mu_n-mu_i(i)-abs(mt% BE(i)) 
 		 enddo
@@ -451,9 +446,9 @@
 		  sum_lnA_final = sum_lnA(1) + log(1.0+sum_lnA_total)
     	  sum_lnZ_final = sum_lnZ(1) + log(1.0+sum_lnZ_total) 
 		  		  
-  		!baryon and charge conservation 
-        equ(mt% Ntable+1,1) = sum_lnZ_final - log(n_e)
-        equ(mt% Ntable+2,1) = sum_lnA_final - log(n_b) !+ alog(1.0+exp(sum_lnA_final-log(n_b))) !+ log(Y_n/(1.0-chi))       
+  		 !baryon and charge conservation 
+         equ(mt% Ntable+1,1) = sum_lnZ_final - log(n_e)
+         equ(mt% Ntable+2,1) = sum_lnA_final - log(n_b) !+ alog(1.0+exp(sum_lnA_final-log(n_b))) !+ log(Y_n/(1.0-chi))       
 
  		write(*,*) 'mu_e=', mu_e
  		write(*,*) 'n_e=', n_e 
