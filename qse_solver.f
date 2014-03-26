@@ -192,7 +192,7 @@
 		 
 		 do j=1,mt% Ntable
 		 !xold(j,1) = 1.d-1
-		 xold(j,1) = mt% BE(j)
+		 xold(j,1) = -mt% BE(j)
 		 end do
 		 xold(mt% Ntable+1, 1) = 0.5
 		 xold(mt% Ntable+2, 1) = 0.0		 
@@ -437,12 +437,12 @@
 		  m_nuc = real(mt% Z(i))*mp_n + real(mt% N(i))*mn_n         
      	  m_term = g*(twopi*hbarc_n**2/(m_nuc*kT))**(-3.0/2.0)
 		  !for baryon conservation
-		  sum_lnA(i) = log(real(mt%A(i))*m_term) + (-mu_i(i)+abs(mt%BE(i)))/kT
-		  sum_lnA(1) = log(real(mt%A(1))*m_term) + (-mu_i(1)+abs(mt%BE(1)))/kT
+		  sum_lnA(i) = log(real(mt%A(i))*m_term) + (mu_i(i)+abs(mt%BE(i)))/kT
+		  sum_lnA(1) = log(real(mt%A(1))*m_term) + (mu_i(1)+abs(mt%BE(1)))/kT
 		  sum_lnA(i) = exp(sum_lnA(i)-sum_lnA(1))
 		  !for charge conservation
-		  sum_lnZ(i) = log(real(mt%Z(i))*m_term) + (-mu_i(i)+abs(mt%BE(i)))/kT
- 		  sum_lnZ(1) = log(real(mt%Z(1))*m_term) + (-mu_i(1)+abs(mt%BE(1)))/kT		
+		  sum_lnZ(i) = log(real(mt%Z(i))*m_term) + (mu_i(i)+abs(mt%BE(i)))/kT
+ 		  sum_lnZ(1) = log(real(mt%Z(1))*m_term) + (mu_i(1)+abs(mt%BE(1)))/kT		
 		  sum_lnZ(i) = exp(sum_lnZ(i)-sum_lnZ(1))
 		  sum_lnA_total = sum_lnA(i) + sum_lnA_total
 		  sum_lnZ_total = sum_lnZ(i) + sum_lnZ_total
@@ -473,6 +473,8 @@
 !	    write(*,*) equ(mt% Ntable+1,1), equ(mt% Ntable+2,1)
 !		write(*,*) sum_lnZ_final, log(Y_e)
 !		write(*,*) sum_lnA_final, log(Y_n/(1.0-chi))
+
+	    write(*,*) 'Y_e=', Y_e, 'equN_1=', equ(mt% Ntable+1,1), 'equN_2=', equ(mt% Ntable+2,1)
              
              
         ! analytical jacobian here     
