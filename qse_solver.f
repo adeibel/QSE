@@ -267,6 +267,20 @@
          write(*,*) 'finished n_b', i
          have_mu_table = .true. 
          
+ 		write(*,*) 'mu_e=', mu_e
+ 		write(*,*) 'n_e=', n_e 
+        write(*,*) 'mu_n=', mu_n
+        write(*,*) 'n_n=', n_n 
+        write(*,*) 'Y_n=', Y_n
+        write(*,*) 'Y_e=', Y_e
+		write(*,*) mu_i(1)
+	    write(*,*) equ(1,1), kn, ke, n_e, n_n
+	    write(*,*) equ(mt% Ntable+1,1), equ(mt% Ntable+2,1)
+		write(*,*) sum_lnZ_final, log(Y_e)
+		write(*,*) sum_lnA_final, log(Y_n/(1.0-chi))        
+            
+         stop
+         
          enddo 
          
          contains         
@@ -448,17 +462,17 @@
          equ(mt% Ntable+1,1) = sum_lnZ_final - log(n_e)
          equ(mt% Ntable+2,1) = sum_lnA_final - log(n_b) !+ alog(1.0+exp(sum_lnA_final-log(n_b))) !+ log(Y_n/(1.0-chi))       
 
- 		write(*,*) 'mu_e=', mu_e
- 		write(*,*) 'n_e=', n_e 
-        write(*,*) 'mu_n=', mu_n
-        write(*,*) 'n_n=', n_n 
-        write(*,*) 'Y_n=', Y_n
-        write(*,*) 'Y_e=', Y_e
-		write(*,*) mu_i(1)
-	    write(*,*) equ(1,1), kn, ke, n_e, n_n
-	    write(*,*) equ(mt% Ntable+1,1), equ(mt% Ntable+2,1)
-		write(*,*) sum_lnZ_final, log(Y_e)
-		write(*,*) sum_lnA_final, log(Y_n/(1.0-chi))
+! 		write(*,*) 'mu_e=', mu_e
+! 		write(*,*) 'n_e=', n_e 
+!        write(*,*) 'mu_n=', mu_n
+!        write(*,*) 'n_n=', n_n 
+!        write(*,*) 'Y_n=', Y_n
+!        write(*,*) 'Y_e=', Y_e
+!		write(*,*) mu_i(1)
+!	    write(*,*) equ(1,1), kn, ke, n_e, n_n
+!	    write(*,*) equ(mt% Ntable+1,1), equ(mt% Ntable+2,1)
+!		write(*,*) sum_lnZ_final, log(Y_e)
+!		write(*,*) sum_lnA_final, log(Y_n/(1.0-chi))
              
              
         ! analytical jacobian here     
