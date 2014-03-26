@@ -276,8 +276,8 @@
 		write(*,*) mu_i(1)
 	    write(*,*) equ(1,1), kn, ke, n_e, n_n
 	    write(*,*) equ(mt% Ntable+1,1), equ(mt% Ntable+2,1)
-		write(*,*) sum_lnZ_final, log(Y_e)
-		write(*,*) sum_lnA_final, log(Y_n/(1.0-chi))        
+		!write(*,*) sum_lnZ_final, log(Y_e)
+		!write(*,*) sum_lnA_final, log(Y_n/(1.0-chi))        
             
          stop
          
@@ -474,7 +474,9 @@
 !		write(*,*) sum_lnZ_final, log(Y_e)
 !		write(*,*) sum_lnA_final, log(Y_n/(1.0-chi))
 
-	    write(*,*) 'Y_e=', Y_e, 'equN_1=', equ(mt% Ntable+1,1), 'equN_2=', equ(mt% Ntable+2,1)
+	    write(*,*) 'Y_e=', Y_e
+	    write(*,*) 'sumZ=', sum_lnZ_final, 'log(n_e)=', log(n_e), 'equN_1=', equ(mt% Ntable+1,1)
+	    write(*,*) 'sumA=', sum_lnA_final, 'log(n_b)=', log(n_b),  'equN_2=', equ(mt% Ntable+2,1)
              
              
         ! analytical jacobian here     
