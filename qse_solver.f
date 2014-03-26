@@ -11,7 +11,6 @@
 
       implicit none
       
-      
       logical, parameter :: dbg = .false.
 
       ! dimensions
@@ -98,7 +97,6 @@
 	  character(len=64), parameter :: eos_table_name = 'helm_table.dat'
 	  character(len=64), parameter :: mu_table_name = 'mu_table_old.data'
       character(len=80) :: infile	
-      real*8 :: Z_average, A_average
       integer :: i, j, ios
       integer :: inlist_id, output_id, abundance_id  
       integer :: mu_table_input_id, mu_table_output_id
@@ -180,8 +178,6 @@
          allocate(equ(nvar,nz), x(nvar,nz), xold(nvar,nz), dx(nvar,nz), xscale(nvar,nz), y(ldy, nsec), stat=ierr)
          if (ierr /= 0) stop 1
 
-55 continue
-
          numerical_jacobian = do_numerical_jacobian
          if (have_mu_table .eqv. .true.) then
 		 mu_table_input_id = alloc_iounit(ierr)
@@ -243,8 +239,8 @@
             call do_newt(null_decsol, null_decsolblk, mkl_pardiso_decsols)
          end if
 
-         !if (nonconv) then
-            !write(*, *) 'failed to converge'
+         if (nonconv) then
+            write(*, *) 'failed to converge'
 			mu_table_output_id = alloc_iounit(ierr)
 	  		if (io_failure(ierr, 'allocating unit for mu table file for output')) stop
 	        open(unit=mu_table_output_id, file=mu_table_name, iostat=ios, status="unknown")
@@ -256,9 +252,8 @@
 	        write(mu_table_output_id,*) Y_e
 	        close(mu_table_output_id) 
 	        call free_iounit(mu_table_output_id) 
-	        !goto 55
-            !stop 2
-         !end if
+            stop 2
+         end if
 
          if (iwork(i_debug) /= 0) then
             write(*, *) 'num_jacobians', iwork(i_num_jacobians)
@@ -376,24 +371,6 @@
          real, parameter :: g=2.0d0
          real :: exponent
 
-	    ! for helm eos
-   	    real :: rho, T 
-        integer, dimension(5549) :: chem_ids, charged_ids
-	    real, dimension(5549) :: Y, Yion
-	    !real, dimension(num_crust_eos_results) :: res
-	    real, dimension(5549) :: res
-	    type(composition_info_type) :: ionic
-	    integer :: ncharged
-        integer :: phase
-        type(crust_eos_component), dimension(num_crust_eos_components) :: eos_components
-	    real :: chi
-	    real :: Z_bar, A_bar
-        real :: f,u,p,s,cv,dpr,dpt,eta
-        real, dimension(num_helm_results) :: helm_res        
-	    logical, parameter :: clip = .true.
-		real :: logT,logRho,Zfrac,Xfrac,abar,zbar
-		logical, save :: averages_set = .false.
-		real :: zbar_in, abar_in
 	    real, dimension(0:3), parameter :: cw0 = [ 1.2974, 15.0298, -15.2343, 7.4663 ]		
 		real :: dmudk_n, dmudk_e, dkdn_n, dkdn_e
 		real :: ni_sum
