@@ -364,7 +364,8 @@
          integer, intent(in) :: lrpar, lipar
          real*8, intent(inout) :: rpar(lrpar)
          integer, intent(inout) :: ipar(lipar)
-         integer, intent(out) :: ierr            
+         integer, intent(out) :: ierr      
+         real :: chi, rho      
 		 !for loop over nuclei abundances
          real, parameter :: g=2.0d0
 		 real :: m_star 
@@ -385,7 +386,6 @@
          ierr = 0
          !call set_sec(0, skip_partials, lrpar, rpar, lipar, ipar, ierr); if (ierr /= 0) return
          !if (io_failure(ierr,'setting secondaries')) stop
-		 Zsum=0.0 ; Asum=0.0 ; ni_sum = 0. ; norm_sum = 0.
 
 	     chi = use_default_nuclear_size
          rho = (n_b*amu_n)*(mev_to_ergs/clight2)/(1.d-39) ! cgs
@@ -493,7 +493,6 @@
 			!A(i, mt% Ntable+1) = 0.0
 			!A(i, mt% Ntable+2) = 0.0
 
-		    exponent = real(mt% Z(i))*(mu_n-mu_e)+real(mt% N(i))*mu_n
 			!last two rows ! should all be in fm^-3
      		m_term = g*(twopi*hbarc_n**2/(real(mt% A(i))*amu_n*kT))**(-3.0/2.0)	!fm^-3	 			 	    		       	
 		 	A(mt% Ntable+1, i) = real(mt% Z(i))*(1.0/kT)*m_term*exp(mu_i(i)/kT)!fm^3 MeV^-1
