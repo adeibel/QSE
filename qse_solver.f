@@ -177,12 +177,14 @@
          allocate(equ(nvar,nz), x(nvar,nz), xold(nvar,nz), dx(nvar,nz), xscale(nvar,nz), y(ldy, nsec), stat=ierr)
          if (ierr /= 0) stop 1
 
+55 continue 
+
          numerical_jacobian = do_numerical_jacobian
          if (have_mu_table .eqv. .true.) then
 		 mu_table_input_id = alloc_iounit(ierr)
 		 if (io_failure(ierr, 'allocating unit for mu table read')) stop		 
 		 open(mu_table_input_id,file=mu_table_name, iostat=ios, status='unknown')
-		 do j = 1, mt% Ntable +2
+		 do j = 1, mt% Ntable + 2
 		 read(mu_table_input_id,*) xold(j,1)
 		 enddo		 
 		 close(mu_table_input_id)
@@ -191,9 +193,10 @@
 		 
 		 
 		 do j=1,mt% Ntable
-		 !xold(j,1) = 1.d-1
 		 xold(j,1) = -mt% BE(j)
 		 end do
+		 !xold(867,1) = -492.3833 !mu_56 at 5.E-8
+		 xold(867,1) = -492.360361 !mu_56 at 5.E-7
 		 xold(mt% Ntable+1, 1) = 0.5
 		 xold(mt% Ntable+2, 1) = 0.0		 
 		 end if
@@ -247,8 +250,8 @@
 	        do j = 1,mt%Ntable
 	        write(mu_table_output_id,*) mu_i(j)
 	        enddo 
-	        write(mu_table_output_id,*) Y_n
 	        write(mu_table_output_id,*) Y_e
+	        write(mu_table_output_id,*) Y_n
 	        close(mu_table_output_id) 
 	        call free_iounit(mu_table_output_id) 
             stop 2
@@ -262,7 +265,9 @@
          deallocate(iwork, work)
          deallocate(equ, x, xold, dx, xscale, y)
          
-         if (nonconv) stop 1
+         if (nonconv) then !stop 1
+         goto 55
+         end do
          
          write(*,*) 'finished n_b', i
          have_mu_table = .true. 
@@ -276,9 +281,7 @@
 		write(*,*) mu_i(1)
 	    write(*,*) equ(1,1), kn, ke, n_e, n_n
 	    write(*,*) equ(mt% Ntable+1,1), equ(mt% Ntable+2,1)
-		!write(*,*) sum_lnZ_final, log(Y_e)
-		!write(*,*) sum_lnA_final, log(Y_n/(1.0-chi))        
-            
+                  
          stop
          
          enddo 
@@ -426,6 +429,7 @@
  		 if (rho < 4.11d11) then
  		 Y_n = 0.
  		 mu_n = -abs(mu_n)
+ 		 n_n = 0.
  		 end if
 	
 		 sum_lnA = 0. ; sum_lnA_total = 0. ; sum_lnA_final = 0. 
@@ -440,11 +444,11 @@
 		  sum_lnA(i) = log(real(mt%A(i))*m_term) + (mu_i(i)+abs(mt%BE(i)))/kT
 		  sum_lnA(1) = log(real(mt%A(1))*m_term) + (mu_i(1)+abs(mt%BE(1)))/kT
 		  sum_lnA(i) = exp(sum_lnA(i)-sum_lnA(1))
+		  sum_lnA_total = sum_lnA(i) + sum_lnA_total		  
 		  !for charge conservation
 		  sum_lnZ(i) = log(real(mt%Z(i))*m_term) + (mu_i(i)+abs(mt%BE(i)))/kT
  		  sum_lnZ(1) = log(real(mt%Z(1))*m_term) + (mu_i(1)+abs(mt%BE(1)))/kT		
 		  sum_lnZ(i) = exp(sum_lnZ(i)-sum_lnZ(1))
-		  sum_lnA_total = sum_lnA(i) + sum_lnA_total
 		  sum_lnZ_total = sum_lnZ(i) + sum_lnZ_total
 		  !detailed balance
 		  equ(i,1) = real(mt% Z(i))*(mu_n-mu_e+m_star)+real(mt% N(i))*mu_n-mu_i(i)-abs(mt% BE(i)) 
@@ -462,22 +466,10 @@
          equ(mt% Ntable+1,1) = sum_lnZ_final - log(n_e)
          equ(mt% Ntable+2,1) = sum_lnA_final - log(n_b) !+ alog(1.0+exp(sum_lnA_final-log(n_b))) !+ log(Y_n/(1.0-chi))       
 
-! 		write(*,*) 'mu_e=', mu_e
-! 		write(*,*) 'n_e=', n_e 
-!        write(*,*) 'mu_n=', mu_n
-!        write(*,*) 'n_n=', n_n 
-!        write(*,*) 'Y_n=', Y_n
-!        write(*,*) 'Y_e=', Y_e
-!		write(*,*) mu_i(1)
-!	    write(*,*) equ(1,1), kn, ke, n_e, n_n
-!	    write(*,*) equ(mt% Ntable+1,1), equ(mt% Ntable+2,1)
-!		write(*,*) sum_lnZ_final, log(Y_e)
-!		write(*,*) sum_lnA_final, log(Y_n/(1.0-chi))
-
 	    write(*,*) 'Y_e=', Y_e
 	    write(*,*) 'sumZ=', sum_lnZ_final, 'log(n_e)=', log(n_e), 'equN_1=', equ(mt% Ntable+1,1)
 	    write(*,*) 'sumA=', sum_lnA_final, 'log(n_b)=', log(n_b),  'equN_2=', equ(mt% Ntable+2,1)
-             
+     	write(*,*) '------------------------------'                   
              
         ! analytical jacobian here     
 		 if (.not. skip_partials) then
