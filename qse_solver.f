@@ -266,6 +266,7 @@
          deallocate(equ, x, xold, dx, xscale, y)
          
          if (nonconv) then !stop 1
+         have_mu_table = .true.
          goto 55
          end do
          
