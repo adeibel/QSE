@@ -58,10 +58,8 @@
 	  ! for crust
       type(mass_table_type), pointer :: mt
       real*8 :: mu_e, mu_n, mu_i(5549), n_i(5549)
-      real*8 :: Y_e, Y_n
-      real*8 :: n_b_start		  
+      real*8 :: Y_e, Y_n 
    	  real*8 :: n_b, n_e, n_n
-      real*8 :: kT
       real*8 :: ke, kn
       real,dimension(:),pointer :: hist
       real :: x1, x2, xacc
@@ -71,13 +69,17 @@
       
       contains
       
-      subroutine do_test_newton(do_numerical_jacobian, which_decsol_in)
+      subroutine do_test_newton
          use mtx_lib
          use mtx_def
          
-         logical, intent(in) :: do_numerical_jacobian
-         integer, intent(in) :: which_decsol_in
-         
+         !namelist
+         real :: n_b_start
+         real :: kT
+         logical :: have_mu_table
+         logical :: do_numerical_jacobian
+         integer :: which_decsol_in
+
          integer :: ierr, liwork, lwork, lid, lrd, which_decsol
          integer, dimension(:), pointer :: iwork
          real*8, dimension(:), pointer :: work
@@ -101,9 +103,9 @@
       integer :: inlist_id, output_id, abundance_id  
       integer :: mu_table_input_id, mu_table_output_id
       logical, save :: mass_table_is_loaded = .FALSE.
-	  logical :: have_mu_table
 
-      namelist /range/ n_b_start, kT, have_mu_table
+      namelist /range/ n_b_start, kT, have_mu_table &
+      	&	do_numerical_jacobian, which_decsol_in
      
       ! set the name of the inlist file name  
       if (command_argument_count() == 1) then
@@ -268,7 +270,7 @@
          if (nonconv) then !stop 1
          have_mu_table = .true.
          goto 55
-         end do
+         end if
          
          write(*,*) 'finished n_b', i
          have_mu_table = .true. 
