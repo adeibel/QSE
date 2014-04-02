@@ -7,7 +7,7 @@
       use phys_constants
       use mass_table 
 !      use rootfind      
-      use crust_eos_lib       
+ !     use crust_eos_lib       
 
       implicit none
       
@@ -115,14 +115,16 @@
       end if
  
 	  ! load eos table 
-	  call crust_eos_startup(data_dir)
-	  write(*,*) 'Loaded HELM EOS table'     
-      eos_handle = alloc_crust_eos_handle(ierr)
+	  !call crust_eos_startup(data_dir)
+	  !write(*,*) 'Loaded HELM EOS table'     
+      !eos_handle = alloc_crust_eos_handle(ierr)
      
       ! set defaults 
       n_b_start = 5.0d-10 !fm^-3
       kT = 1.0d-2  !MeV
       have_mu_table = .false.
+      do_numerical_jacobian = .true.
+      decsol = lapack
     
       ! read in the inputs
  	  ierr = 0
@@ -162,9 +164,11 @@
 	  write(abundance_id,'(A13)') 'n_i [fm^-3]'
 
   	  ! solve for qse distribution at each n_b  	  
-  	  do i=1,1000, 10
+  	  do i=1,1
 
-  	     write(*,*) i
+  	     write(*,*) 'n_b =', n_b
+  	     write(*,*) 'numerical jacobian? =', do_numerical_jacobian
+  	     write(*,*) 'have mu table? =', have_mu_table
   	     n_b = n_b_start*real(i)       
          
          which_decsol = which_decsol_in
@@ -473,7 +477,7 @@
 	    write(*,*) 'sumZ=', sum_lnZ_final, 'log(n_e)=', log(n_e), 'equN_1=', equ(mt% Ntable+1,1)
 	    write(*,*) 'sumA=', sum_lnA_final, 'log(n_b)=', log(n_b),  'equN_2=', equ(mt% Ntable+2,1)
      	write(*,*) '------------------------------'                   
-             
+                          
         ! analytical jacobian here     
 		 if (.not. skip_partials) then
 		 do i=1, mt% Ntable
