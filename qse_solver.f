@@ -473,11 +473,23 @@
 	    write(*,*) 'sumA=', sum_lnA_final, 'log(n_b)=', log(n_b),  'equN_2=', equ(mt% Ntable+2,1)
      	write(*,*) '------------------------------'                   
                           
+        !log space analytical jacobian
+		 if (.not. skip_partials) then
+		 do i=1, mt% Ntable
+		 	do j=1, mt% Ntable
+		 	 ! diagonal jacobian => d(equ)/dmu_i	 	
+		 	 if(i==j) then
+		 	 A(i,j)= -1.0
+		 	 else
+		 	 A(i,j)=0.0
+		 	 endif
+		    enddo
+		            
         ! analytical jacobian here     
 		 if (.not. skip_partials) then
 		 do i=1, mt% Ntable
 		 	do j=1, mt% Ntable
-		 	 ! diagonal jacobian		 	
+		 	 ! diagonal jacobian => d(equ)/dmu_i	 	
 		 	 if(i==j) then
 		 	 A(i,j)= -1.0
 		 	 else
