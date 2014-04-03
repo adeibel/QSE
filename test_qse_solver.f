@@ -10,12 +10,9 @@
       
       implicit none
       logical, parameter :: show_all = .false.  ! false for releases
-      integer ::  k, solver, decsol, omp_get_thread_num
-      logical :: do_numerical_jacobian, m_band, j_band, quiet
+      integer ::  k, solver, omp_get_thread_num
+      logical :: m_band, j_band, quiet
 
-!      decsol = lapack
-!      do_numerical_jacobian = .true.
       call do_test_newton
-
 
       end program test_qse_solver

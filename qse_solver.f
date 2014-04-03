@@ -66,20 +66,20 @@
       integer :: eos_handle
  	  real, save :: zsum_save = 0.
  	  real :: asum, zsum
+     
+          !namelist
+         real :: n_b_start
+         real :: kT
+         logical :: have_mu_table
+         logical :: do_numerical_jacobian
+         integer :: which_decsol_in, decsol    
       
       contains
       
       subroutine do_test_newton
          use mtx_lib
          use mtx_def
-         
-         !namelist
-         real :: n_b_start
-         real :: kT
-         logical :: have_mu_table
-         logical :: do_numerical_jacobian
-         integer :: which_decsol_in, decsol
-
+        
          integer :: ierr, liwork, lwork, lid, lrd, which_decsol
          integer, dimension(:), pointer :: iwork
          real*8, dimension(:), pointer :: work
@@ -387,7 +387,6 @@
          real :: chi, rho      
 		 !for loop over nuclei abundances
          real, parameter :: g=2.0d0
-         real :: kT
 		 real :: m_star 
 		 real :: m_nuc
 		 real :: m_term		 
