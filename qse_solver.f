@@ -104,7 +104,7 @@
       integer :: mu_table_input_id, mu_table_output_id
       logical, save :: mass_table_is_loaded = .FALSE.
 
-      namelist /range/ n_b_start, kT, have_mu_table &
+      namelist /range/ n_b_start, kT, have_mu_table, &
       	&	do_numerical_jacobian, which_decsol_in
      
       ! set the name of the inlist file name  
