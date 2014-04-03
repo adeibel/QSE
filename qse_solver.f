@@ -484,19 +484,7 @@
 		 	 A(i,j)=0.0
 		 	 endif
 		    enddo
-		            
-        ! analytical jacobian here     
-		 if (.not. skip_partials) then
-		 do i=1, mt% Ntable
-		 	do j=1, mt% Ntable
-		 	 ! diagonal jacobian => d(equ)/dmu_i	 	
-		 	 if(i==j) then
-		 	 A(i,j)= -1.0
-		 	 else
-		 	 A(i,j)=0.0
-		 	 endif
-		    enddo
-        
+		    
             dkdn_e = (1.0/3.0)*(n_e*threepisquare)**(-2.0/3.0)*(threepisquare)
 			dkdn_n = (1.0/3.0)*(n_n*threepisquare/2.0)**(-2.0/3.0)*(threepisquare/2.0)
 			dmudk_n = (cw0(0) + 2.0*kn*(cw0(1) + kn*(3.0*cw0(2) + 4.0*kn*cw0(3)))) + onethird*  &
@@ -509,18 +497,19 @@
             end if
             if (n_e .eq. 0.) then
             dkdn_e = 0.
-            end if
-
+            end if		
+                
 		    !last two columns !should be in MeV
 			A(i, mt% Ntable+1) = -real(mt% Z(i))*dmudk_e*dkdn_e*n_b			 ! MeV		    
 			A(i, mt% Ntable+2) = real(mt% A(i))*dmudk_n*dkdn_n*n_b/(1.0-chi) ! MeV
-			!A(i, mt% Ntable+1) = 0.0
-			!A(i, mt% Ntable+2) = 0.0
 
 			!last two rows ! should all be in fm^-3
-     		m_term = g*(twopi*hbarc_n**2/(real(mt% A(i))*amu_n*kT))**(-3.0/2.0)	!fm^-3	 			 	    		       	
-		 	A(mt% Ntable+1, i) = real(mt% Z(i))*(1.0/kT)*m_term*exp(mu_i(i)/kT)!fm^3 MeV^-1
-		 	A(mt% Ntable+2, i) = real(mt% A(i))*(1.0/kT)*m_term*exp(mu_i(i)/kT) !fm^3 MeV^-1     		 	
+     		m_term = g*(twopi*hbarc_n**2/(real(mt% A(i))*amu_n*kT))**(-3.0/2.0)	!fm^-3	 	
+     		A(mt% Ntable+1, i) = real(mt% Z(i))*m_term*(1.0/kT)*exp((mu_i(i)+mt%BE(i))/kT) &
+     							& * real(Z(i))*m_term*exp((mu_i(i)+mt%BE(i))/kT)
+     		A(mt% Ntable+2, i) = real(mt% A(i))*m_term*(1.0/kT)*exp((mu_i(i)+mt%BE(i))/kT) &
+     							& * real(A(i))*m_term*exp((mu_i(i)+mt%BE(i))/kT)
+     				 	    		       	
 			!if using Y version of equations 
 			A(mt% Ntable+1, i) = A(mt% Ntable+1,i)/n_b ! MeV^-1
 			A(mt% Ntable+2, i) = A(mt% Ntable+2,i)/n_b ! MeV^-1
@@ -528,10 +517,10 @@
 			A(mt% Ntable+1, mt% Ntable+1) = 1.0/(1.0-chi)	
 			A(mt% Ntable+1, mt% Ntable+2) = 0.0			
 			A(mt% Ntable+2, mt% Ntable+1) = 0.0			
-			A(mt% Ntable+1, mt% Ntable+1) = -1.0
-
+			A(mt% Ntable+1, mt% Ntable+1) = -1.0		    
+		
 		 enddo
-		 endif
+		 end if
       end subroutine eval_equ
       
       
