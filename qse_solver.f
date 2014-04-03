@@ -7,7 +7,7 @@
       use phys_constants
       use mass_table 
 !      use rootfind      
- !     use crust_eos_lib       
+      use crust_eos_lib       
 
       implicit none
       
@@ -78,7 +78,7 @@
          real :: kT
          logical :: have_mu_table
          logical :: do_numerical_jacobian
-         integer :: which_decsol_in
+         integer :: which_decsol_in, decsol
 
          integer :: ierr, liwork, lwork, lid, lrd, which_decsol
          integer, dimension(:), pointer :: iwork
@@ -113,12 +113,7 @@
       else
        infile = default_infile
       end if
- 
-	  ! load eos table 
-	  !call crust_eos_startup(data_dir)
-	  !write(*,*) 'Loaded HELM EOS table'     
-      !eos_handle = alloc_crust_eos_handle(ierr)
-     
+      
       ! set defaults 
       n_b_start = 5.0d-10 !fm^-3
       kT = 1.0d-2  !MeV
@@ -392,6 +387,7 @@
          real :: chi, rho      
 		 !for loop over nuclei abundances
          real, parameter :: g=2.0d0
+         real :: kT
 		 real :: m_star 
 		 real :: m_nuc
 		 real :: m_term		 
