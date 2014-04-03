@@ -397,6 +397,7 @@
 		 real :: sum_lnZ(5549), sum_lnA(5549) 
 		 real :: sum_lnZ_total, sum_lnZ_final 
 		 real :: sum_lnA_total, sum_lnA_final
+		 real :: log_exponent
 
          if (Y_e .le. 0.0 .or. Y_e .gt. 1.0) then
          write(*,*) 'nonphysical value of Y_e'
@@ -499,6 +500,9 @@
             dkdn_e = 0.
             end if		
                 
+            n_i(i) =  m_term*exp((mu_i(i)+mt%BE(i))/kT)   
+            log_exponent = (1.0+exp(ln(real(mt%Z(i))*n_i(i))-real(mt%Z(1))*n_i(1)))
+                
 		    !last two columns !should be in MeV
 			A(i, mt% Ntable+1) = -real(mt% Z(i))*dmudk_e*dkdn_e*n_b			 ! MeV		    
 			A(i, mt% Ntable+2) = real(mt% A(i))*dmudk_n*dkdn_n*n_b/(1.0-chi) ! MeV
@@ -507,17 +511,17 @@
      		m_term = g*(twopi*hbarc_n**2/(real(mt% A(i))*amu_n*kT))**(-3.0/2.0)	!fm^-3	 
      		
      		! n=0 term
-     		A(mt% Ntable+1, 1) = real(mt% Z(1))*m_term*(1.0/kT)*exp((mu_i(1)+mt%BE(1))/kT) &
-     							& * real(Z(1))*m_term*exp((mu_i(1)+mt%BE(1))/kT)
+     		A(mt% Ntable+1, 1) = real(mt% Z(1))*(1.0/kT)*n_i(1) &
+     							& * real(Z(1))*n_i(1)
      							& + 1.0/(2.0*kT)
-     		A(mt% Ntable+2, 1) = real(mt% A(1))*m_term*(1.0/kT)*exp((mu_i(1)+mt%BE(1))/kT) &
-     							& * real(A(1))*m_term*exp((mu_i(1)+mt%BE(1))/kT)
+     		A(mt% Ntable+2, 1) = real(mt% A(1))*(1.0/kT)*n_i(1) &
+     							& * real(A(1))*n_i(1)
+     							& + 1.0/(2.0*kT)
  			! n=1 to N terms 
-      		A(mt% Ntable+1, i) = real(mt% Z(i))*m_term*(1.0/kT)*exp((mu_i(i)+mt%BE(i))/kT) &
-     							& * real(Z(i))*m_term*exp((mu_i(i)+mt%BE(i))/kT)
-     							& + 1.0/(2.0*kT)
-     		A(mt% Ntable+2, i) = real(mt% A(i))*m_term*(1.0/kT)*exp((mu_i(i)+mt%BE(i))/kT) &
-     							& * real(A(i))*m_term*exp((mu_i(i)+mt%BE(i))/kT)
+      		A(mt% Ntable+1, i) = (1.0/kT)*exp(log_exponent)*(1.0+exp(log_exponent))**-1.0
+     		A(mt% Ntable+2, i) = (1.0/kT)*exp(log_exponent)*(1.0+exp(log_exponent))**-1.0
+     		!A(mt% Ntable+2, i) = real(mt% A(i))*(1.0/kT)*n_i(i) &
+     		!					& * real(A(i))*n_i(i) 
      				 	    		       	
 			!if using Y version of equations 
 			!A(mt% Ntable+1, i) = A(mt% Ntable+1,i)/n_b ! MeV^-1
