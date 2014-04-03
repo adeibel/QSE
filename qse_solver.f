@@ -66,29 +66,26 @@
       integer :: eos_handle
  	  real, save :: zsum_save = 0.
  	  real :: asum, zsum
-     
-          !namelist
-         real :: n_b_start
-         real :: kT
-         logical :: have_mu_table
-         logical :: do_numerical_jacobian
-         integer :: which_decsol_in, decsol    
-      
+      real :: kT
+            
       contains
       
       subroutine do_test_newton
          use mtx_lib
          use mtx_def
         
-         integer :: ierr, liwork, lwork, lid, lrd, which_decsol
-         integer, dimension(:), pointer :: iwork
-         real*8, dimension(:), pointer :: work
-         
-         integer, parameter :: lrpar = 0, lipar = 0
-         integer, target :: ipar(lipar)
-         real*8, target :: rpar(lrpar)
-         
-         character (len=64) :: decsol_option_name
+      integer :: ierr, liwork, lwork, lid, lrd, which_decsol
+      integer, dimension(:), pointer :: iwork
+      real*8, dimension(:), pointer :: work 
+      integer, parameter :: lrpar = 0, lipar = 0
+      integer, target :: ipar(lipar)
+      real*8, target :: rpar(lrpar)
+      character (len=64) :: decsol_option_name
+      !namelist
+      real :: n_b_start
+      logical :: have_mu_table
+      logical :: do_numerical_jacobian
+      integer :: which_decsol_in, decsol    
  
  	  ! for crust
  	  character(len=*), parameter :: mass_table_name = 'nucchem.data'   
@@ -132,6 +129,7 @@
 	  if (io_failure(ios,'unable to read namelist "range"')) stop
 	  close(inlist_id)
 	  call free_iounit(inlist_id)
+ 	  decsol = which_decsol_in 
  
  	  ! load mass table 
       if (mass_table_is_loaded .eqv. .FALSE.) then
@@ -160,14 +158,16 @@
 
   	  ! solve for qse distribution at each n_b  	  
   	  do i=1,1
+  	     n_b = n_b_start*real(i)  
 
   	     write(*,*) 'n_b =', n_b
   	     write(*,*) 'numerical jacobian? =', do_numerical_jacobian
   	     write(*,*) 'have mu table? =', have_mu_table
-  	     n_b = n_b_start*real(i)       
-         
+         write(*,*) 'decsol option', decsol     
+              
          which_decsol = which_decsol_in
          call decsol_option_str(which_decsol, decsol_option_name, ierr)
+         write(*,*) which_decsol, trim(decsol_option_name), ierr
          if (ierr /= 0) return
          write(*,*) 'use ' // trim(decsol_option_name)
 
