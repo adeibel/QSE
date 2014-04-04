@@ -388,8 +388,8 @@
 		 !for loop over nuclei abundances
          real, parameter :: g=2.0d0
 		 real :: m_star 
-		 real :: m_nuc
-		 real :: m_term		 
+		 real :: m_nuc, m_nuc1
+		 real :: m_term, m_term1		 
 		 !for analytical jacobian
 	     real, dimension(0:3), parameter :: cw0 = [ 1.2974, 15.0298, -15.2343, 7.4663 ]		
 		 real :: dmudk_n, dmudk_e, dkdn_n, dkdn_e
@@ -443,14 +443,16 @@
 		  m_star = mn_n-mp_n !does not contain m_e because mu_e has rest mass in definition 
 		  m_nuc = real(mt% Z(i))*mp_n + real(mt% N(i))*mn_n         
      	  m_term = g*(twopi*hbarc_n**2/(m_nuc*kT))**(-3.0/2.0)
+     	  m_nuc1 = real(mt% Z(1))*mp_n + real(mt% N(1))*mn_n 
+     	  m_term1 = g*(twopi*hbarc_n**2/(m_nuc1*kT))**(-3.0/2.0)
 		  !for baryon conservation
 		  sum_lnA(i) = log(real(mt%A(i))*m_term) + (mu_i(i)+abs(mt%BE(i)))/kT
-		  sum_lnA(1) = log(real(mt%A(1))*m_term) + (mu_i(1)+abs(mt%BE(1)))/kT
+		  sum_lnA(1) = log(real(mt%A(1))*m_term1) + (mu_i(1)+abs(mt%BE(1)))/kT
 		  sum_lnA(i) = exp(sum_lnA(i)-sum_lnA(1))
 		  sum_lnA_total = sum_lnA(i) + sum_lnA_total		  
 		  !for charge conservation
 		  sum_lnZ(i) = log(real(mt%Z(i))*m_term) + (mu_i(i)+abs(mt%BE(i)))/kT
- 		  sum_lnZ(1) = log(real(mt%Z(1))*m_term) + (mu_i(1)+abs(mt%BE(1)))/kT		
+ 		  sum_lnZ(1) = log(real(mt%Z(1))*m_term1) + (mu_i(1)+abs(mt%BE(1)))/kT		
 		  sum_lnZ(i) = exp(sum_lnZ(i)-sum_lnZ(1))
 		  sum_lnZ_total = sum_lnZ(i) + sum_lnZ_total
 		  !detailed balance
@@ -458,10 +460,7 @@
 		 enddo
 
           equ(1,1) = real(mt% Z(1))*(mu_n-mu_e+m_star)+real(mt% N(1))*mu_n-mu_i(1)-abs(mt% BE(1))
-         
-		  m_nuc = real(mt% Z(1))*mp_n + real(mt% N(1))*mn_n
-		  m_term = g*(twopi*hbarc_n**2/(m_nuc*kT))**(-3.0/2.0)
-	
+         	
 		  sum_lnA_final = sum_lnA(1) + log(1.0+sum_lnA_total)
     	  sum_lnZ_final = sum_lnZ(1) + log(1.0+sum_lnZ_total) 
 		  		  
@@ -511,17 +510,11 @@
      		m_term = g*(twopi*hbarc_n**2/(real(mt% A(i))*amu_n*kT))**(-3.0/2.0)	!fm^-3	 
      		
      		! n=0 term
-     		A(mt% Ntable+1, 1) = real(mt% Z(1))*(1.0/kT)*n_i(1) &
-     							& * real(Z(1))*n_i(1)
-     							& + 1.0/(2.0*kT)
-     		A(mt% Ntable+2, 1) = real(mt% A(1))*(1.0/kT)*n_i(1) &
-     							& * real(A(1))*n_i(1)
-     							& + 1.0/(2.0*kT)
+     		A(mt% Ntable+1, 1) = (1.0/kT) - (1.0/kT)*exp(log_exponent)*(1.0+exp(log_exponent))**-1.0
+     		A(mt% Ntable+2, 1) = (1.0/kT) -(1.0/kT)*exp(log_exponent)*(1.0+exp(log_exponent))**-1.0
  			! n=1 to N terms 
       		A(mt% Ntable+1, i) = (1.0/kT)*exp(log_exponent)*(1.0+exp(log_exponent))**-1.0
      		A(mt% Ntable+2, i) = (1.0/kT)*exp(log_exponent)*(1.0+exp(log_exponent))**-1.0
-     		!A(mt% Ntable+2, i) = real(mt% A(i))*(1.0/kT)*n_i(i) &
-     		!					& * real(A(i))*n_i(i) 
      				 	    		       	
 			!if using Y version of equations 
 			!A(mt% Ntable+1, i) = A(mt% Ntable+1,i)/n_b ! MeV^-1
