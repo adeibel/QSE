@@ -498,27 +498,23 @@
             if (n_e .eq. 0.) then
             dkdn_e = 0.
             end if		
-                
-            n_i(i) =  m_term*exp((mu_i(i)+mt%BE(i))/kT)   
-            log_exponent = (1.0+exp(ln(real(mt%Z(i))*n_i(i))-real(mt%Z(1))*n_i(1)))
-                
 		    !last two columns !should be in MeV
 			A(i, mt% Ntable+1) = -real(mt% Z(i))*dmudk_e*dkdn_e*n_b			 ! MeV		    
 			A(i, mt% Ntable+2) = real(mt% A(i))*dmudk_n*dkdn_n*n_b/(1.0-chi) ! MeV
 
 		    !last two rows of jacobian, derivatives wrt the conservation equations 
      		! n=0 term
-     		A(mt% Ntable+1, 1) = (1.0/kT)-(1.0/kT)*sum_lnZ_total*(1.0+sum_lnZ_total)**-1.0
-     		A(mt% Ntable+2, 1) = (1.0/kT)-(1.0/kT)*sum_lnA_total*(1.0+sum_lnA_total)**-1.0
+     		A(mt% Ntable+1, 1) = (1.0/kT)-(1.0/kT)*sum_lnZ_total*(1.0+sum_lnZ_total)**(-1)
+     		A(mt% Ntable+2, 1) = (1.0/kT)-(1.0/kT)*sum_lnA_total*(1.0+sum_lnA_total)**(-1)
  			! n=1 to N terms 
-      		A(mt% Ntable+1, i) = (1.0/kT)*sum_lnZ_total*(1.0+sum_lnZ_total)**-1.0
-     		A(mt% Ntable+2, i) = (1.0/kT)*sum_lnA_total*(1.0+sum_lnA_total)**-1.0
+      		A(mt% Ntable+1, i) = (1.0/kT)*sum_lnZ_total*(1.0+sum_lnZ_total)**(-1)
+     		A(mt% Ntable+2, i) = (1.0/kT)*sum_lnA_total*(1.0+sum_lnA_total)**(-1)
      				 	    		       	
 			!if using Y version of equations 
 			!A(mt% Ntable+1, i) = A(mt% Ntable+1,i)/n_b ! MeV^-1
 			!A(mt% Ntable+2, i) = A(mt% Ntable+2,i)/n_b ! MeV^-1
 
-			A(mt% Ntable+1, mt% Ntable+1) = 1.0/(1.0-chi)	
+			A(mt% Ntable+1, mt% Ntable+1) = 0.0	
 			A(mt% Ntable+1, mt% Ntable+2) = 0.0			
 			A(mt% Ntable+2, mt% Ntable+1) = 0.0			
 			A(mt% Ntable+1, mt% Ntable+1) = -1.0		    
