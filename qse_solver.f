@@ -514,16 +514,19 @@
      		! n=0 term
      		A(mt% Ntable+1, 1) = (1.0/kT)-(1.0/kT)*sum_lnZ_total*(1.0+sum_lnZ_total)**(-1)
      		A(mt% Ntable+2, 1) = (1.0/kT)-(1.0/kT)*sum_lnA_total*(1.0+sum_lnA_total)**(-1)
+ 			
+ 			if (i .ge. 1) then
  			! n=1 to N terms 
       		A(mt% Ntable+1, i) = (1.0/kT)*(1.0+exp(logZ_exponent))**(-1) &
       				& *exp(logZ_exponent)
      		A(mt% Ntable+2, i) = (1.0/kT)*(1.0+exp(logA_exponent))**(-1) &
      				& *exp(logA_exponent)
+     	    end if
      				 	    		       	
-			A(mt% Ntable+1, mt% Ntable+1) = 0.0	
+			A(mt% Ntable+1, mt% Ntable+1) = 1.0	
 			A(mt% Ntable+1, mt% Ntable+2) = 0.0			
 			A(mt% Ntable+2, mt% Ntable+1) = 0.0			
-			A(mt% Ntable+1, mt% Ntable+1) = -1.0		    
+			A(mt% Ntable+2, mt% Ntable+2) = 0.0		    
 		
 		 enddo
 		 end if
