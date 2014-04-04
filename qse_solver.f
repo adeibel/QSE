@@ -506,15 +506,13 @@
 			A(i, mt% Ntable+1) = -real(mt% Z(i))*dmudk_e*dkdn_e*n_b			 ! MeV		    
 			A(i, mt% Ntable+2) = real(mt% A(i))*dmudk_n*dkdn_n*n_b/(1.0-chi) ! MeV
 
-			!last two rows ! should all be in fm^-3
-     		m_term = g*(twopi*hbarc_n**2/(real(mt% A(i))*amu_n*kT))**(-3.0/2.0)	!fm^-3	 
-     		
+		    !last two rows of jacobian, derivatives wrt the conservation equations 
      		! n=0 term
-     		A(mt% Ntable+1, 1) = (1.0/kT) - (1.0/kT)*exp(log_exponent)*(1.0+exp(log_exponent))**-1.0
-     		A(mt% Ntable+2, 1) = (1.0/kT) -(1.0/kT)*exp(log_exponent)*(1.0+exp(log_exponent))**-1.0
+     		A(mt% Ntable+1, 1) = (1.0/kT)-(1.0/kT)*sum_lnZ_total*(1.0+sum_lnZ_total)**-1.0
+     		A(mt% Ntable+2, 1) = (1.0/kT)-(1.0/kT)*sum_lnA_total*(1.0+sum_lnA_total)**-1.0
  			! n=1 to N terms 
-      		A(mt% Ntable+1, i) = (1.0/kT)*exp(log_exponent)*(1.0+exp(log_exponent))**-1.0
-     		A(mt% Ntable+2, i) = (1.0/kT)*exp(log_exponent)*(1.0+exp(log_exponent))**-1.0
+      		A(mt% Ntable+1, i) = (1.0/kT)*sum_lnZ_total*(1.0+sum_lnZ_total)**-1.0
+     		A(mt% Ntable+2, i) = (1.0/kT)*sum_lnA_total*(1.0+sum_lnA_total)**-1.0
      				 	    		       	
 			!if using Y version of equations 
 			!A(mt% Ntable+1, i) = A(mt% Ntable+1,i)/n_b ! MeV^-1
