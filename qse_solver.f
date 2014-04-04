@@ -397,7 +397,8 @@
 		 real :: sum_lnZ(5549), sum_lnA(5549) 
 		 real :: sum_lnZ_total, sum_lnZ_final 
 		 real :: sum_lnA_total, sum_lnA_final
-		 real :: log_exponent
+		 real :: logZ_exponent
+		 real :: logA_exponent 
 
          if (Y_e .le. 0.0 .or. Y_e .gt. 1.0) then
          write(*,*) 'nonphysical value of Y_e'
@@ -497,9 +498,13 @@
             end if
             if (n_e .eq. 0.) then
             dkdn_e = 0.
-            end if		
-            
+            end if	
+            	
+		    m_nuc = real(mt% Z(i))*mp_n + real(mt% N(i))*mn_n         
+     	    m_term = g*(twopi*hbarc_n**2/(m_nuc*kT))**(-3.0/2.0)            
             n_i(i) = m_term*exp((mu_i(i)+mt%BE(i))/kT)
+            logZ_exponent = log(real(mt%Z(i))*n_i(i))-log(real(mt%Z(1))*n_i(1))
+            logA_exponent = log(real(mt%A(i))*n_i(i))-log(real(mt%A(1))*n_i(1))
             
 		    !last two columns !should be in MeV
 			A(i, mt% Ntable+1) = -real(mt% Z(i))*dmudk_e*dkdn_e*n_b			 ! MeV		    
@@ -510,8 +515,10 @@
      		A(mt% Ntable+1, 1) = (1.0/kT)-(1.0/kT)*sum_lnZ_total*(1.0+sum_lnZ_total)**(-1)
      		A(mt% Ntable+2, 1) = (1.0/kT)-(1.0/kT)*sum_lnA_total*(1.0+sum_lnA_total)**(-1)
  			! n=1 to N terms 
-      		A(mt% Ntable+1, i) = (1.0/kT)*(1.0+sum_lnZ_total)**(-1)*(exp(ln(real(mt%Z(i))*n_i(i))-ln(real(mt%Z(1))*n_i(1))))
-     		A(mt% Ntable+2, i) = (1.0/kT)*(1.0+sum_lnA_total)**(-1)*(exp(ln(real(mt%A(i))*n_i(i))-ln(real(mt%A(1))*n_i(1))))
+      		A(mt% Ntable+1, i) = (1.0/kT)*(1.0+exp(logZ_exponent))**(-1) &
+      				& *exp(logZ_exponent)
+     		A(mt% Ntable+2, i) = (1.0/kT)*(1.0+exp(logA_exponent))**(-1) &
+     				& *exp(logA_exponent)
      				 	    		       	
 			A(mt% Ntable+1, mt% Ntable+1) = 0.0	
 			A(mt% Ntable+1, mt% Ntable+2) = 0.0			
