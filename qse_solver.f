@@ -465,8 +465,8 @@
     	  sum_lnZ_final = sum_lnZ(1) + log(1.0+sum_lnZ_total) 
 		  		  
   		 !baryon and charge conservation 
-         equ(mt% Ntable+1,1) = sum_lnZ_final - log(n_e)
-         equ(mt% Ntable+2,1) = sum_lnA_final - log(n_b) !+ alog(1.0+exp(sum_lnA_final-log(n_b))) !+ log(Y_n/(1.0-chi))       
+         equ(mt% Ntable+1,1) = sum_lnZ_final - log(n_e) 
+         equ(mt% Ntable+2,1) = sum_lnA_final - log(n_b)  !+ alog(1.0+exp(sum_lnA_final-log(n_b))) !+ log(Y_n/(1.0-chi))       
 
 	    write(*,*) 'Y_e=', Y_e
 	    write(*,*) 'sumZ=', sum_lnZ_final, 'log(n_e)=', log(n_e), 'equN_1=', equ(mt% Ntable+1,1)
@@ -498,6 +498,9 @@
             if (n_e .eq. 0.) then
             dkdn_e = 0.
             end if		
+            
+            n_i(i) = m_term*exp((mu_i(i)+mt%BE(i))/kT)
+            
 		    !last two columns !should be in MeV
 			A(i, mt% Ntable+1) = -real(mt% Z(i))*dmudk_e*dkdn_e*n_b			 ! MeV		    
 			A(i, mt% Ntable+2) = real(mt% A(i))*dmudk_n*dkdn_n*n_b/(1.0-chi) ! MeV
@@ -507,13 +510,9 @@
      		A(mt% Ntable+1, 1) = (1.0/kT)-(1.0/kT)*sum_lnZ_total*(1.0+sum_lnZ_total)**(-1)
      		A(mt% Ntable+2, 1) = (1.0/kT)-(1.0/kT)*sum_lnA_total*(1.0+sum_lnA_total)**(-1)
  			! n=1 to N terms 
-      		A(mt% Ntable+1, i) = (1.0/kT)*sum_lnZ_total*(1.0+sum_lnZ_total)**(-1)
-     		A(mt% Ntable+2, i) = (1.0/kT)*sum_lnA_total*(1.0+sum_lnA_total)**(-1)
+      		A(mt% Ntable+1, i) = (1.0/kT)*(1.0+sum_lnZ_total)**(-1)*(exp(ln(real(mt%Z(i))*n_i(i))-ln(real(mt%Z(1))*n_i(1))))
+     		A(mt% Ntable+2, i) = (1.0/kT)*(1.0+sum_lnA_total)**(-1)*(exp(ln(real(mt%A(i))*n_i(i))-ln(real(mt%A(1))*n_i(1))))
      				 	    		       	
-			!if using Y version of equations 
-			!A(mt% Ntable+1, i) = A(mt% Ntable+1,i)/n_b ! MeV^-1
-			!A(mt% Ntable+2, i) = A(mt% Ntable+2,i)/n_b ! MeV^-1
-
 			A(mt% Ntable+1, mt% Ntable+1) = 0.0	
 			A(mt% Ntable+1, mt% Ntable+2) = 0.0			
 			A(mt% Ntable+2, mt% Ntable+1) = 0.0			
