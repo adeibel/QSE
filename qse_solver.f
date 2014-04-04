@@ -196,8 +196,8 @@
 		 do j=1,mt% Ntable
 		 xold(j,1) = -mt% BE(j)
 		 end do
-		 !xold(867,1) = -492.3833 !mu_56 at 5.E-8
-		 xold(867,1) = -492.360361 !mu_56 at 5.E-7
+		 xold(867,1) = -492.3833 !mu_56 at 5.E-8
+		 !xold(867,1) = -492.360361 !mu_56 at 5.E-7
 		 xold(mt% Ntable+1, 1) = 0.5
 		 xold(mt% Ntable+2, 1) = 0.0		 
 		 end if
@@ -255,6 +255,8 @@
 	        write(mu_table_output_id,*) Y_n
 	        close(mu_table_output_id) 
 	        call free_iounit(mu_table_output_id) 
+	        have_mu_table = .true. 
+	        goto 55
             stop 2
          end if
 
@@ -400,8 +402,10 @@
 		 real :: logZ_exponent
 		 real :: logA_exponent 
 
-         if (Y_e .le. 0.0 .or. Y_e .gt. 1.0) then
-         write(*,*) 'nonphysical value of Y_e'
+         if ( Y_e .gt. 1.0) then
+         !write(*,*) 'nonphysical value of Y_e'
+         Y_e = 1.0
+         !return
   		 end if
 
          ierr = 0
@@ -416,6 +420,13 @@
 
 		 ke = (n_e*threepisquare)**onethird
 		 mu_e = electron_chemical_potential(ke) 
+
+		 if (Y_e .lt. 0.) then
+		 n_e = abs(Y_e)*n_b
+		 ke = (abs(n_e)*threepisquare)**onethird
+		 mu_e = -electron_chemical_potential(ke) 
+		 Y_e = 0. ; mu_e = 0. ; n_e = 1.d-20
+		 end if
 
 		 if (Y_n .lt. 0.) then
 		 Y_n = abs(Y_n)	
@@ -465,11 +476,21 @@
 		  sum_lnA_final = sum_lnA(1) + log(1.0+sum_lnA_total)
     	  sum_lnZ_final = sum_lnZ(1) + log(1.0+sum_lnZ_total) 
 		  		  
+		 !if (sum_lnA_final > 1.d100 .or. sum_lnZ_final > 1.d100) then
+		 !sum_lnA_final = 100.*Y_e ; sum_lnZ_final = 100.*Y_e
+		 !end if 		  
+		  		  
   		 !baryon and charge conservation 
          equ(mt% Ntable+1,1) = sum_lnZ_final - log(n_e) 
          equ(mt% Ntable+2,1) = sum_lnA_final - log(n_b)  !+ alog(1.0+exp(sum_lnA_final-log(n_b))) !+ log(Y_n/(1.0-chi))       
 
+ 		write(*,*) 'mu_e=', mu_e
+ 		write(*,*) 'n_e=', n_e 
+        write(*,*) 'mu_n=', mu_n
+        write(*,*) 'n_n=', n_n 
+        write(*,*) 'Y_n=', Y_n
 	    write(*,*) 'Y_e=', Y_e
+	    write(*,*) 'mu_i', mu_i(1), mu_i(5549)
 	    write(*,*) 'sumZ=', sum_lnZ_final, 'log(n_e)=', log(n_e), 'equN_1=', equ(mt% Ntable+1,1)
 	    write(*,*) 'sumA=', sum_lnA_final, 'log(n_b)=', log(n_b),  'equN_2=', equ(mt% Ntable+2,1)
      	write(*,*) '------------------------------'                   
@@ -509,6 +530,8 @@
 		    !last two columns !should be in MeV
 			A(i, mt% Ntable+1) = -real(mt% Z(i))*dmudk_e*dkdn_e*n_b			 ! MeV		    
 			A(i, mt% Ntable+2) = real(mt% A(i))*dmudk_n*dkdn_n*n_b/(1.0-chi) ! MeV
+			A(i, mt% Ntable+1) = 0.
+			A(i, mt% Ntable+2) = 0. 
 
 		    !last two rows of jacobian, derivatives wrt the conservation equations 
      		! n=0 term
@@ -517,18 +540,21 @@
  			
  			if (i .ge. 1) then
  			! n=1 to N terms 
-      		A(mt% Ntable+1, i) = (1.0/kT)*(1.0+exp(logZ_exponent))**(-1) &
+      		A(mt% Ntable+1, i) = (1.0/kT)*(1.0+sum_lnZ_total)**(-1) &
       				& *exp(logZ_exponent)
-     		A(mt% Ntable+2, i) = (1.0/kT)*(1.0+exp(logA_exponent))**(-1) &
+     		A(mt% Ntable+2, i) = (1.0/kT)*(1.0+sum_lnA_total)**(-1) &
      				& *exp(logA_exponent)
      	    end if
      				 	    		       	
-			A(mt% Ntable+1, mt% Ntable+1) = 1.0	
+			A(mt% Ntable+1, mt% Ntable+1) = -1.0/Y_e	
 			A(mt% Ntable+1, mt% Ntable+2) = 0.0			
 			A(mt% Ntable+2, mt% Ntable+1) = 0.0			
-			A(mt% Ntable+2, mt% Ntable+2) = 0.0		    
+			A(mt% Ntable+2, mt% Ntable+2) = 1.0/(1.0-chi)	    
 		
 		 enddo
+		 
+		 write(*,*) A(mt% Ntable+1, mt% Ntable+1), A(mt% Ntable+2, mt% Ntable+2)
+		 
 		 end if
       end subroutine eval_equ
       
