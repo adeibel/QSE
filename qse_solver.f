@@ -446,7 +446,7 @@
 		 ! Y_n free and mu_n = 0 forced
  		 if (rho < 4.11d11) then
  		 Y_n = 0.
- 		 mu_n = 0. !-abs(mu_n)
+ 		 mu_n = 0.0 !-abs(mu_n)
  		 n_n = 0.
  		 end if
 	
@@ -479,21 +479,16 @@
 		 ! equ(i,1) = real(mt% Z(i))*(mu_n-mu_e+m_star)+real(mt% N(i))*mu_n-mu_i(i)-abs(mt% BE(i)) 
 		 enddo
 
-          
+          write(*,*) 'A(2,2)', 1.0/((1.0-chi)-Y_n)
           
         !equ(1,1) = real(mt% Z(1))*(mu_n-mu_e+m_star)+real(mt% N(1))*mu_n-mu_i(1)-abs(mt% BE(1))
          	
 		  sum_lnA_final = sum_lnA(1) + log(1.0+sum_lnA_total)
     	  sum_lnZ_final = sum_lnZ(1) + log(1.0+sum_lnZ_total) 
-		  		  
-		 !if (sum_lnA_final > 1.d100 .or. sum_lnZ_final > 1.d100) then
-		 !sum_lnA_final = 100.*Y_e ; sum_lnZ_final = 100.*Y_e
-		 !end if 		  
-		  		  
+		  		    
   		 !baryon and charge conservation 
          equ(1,1) = sum_lnZ_final - log(n_e) 
-         equ(2,1) = sum_lnA_final - log(n_b) - log(1.0 - Y_n)
-
+         equ(2,1) = sum_lnA_final - log(n_b) - log(1.0 - Y_n/(1.0-chi))
 
  		write(*,*) 'mu_e=', mu_e
  		write(*,*) 'n_e=', n_e 
