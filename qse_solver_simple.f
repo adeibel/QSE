@@ -15,8 +15,8 @@
 
       ! dimensions
       integer, parameter :: nz = 1 ! number of zones
-      integer, parameter :: nvar = 1  ! number of variables per zone
-      integer, parameter :: neq = 2 !nz*nvar
+      integer, parameter :: nvar = 2  ! number of variables per zone
+      integer, parameter :: neq = nz*nvar
 
       ! information about the bandwidth of the jacobian matrix
       ! we have a square matrix, so set number zones sub and super both to 0
@@ -175,7 +175,7 @@
             if (.not. okay_to_use_mkl_pardiso()) which_decsol = lapack
          end if
          
-         allocate(equ(neq,nz), x(nvar,nz), xold(nvar,nz), dx(nvar,nz), xscale(nvar,nz), y(ldy, nsec), stat=ierr)
+         allocate(equ(nvar,nz), x(nvar,nz), xold(nvar,nz), dx(nvar,nz), xscale(nvar,nz), y(ldy, nsec), stat=ierr)
          if (ierr /= 0) stop 1
 
 55 continue 
@@ -201,7 +201,7 @@
 		! xold(867,1) = -492.3833 !mu_56 at 5.E-8
 		 !xold(867,1) = -492.360361 !mu_56 at 5.E-7
 		 xold(1, 1) = 0.5
-		 !xold(2, 1) = 0.0		 
+		 xold(2, 1) = 0.1		 
 		 end if
 
          dx = 0 ! a not very good starting "guess" for the solution
@@ -285,8 +285,8 @@
         write(*,*) 'Y_n=', Y_n
         write(*,*) 'Y_e=', Y_e
 		write(*,*) mu_i(1)
-	    write(*,*) equ(1,1), equ(2,1)
-	    !write(*,*) equ(mt% Ntable+1,1), equ(mt% Ntable+2,1)
+	    write(*,*) equ(1,1), kn, ke, n_e, n_n
+	   ! write(*,*) equ(mt% Ntable+1,1), equ(mt% Ntable+2,1)
                   
          stop
          
@@ -334,7 +334,7 @@
 !		 mu_i(i) = x(i,1)
 !		 enddo
 		 Y_e = x(1,1)		 
-!		 Y_n = x(2,1)
+		 Y_n = x(2,1)
       end subroutine set_primaries
       
 
@@ -369,8 +369,7 @@
          real*8, intent(inout) :: rpar(lrpar)
          integer, intent(inout) :: ipar(lipar)
          integer, intent(out) :: ierr
-      	 !real*8, dimension(nvar*nz, nvar*nz) :: A ! square matrix for jacobian
-		 real*8, dimension(neq, nvar) :: A
+      	 real*8, dimension(nvar*nz, nvar*nz) :: A ! square matrix for jacobian
 		 logical, parameter :: skip_partials = .true.			
 		 call eval_equ(nvar, nz, equ, skip_partials, A, lrpar, rpar, lipar, ipar, ierr)         
       end subroutine eval_equations
@@ -384,7 +383,7 @@
          integer, intent(in) :: nvar, nz
          real*8, pointer, dimension(:,:) :: equ
 		 logical, intent(in) :: skip_partials
-      	 real*8, dimension(neq,nvar) :: A !dimension(nvar*nz, nvar*nz) :: A 
+      	 real*8, dimension(nvar*nz, nvar*nz) :: A 
          integer, intent(in) :: lrpar, lipar
          real*8, intent(inout) :: rpar(lrpar)
          integer, intent(inout) :: ipar(lipar)
@@ -405,6 +404,11 @@
 		 real :: logZ_exponent
 		 real :: logA_exponent 
 
+         if ( Y_e .gt. 1.0) then
+         !write(*,*) 'nonphysical value of Y_e'
+         Y_e = 1.0
+         !return
+  		 end if
 
          ierr = 0
          !call set_sec(0, skip_partials, lrpar, rpar, lipar, ipar, ierr); if (ierr /= 0) return
@@ -431,6 +435,7 @@
 		 n_n = Y_n*n_b/(1.0-chi) 		
 		 kn = (0.5*n_n*threepisquare)**onethird
 		 mu_n = neutron_chemical_potential(kn)
+		 !Y_n = -Y_n
 		 end if
 
 		 kn = (0.5*n_n*threepisquare)**onethird
@@ -439,20 +444,14 @@
 		 !nearly converges in outer crust with
 		 ! Y_n free and mu_n = 0 forced
  		 if (rho < 4.11d11) then
- 		 Y_n = 0.
- 		 mu_n = 0.
- 		 n_n = 0.0
+ 		 !Y_n = 0.
+ 		 !mu_n = 0. -abs(mu_n)
+ 		 !n_n = 0.
  		 end if
 	
 		 sum_lnA = 0. ; sum_lnA_total = 0. ; sum_lnA_final = 0. 
 		 sum_lnZ = 0. ; sum_lnZ_total = 0. ; sum_lnZ_final = 0. 
 
-     	 m_nuc1 = real(mt% Z(1))*mp_n + real(mt% N(1))*mn_n 
-     	 m_nuc1 = real(mt% A(1))*amu_n
-     	 m_term1 = g*(twopi*hbarc_n**2/(m_nuc1*kT))**(-3.0/2.0)
-		 sum_lnA(1) = log(real(mt%A(1))*m_term1) + (mu_i(1)+abs(mt%BE(1)))/kT
- 		 sum_lnZ(1) = log(real(mt%Z(1))*m_term1) + (mu_i(1)+abs(mt%BE(1)))/kT		
- 		  
         m_star = mn_n-mp_n
 		do i = 1, mt% Ntable
 		mu_i(i) = real(mt% Z(i))*(mu_n-mu_e+m_star)+real(mt% N(i))*mu_n-abs(mt% BE(i)) 
@@ -462,30 +461,40 @@
           !number density of isotopes
 		  m_star = mn_n-mp_n !does not contain m_e because mu_e has rest mass in definition 
 		  m_nuc = real(mt% Z(i))*mp_n + real(mt% N(i))*mn_n         
-		  m_nuc = real(mt% A(i))*amu_n
      	  m_term = g*(twopi*hbarc_n**2/(m_nuc*kT))**(-3.0/2.0)
+     	  m_nuc1 = real(mt% Z(1))*mp_n + real(mt% N(1))*mn_n 
+     	  m_term1 = g*(twopi*hbarc_n**2/(m_nuc1*kT))**(-3.0/2.0)
 		  !for baryon conservation
 		  sum_lnA(i) = log(real(mt%A(i))*m_term) + (mu_i(i)+abs(mt%BE(i)))/kT
+		  sum_lnA(1) = log(real(mt%A(1))*m_term1) + (mu_i(1)+abs(mt%BE(1)))/kT
 		  sum_lnA(i) = exp(sum_lnA(i)-sum_lnA(1))
 		  sum_lnA_total = sum_lnA(i) + sum_lnA_total		  
 		  !for charge conservation
 		  sum_lnZ(i) = log(real(mt%Z(i))*m_term) + (mu_i(i)+abs(mt%BE(i)))/kT
+ 		  sum_lnZ(1) = log(real(mt%Z(1))*m_term1) + (mu_i(1)+abs(mt%BE(1)))/kT		
 		  sum_lnZ(i) = exp(sum_lnZ(i)-sum_lnZ(1))
 		  sum_lnZ_total = sum_lnZ(i) + sum_lnZ_total
 		  !detailed balance
 		 ! equ(i,1) = real(mt% Z(i))*(mu_n-mu_e+m_star)+real(mt% N(i))*mu_n-mu_i(i)-abs(mt% BE(i)) 
 		 enddo
 
-          !write(*,*) 'A(2,2)', 1.0/((1.0-chi)-Y_n)
+          
           
         !equ(1,1) = real(mt% Z(1))*(mu_n-mu_e+m_star)+real(mt% N(1))*mu_n-mu_i(1)-abs(mt% BE(1))
          	
 		  sum_lnA_final = sum_lnA(1) + log(1.0+sum_lnA_total)
     	  sum_lnZ_final = sum_lnZ(1) + log(1.0+sum_lnZ_total) 
-		  		    
+		  		  
+		 !if (sum_lnA_final > 1.d100 .or. sum_lnZ_final > 1.d100) then
+		 !sum_lnA_final = 100.*Y_e ; sum_lnZ_final = 100.*Y_e
+		 !end if 		  
+		  		  
   		 !baryon and charge conservation 
          equ(1,1) = sum_lnZ_final - log(n_e) 
-         equ(2,1) = sum_lnA_final - log(n_b) - log(1.0 - Y_n/(1.0-chi))
+         equ(2,1) = sum_lnA_final - log(n_b) + log(n_n/(1.0-chi)) + log(1.0-n_b*(1.0-chi)/n_n)
+         !+ alog(1.0+exp(sum_lnA_final-log(n_b))) !+ log(Y_n/(1.0-chi))       
+
+		write(*,*) log(n_n/(1.0-chi)), log(1.0-n_b*(1.0-chi)/n_n)
 
  		write(*,*) 'mu_e=', mu_e
  		write(*,*) 'n_e=', n_e 
@@ -496,23 +505,21 @@
 	    write(*,*) 'mu_i', mu_i(1), mu_i(5549)
 	    write(*,*) 'sumZ=', sum_lnZ_final, 'log(n_e)=', log(n_e), 'equN_1=', equ(1,1)
 	    write(*,*) 'sumA=', sum_lnA_final, 'log(n_b)=', log(n_b),  'equN_2=', equ(2,1)
-	    write(*,*) 'sum_lnZ(1) =', sum_lnZ(1), 'sum_lnA(1) =', sum_lnA(1)
      	write(*,*) '------------------------------'                   
                           
         !log space analytical jacobian
 		 if (.not. skip_partials) then     				 	    		
 			A(1, 1) = -1.0/Y_e	
-			!A(1, 2) = 0.0			
+			A(1, 2) = 0.0			
 			A(2, 1) = 0.0			
-			!A(2, 2) = 1.0/((1.0-chi)-Y_n) 
+			A(2, 2) = 1.0   
 		 end if
       end subroutine eval_equ
       
       
       subroutine eval_jacobian(ldA, A, idiag, lrpar, rpar, lipar, ipar, ierr)
          integer, intent(in) :: ldA ! leading dimension of A
-         !real*8 :: A(ldA, neq) !nvar*nz) ! the jacobian matrix
-         real*8 :: A(neq, nvar) 
+         real*8 :: A(ldA, nvar*nz) ! the jacobian matrix
          ! A(idiag+q-v, v) = partial of equation(q) wrt variable(v)
          integer, intent(inout) :: idiag 
          integer, intent(in) :: lrpar, lipar
