@@ -201,7 +201,7 @@
 		! xold(867,1) = -492.3833 !mu_56 at 5.E-8
 		 !xold(867,1) = -492.360361 !mu_56 at 5.E-7
 		 xold(1, 1) = 0.5
-		 xold(2, 1) = 0.1		 
+		 xold(2, 1) = 0.0		 
 		 end if
 
          dx = 0 ! a not very good starting "guess" for the solution
@@ -404,13 +404,6 @@
 		 real :: logZ_exponent
 		 real :: logA_exponent 
 
-
-         if ( Y_e .gt. 1.0) then
-         !write(*,*) 'nonphysical value of Y_e'
-         Y_e = 1.0
-         !return
-  		 end if
-
          ierr = 0
          !call set_sec(0, skip_partials, lrpar, rpar, lipar, ipar, ierr); if (ierr /= 0) return
          !if (io_failure(ierr,'setting secondaries')) stop
@@ -436,7 +429,6 @@
 		 n_n = Y_n*n_b/(1.0-chi) 		
 		 kn = (0.5*n_n*threepisquare)**onethird
 		 mu_n = neutron_chemical_potential(kn)
-		 !Y_n = -Y_n
 		 end if
 
 		 kn = (0.5*n_n*threepisquare)**onethird
@@ -445,9 +437,9 @@
 		 !nearly converges in outer crust with
 		 ! Y_n free and mu_n = 0 forced
  		 if (rho < 4.11d11) then
- 		 Y_n = 0.
+ 		 !Y_n = 0.
  		 mu_n = 0.0 !-abs(mu_n)
- 		 n_n = 0.
+ 		 n_n = 0.0
  		 end if
 	
 		 sum_lnA = 0. ; sum_lnA_total = 0. ; sum_lnA_final = 0. 
@@ -499,6 +491,7 @@
 	    write(*,*) 'mu_i', mu_i(1), mu_i(5549)
 	    write(*,*) 'sumZ=', sum_lnZ_final, 'log(n_e)=', log(n_e), 'equN_1=', equ(1,1)
 	    write(*,*) 'sumA=', sum_lnA_final, 'log(n_b)=', log(n_b),  'equN_2=', equ(2,1)
+	    write(*,*) 'sum_lnZ(1) =', sum_lnZ(1), 'sum_lnA(1) =', sum_lnA(1)
      	write(*,*) '------------------------------'                   
                           
         !log space analytical jacobian
