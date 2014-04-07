@@ -482,6 +482,24 @@
                           
         !log space analytical jacobian
 		 if (.not. skip_partials) then
+
+		 sum_lnA = 0. ; sum_lnA_total = 0. ; sum_lnA_final = 0. 
+		 sum_lnZ = 0. ; sum_lnZ_total = 0. ; sum_lnZ_final = 0. 
+
+		 do i = 2, mt% Ntable
+          !number density of isotopes
+		  m_nuc = real(mt% Z(i))*mp_n + real(mt% N(i))*mn_n         
+     	  m_term = g*(twopi*hbarc_n**2/(m_nuc*kT))**(-3.0/2.0)
+		  !for baryon conservation
+		  sum_lnA(i) = log(real(mt%A(i))*m_term) + (mu_i(i)+abs(mt%BE(i)))/kT
+		  sum_lnA(i) = exp(sum_lnA(i)-sum_lnA(1))
+		  sum_lnA_total = sum_lnA(i) + sum_lnA_total		  
+		  !for charge conservation
+		  sum_lnZ(i) = log(real(mt%Z(i))*m_term) + (mu_i(i)+abs(mt%BE(i)))/kT
+		  sum_lnZ(i) = exp(sum_lnZ(i)-sum_lnZ(1))
+		  sum_lnZ_total = sum_lnZ(i) + sum_lnZ_total
+		 enddo
+
 		 do i=1, mt% Ntable
 		 	do j=1, mt% Ntable
 		 	 ! diagonal jacobian => d(equ)/dmu_i	 	
@@ -491,57 +509,58 @@
 		 	 A(i,j)=0.0
 		 	 endif
 		    enddo
+		 enddo
+		 
+		 do i=1, mt% Ntable    
 		    
             dkdn_e = (1.0/3.0)*(n_e*threepisquare)**(-2.0/3.0)*(threepisquare)
-			dkdn_n = (1.0/3.0)*(n_n*threepisquare/2.0)**(-2.0/3.0)*(threepisquare/2.0)
+			dmudk_e = (me_n/2.0)*(1.0+((ke*hbarc_n)/me_n)**2.0)**(-1.0/2.0) &
+				& *2.0*(ke*hbarc_n/me_n)*hbarc_n/me_n			
+			
+			dkdn_n = (1.0/3.0)*(n_n*threepisquare/2.0)**(-2.0/3.0)*(threepisquare/2.0)	
 			dmudk_n = (cw0(0) + 2.0*kn*(cw0(1) + kn*(3.0*cw0(2) + 4.0*kn*cw0(3)))) + onethird*  &
 				& (cw0(0) + kn*(4.0*cw0(1) + kn*(9.0*cw0(2) + 16.0*kn*cw0(3))))
-			dmudk_e = (me_n/2.0)*(1.0+((ke*hbarc_n)/me_n)**2.0)**(-1.0/2.0) &
-				& *2.0*(ke*hbarc_n/me_n)*hbarc_n/me_n
 
             if (n_n .eq. 0.) then
             dkdn_n = 0.
+            dmudk_n = 0.
             end if
             if (n_e .eq. 0.) then
             dkdn_e = 0.
+            dmudk_e = 0. 
             end if	
             	
 		    m_nuc = real(mt% Z(i))*mp_n + real(mt% N(i))*mn_n         
-     	    m_term = g*(twopi*hbarc_n**2/(m_nuc*kT))**(-3.0/2.0)            
-            n_i(i) = m_term*exp((mu_i(i)+mt%BE(i))/kT)
-            logZ_exponent = log(real(mt%Z(i))*n_i(i))-log(real(mt%Z(1))*n_i(1))
-            logA_exponent = log(real(mt%A(i))*n_i(i))-log(real(mt%A(1))*n_i(1))
+     	    m_term = g*(twopi*hbarc_n**2/(m_nuc*kT))**(-3.0/2.0)  
+ 		    m_nuc1 = real(mt% Z(1))*mp_n + real(mt% N(1))*mn_n         
+     	    m_term1 = g*(twopi*hbarc_n**2/(m_nuc1*kT))**(-3.0/2.0)      	              
+
+            logZ_exponent = log(real(mt%Z(i))*m_term) + (mu_i(i)+mt%BE(i))/kT &
+            			&  - log(real(mt%Z(1))*m_term1) + (mu_i(1)+mt%BE(1))/kT
+            logA_exponent = log(real(mt%A(i))*m_term) + (mu_i(i)+mt%BE(i))/kT &
+            			&  - log(real(mt%A(1))*m_term1) + (mu_i(1)+mt%BE(1))/kT            			
             
 		    !last two columns !should be in MeV
-			!A(i, mt% Ntable+1) = -real(mt% Z(i))*dmudk_e*dkdn_e*n_b			 ! MeV		    
-			!A(i, mt% Ntable+2) = real(mt% A(i))*dmudk_n*dkdn_n*n_b/(1.0-chi) ! MeV
-			!A(i, mt% Ntable+1) = 0.
-			!A(i, mt% Ntable+2) = 0. 
-			A(i, mt% Ntable+1) = -real(mt% Z(i))*dmudk_e*dkdn_e
-			A(i, mt% Ntable+2) = real(mt% A(i))*dmudk_n*dkdn_n/(1.0-chi)
+			A(i, mt% Ntable+1) = -real(mt% Z(i))*dmudk_e*dkdn_e*n_b			 ! MeV		    
+			A(i, mt% Ntable+2) = real(mt% A(i))*dmudk_n*dkdn_n*n_b/(1.0-chi) ! MeV
 
-		    !last two rows of jacobian, derivatives wrt the conservation equations 
-     		! n=0 term
-     		A(mt% Ntable+1, 1) = (1.0/kT)-(1.0/kT)*sum_lnZ_total*(1.0+sum_lnZ_total)**(-1)
-     		A(mt% Ntable+2, 1) = (1.0/kT)-(1.0/kT)*sum_lnA_total*(1.0+sum_lnA_total)**(-1)
- 			
- 			if (i .ge. 1) then
  			! n=1 to N terms 
-      		A(mt% Ntable+1, i) = (1.0/kT)*(1.0+sum_lnZ_total)**(-1) &
+      		A(mt% Ntable+1, i) = (1.0/kT)*(1.0+sum_lnZ_total)**(-1.0) &
       				& *exp(logZ_exponent)
-     		A(mt% Ntable+2, i) = (1.0/kT)*(1.0+sum_lnA_total)**(-1) &
+     		A(mt% Ntable+2, i) = (1.0/kT)*(1.0+sum_lnA_total)**(-1.0) &
      				& *exp(logA_exponent)
-     	    end if
+  
+  		    !last two rows of jacobian, derivatives wrt the conservation equations 
+     		! n=0 term
+     		A(mt% Ntable+1, 1) = (1.0/kT)-(1.0/kT)*sum_lnZ_total*(1.0+sum_lnZ_total)**(-1.0)
+     		A(mt% Ntable+2, 1) = (1.0/kT)-(1.0/kT)*sum_lnA_total*(1.0+sum_lnA_total)**(-1.0)
      				 	    		       	
 			A(mt% Ntable+1, mt% Ntable+1) = -1.0/Y_e	
 			A(mt% Ntable+1, mt% Ntable+2) = 0.0			
 			A(mt% Ntable+2, mt% Ntable+1) = 0.0			
 			A(mt% Ntable+2, mt% Ntable+2) = 1.0/((1.0-chi)-Y_n)  
 		
-		 enddo
-		 
-		 write(*,*) A(mt% Ntable+1, mt% Ntable+1), A(mt% Ntable+2, mt% Ntable+2)
-		 
+		 enddo 
 		 end if
       end subroutine eval_equ
       
