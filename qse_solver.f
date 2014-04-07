@@ -15,7 +15,7 @@
 
       ! dimensions
       integer, parameter :: nz = 1 ! number of zones
-      integer, parameter :: nvar = 1  ! number of variables per zone
+      integer, parameter :: nvar = 2  ! number of variables per zone
       integer, parameter :: neq = 2 !nz*nvar
 
       ! information about the bandwidth of the jacobian matrix
@@ -201,7 +201,7 @@
 		! xold(867,1) = -492.3833 !mu_56 at 5.E-8
 		 !xold(867,1) = -492.360361 !mu_56 at 5.E-7
 		 xold(1, 1) = 0.5
-		 !xold(2, 1) = 0.0		 
+		 xold(2, 1) = 1.d-8	 
 		 end if
 
          dx = 0 ! a not very good starting "guess" for the solution
@@ -334,7 +334,7 @@
 !		 mu_i(i) = x(i,1)
 !		 enddo
 		 Y_e = x(1,1)		 
-!		 Y_n = x(2,1)
+		 Y_n = x(2,1)
       end subroutine set_primaries
       
 
@@ -439,9 +439,9 @@
 		 !nearly converges in outer crust with
 		 ! Y_n free and mu_n = 0 forced
  		 if (rho < 4.11d11) then
- 		 Y_n = 0.
- 		 mu_n = 0.
- 		 n_n = 0.0
+ 		 !Y_n = 0.
+ 		 !mu_n = 0.
+ 		 !n_n = 0.0
  		 end if
 	
 		 sum_lnA = 0. ; sum_lnA_total = 0. ; sum_lnA_final = 0. 
@@ -484,8 +484,11 @@
     	  sum_lnZ_final = sum_lnZ(1) + log(1.0+sum_lnZ_total) 
 		  		    
   		 !baryon and charge conservation 
-         equ(1,1) = sum_lnZ_final - log(n_e) 
-         equ(2,1) = sum_lnA_final - log(n_b) - log(1.0 - Y_n/(1.0-chi))
+         !equ(1,1) = sum_lnZ_final - log(n_e) 
+         !equ(2,1) = sum_lnA_final - log(n_b) - log(1.0 - Y_n/(1.0-chi))
+
+		 equ(1,1) = sum_lnZ_final - log(n_e)
+		 equ(2,1) = sum_lnA_final - log(n_b - n_n) 
 
  		write(*,*) 'mu_e=', mu_e
  		write(*,*) 'n_e=', n_e 
@@ -502,9 +505,10 @@
         !log space analytical jacobian
 		 if (.not. skip_partials) then     				 	    		
 			A(1, 1) = -1.0/Y_e	
-			!A(1, 2) = 0.0			
+			A(1, 2) = 0.0			
 			A(2, 1) = 0.0			
 			!A(2, 2) = 1.0/((1.0-chi)-Y_n) 
+		 	A(2, 2) = n_b/((1.0-chi)*(n_b-n_n))
 		 end if
       end subroutine eval_equ
       
