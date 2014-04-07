@@ -198,7 +198,7 @@
 		 end do
 		 xold(867,1) = -492.3833 !mu_56 at 5.E-8
 		 !xold(867,1) = -492.360361 !mu_56 at 5.E-7
-		 xold(mt% Ntable+1, 1) = 0.5
+		 xold(mt% Ntable+1, 1) = 0.455
 		 xold(mt% Ntable+2, 1) = 0.0		 
 		 end if
 
@@ -433,6 +433,7 @@
  		 if (rho < 4.11d11) then
  		 Y_n = 0.
  		 mu_n = -abs(mu_n)
+ 		 !mu_n = 0.
  		 n_n = 0.
  		 end if
 	
@@ -469,12 +470,8 @@
          equ(mt% Ntable+1,1) = sum_lnZ_final - log(n_e) 
          equ(mt% Ntable+2,1) = sum_lnA_final - log(n_b-n_n) !- log(1.0 - Y_n/(1.0-chi))        
 
- 		write(*,*) 'mu_e=', mu_e
- 		write(*,*) 'n_e=', n_e 
-        write(*,*) 'mu_n=', mu_n
-        write(*,*) 'n_n=', n_n 
-        write(*,*) 'Y_n=', Y_n
-	    write(*,*) 'Y_e=', Y_e
+ 		write(*,*) 'Y_e=', Y_e, 'mu_e=', mu_e, 'n_e=', n_e 
+        write(*,*) 'Y_n=', Y_n, 'mu_n=', mu_n, 'n_n=', n_n
 	    write(*,*) 'mu_i', mu_i(1), mu_i(5549)
 	    write(*,*) 'sumZ=', sum_lnZ_final, 'log(n_e)=', log(n_e), 'equN_1=', equ(mt% Ntable+1,1)
 	    write(*,*) 'sumA=', sum_lnA_final, 'log(n_b)=', log(n_b),  'equN_2=', equ(mt% Ntable+2,1)
@@ -542,9 +539,10 @@
             
 		    !last two columns !should be in MeV
 			A(i, mt% Ntable+1) = -real(mt% Z(i))*dmudk_e*dkdn_e*n_b			 ! MeV		    
-			A(i, mt% Ntable+2) = real(mt% A(i))*dmudk_n*dkdn_n*n_b/(1.0-chi) ! MeV
+			!A(i, mt% Ntable+2) = real(mt% A(i))*dmudk_n*dkdn_n*n_b/(1.0-chi) ! MeV
+			A(i, mt% Ntable+2) = real(mt% A(i))*dmudk_n*dkdn_n*n_b ! MeV
 
- 			! n=1 to N terms 
+ 			! n=1 to N terms of last two rows
       		A(mt% Ntable+1, i) = (1.0/kT)*(1.0+sum_lnZ_total)**(-1.0) &
       				& *exp(logZ_exponent)
      		A(mt% Ntable+2, i) = (1.0/kT)*(1.0+sum_lnA_total)**(-1.0) &
@@ -558,7 +556,14 @@
 			A(mt% Ntable+1, mt% Ntable+1) = -1.0/Y_e	
 			A(mt% Ntable+1, mt% Ntable+2) = 0.0			
 			A(mt% Ntable+2, mt% Ntable+1) = 0.0			
-			A(mt% Ntable+2, mt% Ntable+2) = 1.0/((1.0-chi)-Y_n)  
+			!A(mt% Ntable+2, mt% Ntable+2) = 1.0/((1.0-chi)-Y_n)  
+			A(mt% Ntable+2, mt% Ntable+2) = 1.0
+		
+			!try	
+			A(mt% Ntable+1, i) = 1./kT
+			A(mt% Ntable+2, i) = 1./kT
+			!A(i, mt% Ntable+2) = real(mt% A(i))*dmudk_n*dkdn_n*n_b/(1.0-chi) ! MeV
+			A(mt% Ntable+2, mt% Ntable+2) = 1.0/((1.0-chi)-Y_n)
 		
 		 enddo 
 		 end if
