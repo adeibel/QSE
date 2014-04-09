@@ -198,7 +198,7 @@
 		 end do
 		 !xold(867,1) = -492.3833 !mu_56 at 5.E-8
 		 !xold(867,1) = -492.360361 !mu_56 at 5.E-7
-		 xold(mt% Ntable+1, 1) = 0.3
+		 xold(mt% Ntable+1, 1) = 0.457
 		 xold(mt% Ntable+2, 1) = 0.0		 
 		 end if
 
@@ -419,7 +419,8 @@
 		 if (Y_e .lt. 0.) then
 		 n_e = abs(Y_e)*n_b
 		 ke = (abs(n_e)*threepisquare)**onethird
-		 mu_e = -electron_chemical_potential(ke) 
+		 mu_e = -electron_chemical_potential(ke)-me_n
+		 n_e = 0. 
 		 end if
 
 		 if (Y_n .lt. 0.) then
@@ -462,10 +463,10 @@
 		  sum_lnZ(i) = exp(sum_lnZ(i)-sum_lnZ(1))
 		  sum_lnZ_total = sum_lnZ(i) + sum_lnZ_total
 		  !detailed balance
-		  equ(i,1) = real(mt% Z(i))*(mu_n-mu_e+m_star)+real(mt% N(i))*mu_n-mu_i(i) !-abs(mt% BE(i)) 
+		  equ(i,1) = real(mt% Z(i))*(mu_n-mu_e+m_star)+real(mt% N(i))*mu_n-mu_i(i)-abs(mt% BE(i)) 
 		 enddo
 
-          equ(1,1) = real(mt% Z(1))*(mu_n-mu_e+m_star)+real(mt% N(1))*mu_n-mu_i(1) !-abs(mt% BE(1))
+          equ(1,1) = real(mt% Z(1))*(mu_n-mu_e+m_star)+real(mt% N(1))*mu_n-mu_i(1)-abs(mt% BE(1))
          	
 		  sum_lnA_final = sum_lnA(1) + log(1.0+sum_lnA_total)
     	  sum_lnZ_final = sum_lnZ(1) + log(1.0+sum_lnZ_total) 
