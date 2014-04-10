@@ -15,7 +15,7 @@
 
       ! dimensions
       integer, parameter :: nz = 1 ! number of zones
-      integer, parameter :: nvar = 5549+2  ! number of variables per zone
+      integer, parameter :: nvar = 5549+2 !5284+2  ! number of variables per zone
       integer, parameter :: neq = nz*nvar
 
       ! information about the bandwidth of the jacobian matrix
@@ -58,6 +58,7 @@
 	  ! for crust
       type(mass_table_type), pointer :: mt
       real*8 :: mu_e, mu_n, mu_i(5549), n_i(5549)
+      real*8 :: mu_e_prev, Y_e_prev
       real*8 :: Y_e, Y_n 
    	  real*8 :: n_b, n_e, n_n
       real*8 :: ke, kn
@@ -89,6 +90,7 @@
  
  	  ! for crust
  	  character(len=*), parameter :: mass_table_name = 'nucchem.data'   
+!	  character(len=*), parameter :: mass_table_name = 'nucchem_trunc.data'
       character(len=*), parameter :: output_file = 'qse_output.data'
    	  character(len=*), parameter :: abundance_file = 'qse_abun.data'
    	  character(len=*), parameter :: default_infile = 'qse.inlist'
@@ -100,6 +102,7 @@
       integer :: inlist_id, output_id, abundance_id  
       integer :: mu_table_input_id, mu_table_output_id
       logical, save :: mass_table_is_loaded = .FALSE.
+      logical, save :: ye_set = .FALSE.
 
       namelist /range/ n_b_start, kT, have_mu_table, &
       	&	do_numerical_jacobian, which_decsol_in
@@ -112,7 +115,7 @@
       end if
       
       ! set defaults 
-      n_b_start = 5.0d-10 !fm^-3
+      n_b_start = 5.0d-8 !fm^-3
       kT = 1.0d-2  !MeV
       have_mu_table = .false.
       do_numerical_jacobian = .true.
@@ -157,7 +160,7 @@
 	  write(abundance_id,'(A13)') 'n_i [fm^-3]'
 
   	  ! solve for qse distribution at each n_b  	  
-  	  do i=1,1
+  	  do i=1,2
   	     n_b = n_b_start*real(i)  
 
   	     write(*,*) 'n_b =', n_b
@@ -198,8 +201,8 @@
 		 end do
 		 !xold(867,1) = -492.3833 !mu_56 at 5.E-8
 		 !xold(867,1) = -492.360361 !mu_56 at 5.E-7
-		 xold(mt% Ntable+1, 1) = 0.457
-		 xold(mt% Ntable+2, 1) = 0.0		 
+		 xold(mt% Ntable+1, 1) = 0.45 
+		 xold(mt% Ntable+2, 1) = 0.0	
 		 end if
 
          dx = 0 ! a not very good starting "guess" for the solution
@@ -242,8 +245,8 @@
             call do_newt(null_decsol, null_decsolblk, mkl_pardiso_decsols)
          end if
 
-         if (nonconv) then
-            write(*, *) 'failed to converge'
+ !        if (nonconv) then
+ !           write(*, *) 'failed to converge'
 			mu_table_output_id = alloc_iounit(ierr)
 	  		if (io_failure(ierr, 'allocating unit for mu table file for output')) stop
 	        open(unit=mu_table_output_id, file=mu_table_name, iostat=ios, status="unknown")
@@ -256,9 +259,9 @@
 	        close(mu_table_output_id) 
 	        call free_iounit(mu_table_output_id) 
 	        have_mu_table = .true. 
-	        goto 55
-            stop 2
-         end if
+!	        goto 55
+ !           stop 2
+ !        end if
 
          if (iwork(i_debug) /= 0) then
             write(*, *) 'num_jacobians', iwork(i_num_jacobians)
@@ -276,6 +279,12 @@
          write(*,*) 'finished n_b', i
          have_mu_table = .true. 
          
+         if (ye_set .eqv. .false.) then
+         mu_e_prev = mu_e
+         Y_e_prev = Y_e
+         ye_set = .true.
+         end if
+
  		write(*,*) 'mu_e=', mu_e
  		write(*,*) 'n_e=', n_e 
         write(*,*) 'mu_n=', mu_n
@@ -283,10 +292,10 @@
         write(*,*) 'Y_n=', Y_n
         write(*,*) 'Y_e=', Y_e
 		write(*,*) mu_i(1)
-	    write(*,*) equ(1,1), kn, ke, n_e, n_n
-	    write(*,*) equ(mt% Ntable+1,1), equ(mt% Ntable+2,1)
+	   ! write(*,*) equ(1,1), kn, ke, n_e, n_n
+	    !write(*,*) equ(mt% Ntable+1,1), equ(mt% Ntable+2,1)
                   
-         stop
+         !stop
          
          enddo 
          
@@ -405,6 +414,11 @@
 		 real :: ni_Zsum, ni_Asum
 		 real :: n_i(5549)
 
+		! if (mu_e .lt. mu_e_prev) then
+!		 if (Y_e .lt. Y_e_prev) then
+!		 Y_e = Y_e_prev
+!		 end if
+
          ierr = 0
 
 	     chi = use_default_nuclear_size
@@ -414,13 +428,19 @@
 		 n_e = Y_e*n_b	
 
 		 ke = (n_e*threepisquare)**onethird
-		 mu_e = electron_chemical_potential(ke)
+		 mu_e = electron_chemical_potential(ke) 
+
+		 if (mu_e .lt. mu_e_prev) then
+		 Y_e = Y_e + 0.1
+		 n_e = Y_e*n_b	
+		 ke = (n_e*threepisquare)**onethird
+		 mu_e = electron_chemical_potential(ke) 
+		 end if 
 
 		 if (Y_e .lt. 0.) then
 		 n_e = abs(Y_e)*n_b
 		 ke = (abs(n_e)*threepisquare)**onethird
-		 mu_e = -electron_chemical_potential(ke)-me_n
-		 n_e = 0. 
+		 mu_e = -electron_chemical_potential(ke) 
 		 end if
 
 		 if (Y_n .lt. 0.) then
@@ -439,7 +459,7 @@
  		 mu_n = -abs(mu_n)
  		 !mu_n = 0.
  		 n_n = 0.
- 		 !kn=0. 
+ 		 kn=0. 
  		 end if
 
 		 sum_lnA = 0. ; sum_lnA_total = 0. ; sum_lnA_final = 0. 
@@ -447,7 +467,7 @@
 
 		 do i = 2, mt% Ntable
           !number density of isotopes
-		  m_star = mn_n-mp_n-me_n !does not contain m_e because mu_e has rest mass in definition 
+		  m_star = mn_n-mp_n !does not contain m_e because mu_e has rest mass in definition 
 		  m_nuc = real(mt% Z(i))*mp_n + real(mt% N(i))*mn_n         
      	  m_term = g*(twopi*hbarc_n**2/(m_nuc*kT))**(-3.0/2.0)
      	  m_nuc1 = real(mt% Z(1))*mp_n + real(mt% N(1))*mn_n 
@@ -473,10 +493,12 @@
 		  		  
   		 !baryon and charge conservation 
          equ(mt% Ntable+1,1) = sum_lnZ_final - log(n_e) 
-         equ(mt% Ntable+2,1) = sum_lnA_final - log(n_b-n_n) !- log(1.0 - Y_n/(1.0-chi))        
+         equ(mt% Ntable+2,1) = sum_lnA_final - log(n_b-n_n) !- log(1.0 - Y_n/(1.0-chi))     
+        ! equ(mt% Ntable+3,1) = sum_lnA_final - log(n_b-me_n*n_e/amu_n)   log(n_b-me_n*n_e/amu_n-n_n)!
 
- 		write(*,*) 'Y_e=', Y_e, 'mu_e=', mu_e, 'n_e=', n_e 
-        write(*,*) 'Y_n=', Y_n, 'mu_n=', mu_n, 'n_n=', n_n
+		write(*,*) 'n_b=', n_b
+ 		write(*,*) 'Y_e=', Y_e, 'mu_e=', mu_e, 'n_e=', n_e, 'ke=', ke
+        write(*,*) 'Y_n=', Y_n, 'mu_n=', mu_n, 'n_n=', n_n, 'kn=', kn
 	    write(*,*) 'mu_i', mu_i(1), mu_i(5549)
 	    write(*,*) 'sumZ=', sum_lnZ_final, 'log(n_e)=', log(n_e), 'equN_1=', equ(mt% Ntable+1,1)
 	    write(*,*) 'sumA=', sum_lnA_final, 'log(n_b)=', log(n_b),  'equN_2=', equ(mt% Ntable+2,1)
