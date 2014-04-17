@@ -196,9 +196,9 @@
 		 do j=1,mt% Ntable
 		 xold(j,1) = -mt% BE(j)
 		 end do
-		 !xold(867,1) = -492.3833 !mu_56 at 5.E-8
+		 xold(867,1) = -492.3833 !mu_56 at 5.E-8
 		 !xold(867,1) = -492.360361 !mu_56 at 5.E-7
-		 xold(mt% Ntable+1, 1) = 0.3
+		 xold(mt% Ntable+1, 1) = 0.5
 		 xold(mt% Ntable+2, 1) = 0.0		 
 		 end if
 
@@ -388,7 +388,7 @@
          integer, intent(out) :: ierr      
          real :: chi, rho      
 		 !for loop over nuclei abundances
-         real, parameter :: g=2.0d0
+         real, parameter :: g=1.0d0
 		 real :: m_star 
 		 real :: m_nuc, m_nuc1
 		 real :: m_term, m_term1		 
@@ -434,7 +434,7 @@
 		 !nearly converges in outer crust with
 		 ! Y_n free and mu_n = 0 forced
  		 if (rho < 4.11d11) then
- 		 Y_n = 0.
+ 		 !Y_n = 0.
  		 mu_n = -abs(mu_n)
  		 !mu_n = 0.
  		 n_n = 0.
@@ -446,7 +446,7 @@
 
 		 do i = 2, mt% Ntable
           !number density of isotopes
-		  m_star = mn_n-mp_n-me_n !does not contain m_e because mu_e has rest mass in definition 
+		  m_star = mn_n-mp_n !does not contain m_e because mu_e has rest mass in definition 
 		  m_nuc = real(mt% Z(i))*mp_n + real(mt% N(i))*mn_n         
      	  m_term = g*(twopi*hbarc_n**2/(m_nuc*kT))**(-3.0/2.0)
      	  m_nuc1 = real(mt% Z(1))*mp_n + real(mt% N(1))*mn_n 
