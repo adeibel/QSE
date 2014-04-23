@@ -198,7 +198,7 @@
 		! xold(867,1) = -492.3833 !mu_56 at 5.E-8
 		 !xold(867,1) = -492.360361 !mu_56 at 5.E-7
 		 xold(1, 1) = 1.3 !+me_n
-		 xold(2, 1) = 1.d-6 !-1.d-3		 
+		 xold(2, 1) = 0. !-1.d-3		 
 		 end if
 
          dx = 0 ! a not very good starting "guess" for the solution
@@ -214,7 +214,7 @@
          tol_residual_norm = 1d99
          
          !epsder = 1d-6 ! relative variation to compute derivatives
-         epsder = 1.d-6
+         epsder = 1.d-5
          
          doing_jacobian = .false.
          
@@ -461,6 +461,8 @@
  		 !mu_n = 
  		 !n_n = 0.
  		 !end if
+ 		 
+ 		 n_n = 0. 
 	
 		 sum_lnA = 0. ; sum_lnA_total = 0. ; sum_lnA_final = 0. 
 		 sum_lnZ = 0. ; sum_lnZ_total = 0. ; sum_lnZ_final = 0.
@@ -484,18 +486,16 @@
 		  asum = asum + X_A(i)
 		  zsum = zsum + X_Z(i)
 
-		zs = zs + real(mt% Z(i))**2/kT*m_term/n_b * exp((mu_i(i)+real(mt%BE(i)))/kT)
-		as = as + real(mt% A(i))**2/kT*m_term/n_b *exp((mu_i(i)+real(mt%BE(i)))/kT)
+		  zs = zs + real(mt% Z(i))**2/kT*m_term/n_b * exp((mu_i(i)+real(mt%BE(i)))/kT)
+		  as = as + real(mt% A(i))**2/kT*m_term/n_b *exp((mu_i(i)+real(mt%BE(i)))/kT)
 		  !detailed balance
-		 ! equ(i,1) = real(mt% Z(i))*(mu_n-mu_e+m_star)+real(mt% N(i))*mu_n-mu_i(i)-abs(mt% BE(i)) 
+		  !equ(i,1) = real(mt% Z(i))*(mu_n-mu_e+m_star)+real(mt% N(i))*mu_n-mu_i(i)-abs(mt% BE(i)) 
 		 enddo
 
           
           
         !equ(1,1) = real(mt% Z(1))*(mu_n-mu_e+m_star)+real(mt% N(1))*mu_n-mu_i(1)-abs(mt% BE(1))
-         	
-		  sum_lnA_final = sum_lnA(1) + log(1.0+sum_lnA_total)
-    	  sum_lnZ_final = sum_lnZ(1) + log(1.0+sum_lnZ_total) 
+
 		  		  
 		 !if (sum_lnA_final > 1.d100 .or. sum_lnZ_final > 1.d100) then
 		 !sum_lnA_final = 100.*Y_e ; sum_lnZ_final = 100.*Y_e
@@ -507,7 +507,7 @@
 		  		  
   		 !baryon and charge conservation 
          equ(1,1) = zsum - Y_e 
-         equ(2,1) = asum - 1.0  + n_n !+ log(n_n/(1.0-chi)) + log(1.0-n_b*(1.0-chi)/n_n)
+         equ(2,1) = asum - 1.0  + Y_n !+ log(n_n/(1.0-chi)) + log(1.0-n_b*(1.0-chi)/n_n)
          !+ alog(1.0+exp(sum_lnA_final-log(n_b))) !+ log(Y_n/(1.0-chi))       
 
 		!write(*,*) log(n_n/(1.0-chi)), log(1.0-n_b*(1.0-chi)/n_n)
@@ -527,16 +527,45 @@
 
 		if (.not. skip_partials) then
  
+     
+            dkdn_e = (1.0/3.0)*(n_e*threepisquare)**(-2.0/3.0)*(threepisquare)			
+			dmudk_e = (me_n/2.0)*(1.0+((ke*hbarc_n)/me_n)**2.0)**(-1.0/2.0) &
+				& *2.0*(ke*hbarc_n/me_n)*hbarc_n/me_n
+			dmudk_e = (hbarc_n**2.0*ke/me_n)*(1.0+((ke*hbarc_n)/me_n)**2.0)**(-1.0/2.0)
+										
+			dkdn_n = (1.0/3.0)*(n_n*threepisquare/2.0)**(-2.0/3.0)*(threepisquare/2.0)	
+			!dmudk_n = (cw0(0) + 2.0*kn*(cw0(1) + kn*(3.0*cw0(2) + 4.0*kn*cw0(3)))) + onethird*  &
+			!	& (cw0(0) + kn*(4.0*cw0(1) + kn*(9.0*cw0(2) + 16.0*kn*cw0(3))))				
+			dmudk_n = (4.0/3.0)*cw0(0)+(10.0/3.0)*cw0(1)*kn &
+				&	  + 6.0*cw0(2)*kn**2.0+(28.0/3.0)*cw0(3)*kn**3.0
+
+			dmudne=dkdn_e*dmudk_e
+			dmudnn=dkdn_n*dmudk_n
+
+            if (n_n .eq. 0.) then
+            dkdn_n = 0.
+            dmudk_n = 0.
+            end if
+            if (n_e .eq. 0.) then
+            dkdn_e = 0.
+            dmudk_e = 0. 
+            end if	
+
+ 
+ 			A(1, 1) = - 1.0/dmudne
+ 			A(1, 2) =  1.0/dmudnn
+ 			A(2, 1) =  - 1.0/dmudne
+ 			A(2, 2) =  1.0/dmudnn
 
 !			A(1, 1) = -1.0/Y_e	
 !			A(1, 2) = 0.0			
 !			A(2, 1) = 0.0			
 !			A(2, 2) = 1.0   
 	
-			A(1, 1) = -zs
-			A(1, 2) = as
-			A(2, 1) = -zs
-			A(2, 2) = as
+!			A(1, 1) = -zs
+!			A(1, 2) = as
+!			A(2, 1) = -zs
+!			A(2, 2) = as
 
 !			A(1, 1) = -(real(mt%Z(1))/kT)+ &
 !			 & (der_Zsum/kT)*sum_lnZ_total/(1.0+sum_lnZ_total)	&
