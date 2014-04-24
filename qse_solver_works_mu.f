@@ -416,6 +416,7 @@
 		 real :: der_Zsum, der_Asum
 		 real :: Asum, Zsum
 		 real :: As(5549), Zs(5549)
+		 real :: Zi, Ai
 
                 
          ierr = 0
@@ -455,6 +456,7 @@
  		 end if
 
 		 Asum = 0. ; Zsum = 0. 
+		 Ai = 0. ; Zi = 0.
 
 		 do i = 1, mt% Ntable
           !number density of isotopes
@@ -464,9 +466,11 @@
 		  !for baryon conservation
 		  as(i) = real(mt% A(i))*m_term*exp((mu_i(i)+mt%BE(i))/kT)	 
 		  Asum = Asum + as(i) 
+		  Ai = Ai + real(mt% A(i))
 		  !for charge conservation
 		  zs(i) = real(mt% Z(i))*m_term*exp((mu_i(i)+mt%BE(i))/kT)
 		  Zsum = Zsum + zs(i)
+		  Zi = Zi + real(mt% Z(i))
 		  !detailed balance
 		  equ(i,1) = real(mt% Z(i))*(mu_n-mu_e+m_star)+real(mt% N(i))*mu_n-mu_i(i)-abs(mt% BE(i)) 
 		 enddo
@@ -482,6 +486,7 @@
 	    write(*,*) 'mu_i', mu_i(1), mu_i(5549)
 	    write(*,*) 'sumZ=', Zsum, 'n_e=', n_e, 'equN_1=', equ(mt% Ntable+1,1)
 	    write(*,*) 'sumA=', Asum, 'n_b=', n_b, 'n_n=', n_n,  'equN_2=', equ(mt% Ntable+2,1)
+	    write(*,*) 'Zi=', Zi, 'Ai=', Ai
      	write(*,*) '------------------------------'                   
                           
         !log space analytical jacobian
@@ -538,7 +543,8 @@
 			A(mt% Ntable+2, mt% Ntable+2) = 0. 
 			A(mt% Ntable+2, mt% Ntable+1) = 0.
 
-
+			write(*,*) A(mt% Ntable+1, i), A(mt% Ntable+2, i), A(i, mt% Ntable+1), A(i, mt% Ntable+2) 
+			
 		 enddo 
 		 end if
       end subroutine eval_equ
