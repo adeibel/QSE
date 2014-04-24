@@ -500,7 +500,7 @@
 		 
 		 do i=1, mt% Ntable    
 		 
-		 		  m_nuc = real(mt% Z(i))*mp_n + real(mt% N(i))*mn_n         
+		  m_nuc = real(mt% Z(i))*mp_n + real(mt% N(i))*mn_n         
      	  m_term = g*(twopi*hbarc_n**2/(m_nuc*kT))**(-3.0/2.0)
 		    
             dkdn_e = (1.0/3.0)*(n_e*threepisquare)**(-2.0/3.0)*(threepisquare)			
@@ -508,9 +508,7 @@
 				& *2.0*(ke*hbarc_n/me_n)*hbarc_n/me_n
 			dmudk_e = (hbarc_n**2.0*ke/me_n)*(1.0+((ke*hbarc_n)/me_n)**2.0)**(-1.0/2.0)
 										
-			dkdn_n = (1.0/3.0)*(n_n*threepisquare/2.0)**(-2.0/3.0)*(threepisquare/2.0)	
-			!dmudk_n = (cw0(0) + 2.0*kn*(cw0(1) + kn*(3.0*cw0(2) + 4.0*kn*cw0(3)))) + onethird*  &
-			!	& (cw0(0) + kn*(4.0*cw0(1) + kn*(9.0*cw0(2) + 16.0*kn*cw0(3))))				
+			dkdn_n = (1.0/3.0)*(n_n*threepisquare/2.0)**(-2.0/3.0)*(threepisquare/2.0)			
 			dmudk_n = (4.0/3.0)*cw0(0)+(10.0/3.0)*cw0(1)*kn &
 				&	  + 6.0*cw0(2)*kn**2.0+(28.0/3.0)*cw0(3)*kn**3.0
 
@@ -525,9 +523,7 @@
             dkdn_e = 0.
             dmudk_e = 0. 
             end if	
-            	
-
-			   
+            		   
   		    !last two rows of jacobian, derivatives wrt the conservation equations 
      		! n=0 term
      		A(mt% Ntable+1, i) = real(mt% Z(i))*m_term*exp((mu_i(i)+mt%BE(i))/kT)/kT	
@@ -541,48 +537,7 @@
 			A(mt% Ntable+1, mt% Ntable+2) = 0.			
 			A(mt% Ntable+2, mt% Ntable+2) = 0. 
 			A(mt% Ntable+2, mt% Ntable+1) = 0.
-     	
-     		!last two rows
-     		!A(mt% Ntable+1, i) = real(mt% Z(i))*n_i(i)/(kT*ni_Zsum)
-     		!A(mt% Ntable+2, i) = real(mt% A(i))*n_i(i)/(kT*ni_Asum)
-     			 	    		       	
-			!A(mt% Ntable+1, mt% Ntable+1) = -1.0/Y_e			
-			!A(mt% Ntable+1, mt% Ntable+2) = (1.0/ni_Zsum)*real(mt%Z(i))*n_i(i) &
-			!	& *real(mt%A(i))/kT*dmudnn*n_b/(1.0-chi)		
-				
-			!A(mt% Ntable+2, mt% Ntable+2) = 1.0 /((1.0-chi)-Y_n)  
-			!A(mt% Ntable+2, mt% Ntable+1) = (1.0/ni_Asum)*real(mt%A(i))*n_i(i) &
-			!	& *(-real(mt%Z(i)))/kT*dmudne*n_b	
-			
-			!A(mt% Ntable+1, mt% Ntable+1) = -(1.0/n_e)*1.0/dmudne
-			!A(mt% Ntable+2, mt% Ntable+2) = 1.0/dmudnn
-  				
-		
 
-!			
-!			A(mt% Ntable+1, mt% Ntable+1) = -real(mt% Z(i))**2 &
-!     				& *n_i(i)/(kT*ni_Zsum) - (1.0/n_e)/dmudne		
-!     		A(mt% Ntable+1, mt% Ntable+2) = real(mt% A(i))*real(mt%Z(i)) &
-!     				*n_i(i)/(kT*ni_Asum)     		
-!     		
-!     		A(mt% Ntable+2, mt% Ntable+1) =  -real(mt% Z(i))*real(mt%A(i)) &
-!     				& *n_i(i)/(kT*ni_Zsum) + 1.0/dmudnn
-!			if (n_n .gt. 0.) then
-!			A(mt% Ntable+2, mt% Ntable+2) = 1.0/n_n/dmudnn &
-!				& + real(mt%A(i))**2*n_i(i)/(kT*ni_Asum)
-!			else 
-!			A(mt% Ntable+2, mt% Ntable+2) = 0.
-!			end if	
-			
-		!	A(mt% Ntable+2, i) = 0.
-		!	A(mt% Ntable+2, mt% Ntable+1) = 0.
-		!	A(mt% Ntable+2, mt% Ntable+2) = 0. 
-						
-			!try	
-			!A(mt% Ntable+1, i) = 1./kT
-			!A(mt% Ntable+2, i) = 1./kT
-			!A(i, mt% Ntable+2) = real(mt% A(i))*dmudk_n*dkdn_n*n_b/(1.0-chi) ! MeV
-			!A(mt% Ntable+2, mt% Ntable+2) = 1.0/((1.0-chi)-Y_n)
 
 		 enddo 
 		 end if
