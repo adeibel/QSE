@@ -197,7 +197,7 @@
 		 
 		 
 		 do j=1,mt% Ntable
-		 xold(j,1) = -mt% BE(j)
+		 xold(j,1) = -mt% BE(j) !- 1.0
 		 end do
 		 !xold(867,1) = -492.3833 !mu_56 at 5.E-8
 		 !xold(867,1) = -492.360361 !mu_56 at 5.E-7
@@ -466,11 +466,11 @@
 		  !for baryon conservation
 		  as(i) = real(mt% A(i))*m_term*exp((mu_i(i)+mt%BE(i))/kT)	 
 		  Asum = Asum + as(i) 
-		  Ai = Ai + real(mt% A(i))
+		  Ai = Ai + as(i)/n_b
 		  !for charge conservation
 		  zs(i) = real(mt% Z(i))*m_term*exp((mu_i(i)+mt%BE(i))/kT)
 		  Zsum = Zsum + zs(i)
-		  Zi = Zi + real(mt% Z(i))
+		  Zi = Zi + zs(i)/n_b
 		  !detailed balance
 		  equ(i,1) = real(mt% Z(i))*(mu_n-mu_e+m_star)+real(mt% N(i))*mu_n-mu_i(i)-abs(mt% BE(i)) 
 		 enddo
@@ -536,14 +536,14 @@
 
 		    !last two columns 
 			A(i, mt% Ntable+1) = -real(mt% Z(i))		 ! MeV		    
-			A(i, mt% Ntable+2) = real(mt% A(i)) ! MeV
+			A(i, mt% Ntable+2) = real(mt% N(i)) ! MeV
 
 			A(mt% Ntable+1, mt% Ntable+1) = 0.			
 			A(mt% Ntable+1, mt% Ntable+2) = 0.			
 			A(mt% Ntable+2, mt% Ntable+2) = 0. 
 			A(mt% Ntable+2, mt% Ntable+1) = 0.
 
-			write(*,*) A(mt% Ntable+1, i), A(mt% Ntable+2, i), A(i, mt% Ntable+1), A(i, mt% Ntable+2) 
+			!write(*,*) A(mt% Ntable+1, i), A(mt% Ntable+2, i), A(i, mt% Ntable+1), A(i, mt% Ntable+2) 
 			
 		 enddo 
 		 end if
