@@ -67,6 +67,9 @@
  	  real, save :: zsum_save = 0.
  	  real :: asum, zsum
       real :: kT
+      real :: mterm
+      real :: fac1, fac2, fac3
+      real, parameter :: g=1.d0
             
       contains
       
@@ -190,15 +193,20 @@
 		 close(mu_table_input_id)
          call free_iounit(mu_table_input_id)		 
 		 else 
-		 
-		 
+		         
+         mterm = g*(m_nuc*kT/(twopi*hbarc_n**2))**(1.5)
+         fac1 = real(mt% A(867))/n_b
+         fac2 = mterm
+         xold(1,1) = -(log(fac1*fac2)*kT + mt% BE(i))/real(mt% Z(i))
+         xold(2,1) = 0. 
+      
 		 !do j=1,mt% Ntable
 		 !xold(j,1) = -mt% BE(j)
 		 !end do
 		! xold(867,1) = -492.3833 !mu_56 at 5.E-8
 		 !xold(867,1) = -492.360361 !mu_56 at 5.E-7
-		 xold(1, 1) = 1.3 !+me_n
-		 xold(2, 1) = 0. !-1.d-3		 
+		 !xold(1, 1) = 1.3 !+me_n
+		 !xold(2, 1) = 0. !-1.d-3		 
 		 end if
 
          dx = 0 ! a not very good starting "guess" for the solution
