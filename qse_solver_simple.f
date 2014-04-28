@@ -195,7 +195,7 @@
          call free_iounit(mu_table_input_id)		 
 		 else 
 		 
-		 m_nuc = real(mt%A(867))*amu_n  		         
+		 m_nuc = real(mt% A(867))*amu_n  		         
          mterm = g*(m_nuc*kT/(twopi*hbarc_n**2))**(1.5)
          fac1 = real(mt% A(867))/n_b
          fac2 = mterm
@@ -425,6 +425,9 @@
 		 real :: dxde(5549)
 		 real :: xnsum, xesum
 		 real :: yedn, yede
+		 real :: y_e_want
+
+		y_e_want = 0.45
 
          ierr = 0
 
@@ -465,52 +468,35 @@
         Y_n = n_n*(1.-chi)/n_b   
 		mu_n = -mu_n 
 		end if
-
-		!mu_e = mu_e - me_n
-		
-		 !nearly converges in outer crust with
-		 ! Y_n free and mu_n = 0 forced
- 		 !if (rho < 4.11d11) then
- 		 !Y_n = 0.
- 		 !mu_n =  -abs(mu_n)
- 		 !mu_n = 
- 		 !n_n = 0.
- 		 !end if
- 		 
- 		 n_n = 0. 
 	
-		 sum_lnA = 0. ; sum_lnA_total = 0. ; sum_lnA_final = 0. 
-		 sum_lnZ = 0. ; sum_lnZ_total = 0. ; sum_lnZ_final = 0.
 		 asum = 0. ; zsum = 0. 
 		 as = 0. ; zs = 0.
 		 xnsum = 0. ; xesum = 0. 
 		 yede = 0. ; yedn = 0. 
 		 
-
-
-		 do i = 1, mt% Ntable
+		do i = 1, mt% Ntable
          m_star = mn_n-mp_n-me_n
 		 mu_i(i) = real(mt% Z(i))*(mu_n-mu_e+m_star)+real(mt% N(i))*mu_n	 
          !number density of isotopes
-		 m_nuc = real(mt%A(i))*amu_n       
+		 m_nuc = real(mt% A(i))*amu_n       
      	 m_term = g*(m_nuc*kT/(twopi*hbarc_n**2))**(1.5)
-		 xmass(i) = real(mt%A(i))*m_term*exp((mu_i(i)+mt%BE(i))/kT)/n_b
+		 xmass(i) = real(mt% A(i))*m_term*exp((mu_i(i)+mt%BE(i))/kT)/n_b
 		 asum = asum + xmass(i)
-		 zsum = zsum + xmass(i)*real(mt%Z(i))/real(mt% A(i))
+		 zsum = zsum + xmass(i)*real(mt% Z(i))/real(mt% A(i))
 		
 		 dxdn(i) = xmass(i)*real(mt% A(i))/kT
 		 xnsum = xnsum + dxdn(i)
 		 yedn = yedn + dxdn(i)*real(mt%Z(i))/real(mt% A(i))
 		
-		 dxde(i) = xmass(i)*real(mt% Z(i))/kT
+		 dxde(i) = -xmass(i)*real(mt% Z(i))/kT
 		 xesum = xesum + dxde(i)
 		 yede = yede + dxde(i)*real(mt%Z(i))/real(mt% A(i))
 		 !write(*,*) asum, zsum, xmass(i), xnsum, xesum, dxde(i), dxdn(i)
 		enddo
 	  
   		 !baryon and charge conservation 
-         equ(1,1) = zsum - Y_e 
-         equ(2,1) = asum - 1.0  + Y_n
+         equ(1,1) = zsum - y_e
+         equ(2,1) = asum - 1.0  + y_n
          
  		write(*,*) 'mu_e=', mu_e
  		write(*,*) 'n_e=', n_e 
