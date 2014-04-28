@@ -70,7 +70,7 @@
       real :: mterm
       real :: fac1, fac2, fac3
       real, parameter :: g=1.d0
-      real :: m_nuc
+      real :: m_nuc, m_star
             
       contains
       
@@ -92,7 +92,8 @@
       integer :: which_decsol_in, decsol    
  
  	  ! for crust
- 	  character(len=*), parameter :: mass_table_name = 'nucchem_trunc.data'   
+ 	  !character(len=*), parameter :: mass_table_name = 'nucchem_trunc.data'   
+      character(len=*), parameter :: mass_table_name = 'nucchem.data'
       character(len=*), parameter :: output_file = 'qse_output.data'
    	  character(len=*), parameter :: abundance_file = 'qse_abun.data'
    	  character(len=*), parameter :: default_infile = 'qse.inlist'
@@ -194,13 +195,14 @@
 		 close(mu_table_input_id)
          call free_iounit(mu_table_input_id)		 
 		 else 
-		 
+		
+		 m_star = mn_n-mp_n !-me_n
 		 m_nuc = real(mt% A(867))*amu_n  		         
          mterm = g*(m_nuc*kT/(twopi*hbarc_n**2))**(1.5)
          fac1 = real(mt% A(867))/n_b
          fac2 = mterm
-         xold(1,1) = (log(fac1*fac2)*kT + mt% BE(867))/real(mt% Z(867))
-         xold(2,1) = 0.
+         xold(1,1) = ((log(fac1*fac2)*kT + mt% BE(867))-real(mt% Z(867))*m_star)/real(mt% Z(867))
+         xold(2,1) = 0. !xold(1,1)
       
 		 !do j=1,mt% Ntable
 		 !xold(j,1) = -mt% BE(j)
@@ -475,8 +477,8 @@
 		 yede = 0. ; yedn = 0. 
 		 
 		do i = 1, mt% Ntable
-         m_star = mn_n-mp_n-me_n
-		 mu_i(i) = real(mt% Z(i))*(mu_n-mu_e+m_star)+real(mt% N(i))*mu_n	 
+         m_star = mn_n-mp_n !-me_n
+		 mu_i(i) = real(mt% Z(i))*(mu_n-mu_e+m_star)+real(mt% N(i))*mu_n-mt%BE(i)	 
          !number density of isotopes
 		 m_nuc = real(mt% A(i))*amu_n       
      	 m_term = g*(m_nuc*kT/(twopi*hbarc_n**2))**(1.5)
@@ -491,12 +493,14 @@
 		 dxde(i) = -xmass(i)*real(mt% Z(i))/kT
 		 xesum = xesum + dxde(i)
 		 yede = yede + dxde(i)*real(mt%Z(i))/real(mt% A(i))
-		 !write(*,*) asum, zsum, xmass(i), xnsum, xesum, dxde(i), dxdn(i)
+		 !write(*,*) '1', i, m_nuc, m_term, mu_i(i)
+		 !write(*,*) '2', asum, zsum, xmass(i), xnsum, xesum, dxde(i), dxdn(i)
 		enddo
+		!stop
 	  
   		 !baryon and charge conservation 
          equ(1,1) = zsum - y_e
-         equ(2,1) = asum - 1.0  + y_n
+         equ(2,1) = asum - 1.0  !+ y_n
          
  		write(*,*) 'mu_e=', mu_e
  		write(*,*) 'n_e=', n_e 
