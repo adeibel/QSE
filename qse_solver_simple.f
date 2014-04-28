@@ -196,20 +196,27 @@
          call free_iounit(mu_table_input_id)		 
 		 else 
 		
-		 m_star = mn_n-mp_n
+		 m_star = mn_n-mp_n-me_n
 		 m_nuc = real(mt% A(867))*amu_n  		         
          mterm = g*(m_nuc*kT/(twopi*hbarc_n**2))**(1.5)
          fac1 = real(mt% A(867))/n_b
          fac2 = mterm
-         xold(1,1) = ((log(fac1*fac2)*kT + mt% BE(867))-real(mt% Z(867))*m_star)/real(mt% N(867))
-         xold(2,1) = xold(1,1)
+         xold(1,1) = (log(fac1*fac2)*kT+real(mt% Z(867))*m_star)/real(mt% Z(867))
+         xold(2,1) = 0.
+      
+        write(*,*) xold(1,1)
+        write(*,*) (-real(mt% Z(867))*xold(1,1)+mt%BE(867))/kT
+        write(*,*) (-real(mt% Z(867))*xold(1,1)+real(mt% Z(867))*m_star)/kT       
+      	write(*,*) exp((-real(mt% Z(867))*xold(1,1)+mt%BE(867))/kT)
+      	write(*,*) fac1*fac2* &
+      		& exp((-real(mt% Z(867))*xold(1,1)+real(mt% Z(867))*m_star)/kT )
       
 		 !do j=1,mt% Ntable
 		 !xold(j,1) = -mt% BE(j)
 		 !end do
 		! xold(867,1) = -492.3833 !mu_56 at 5.E-8
 		 !xold(867,1) = -492.360361 !mu_56 at 5.E-7
-		 !xold(1, 1) = 1.3 !+me_n
+		! xold(1, 1) = 1.3 !+me_n
 		 !xold(2, 1) = 0. !-1.d-3		 
 		 end if
 
@@ -429,45 +436,76 @@
 		 real :: yedn, yede
 		 real :: y_e_want
 
-
          ierr = 0
 	     chi = use_default_nuclear_size
          !rho = (n_b*amu_n)*(mev_to_ergs/clight2)/(1.d-39) ! cgs
 		 rho = n_b*amu_n
 
-		if (mu_e == 0. ) then
-		ke = 0.
-		n_e = 0.
-		Y_e = 0.
-		else                    
+		if (mu_e < 0. ) then
+		mu_e = abs(mu_e)
+		! electron wave vector fm^-1
+        x1=0.0
+        x2=10.0
+        xacc=1.d-15
+        ke=root_bisection(ke_solve,x1,x2,xacc,ierr,hist) !returns in fm**-1
+        if (io_failure(ierr,'Error in bisection for ke wave vector')) then
+        write(*,*) 'mu_e < 0', mu_e
+        stop
+        end if
+        n_e = -ke**3/threepisquare               
+        Y_e = n_e/n_b   
+        mu_e = -mu_e
+		end if
+		
+		if (mu_e > 0.) then                
         ! electron wave vector fm^-1
         x1=0.0
         x2=10.0
         xacc=1.d-15
         ke=root_bisection(ke_solve,x1,x2,xacc,ierr,hist) !returns in fm**-1
         if (io_failure(ierr,'Error in bisection for ke wave vector')) then
-        write(*,*) mu_e
+        write(*,*) 'mu_e > 0', mu_e, ke
         stop
         end if
         n_e = ke**3/threepisquare               
         Y_e = n_e/n_b   
         end if
+        
+        if (mu_e == 0.) then
+        ke = 0. 
+        n_e = 0. 
+        Y_e = 0.
+        end if
 
-		if (mu_n == 0.) then
-		kn = 0.
-		n_n = 0.
-		Y_n = 0.
-		else
+		if (mu_n < 0.) then
 		mu_n = abs(mu_n)
         x1=0.0
         x2=10.0
         xacc=1.d-15
         kn=root_bisection(kn_solve,x1,x2,xacc,ierr,hist) !returns in fm**-1
         if (io_failure(ierr,'Error in bisection for kn wave vector')) stop   
-        n_n = 2.0*kn**3/threepisquare !-2.0*kn**3/threepisquare               
+        n_n = -2.0*kn**3/threepisquare !-2.0*kn**3/threepisquare               
         Y_n = n_n*(1.-chi)/n_b   
-		!mu_n = -mu_n 
+		mu_n = -abs(mu_n) 
 		end if
+		
+		if (mu_n > 0.) then
+        x1=0.0
+        x2=10.0
+        xacc=1.d-15
+        kn=root_bisection(kn_solve,x1,x2,xacc,ierr,hist) !returns in fm**-1
+        if (io_failure(ierr,'Error in bisection for kn wave vector')) stop   
+        n_n = -2.0*kn**3/threepisquare !-2.0*kn**3/threepisquare               
+        Y_n = n_n*(1.-chi)/n_b   
+        mu_n = -abs(mu_n)
+		end if
+	
+		if (mu_n == 0.) then
+		kn=0.
+		n_n = 0.
+		Y_n = 0.
+		end if 
+	
 	
 		 asum = 0. ; zsum = 0. 
 		 as = 0. ; zs = 0.
@@ -477,7 +515,7 @@
 		 
 		do i = 1, mt% Ntable
          m_star = mn_n-mp_n-me_n
-		 mu_i(i) = real(mt% Z(i))*(mu_n-mu_e+m_star)+real(mt% N(i))*mu_n 
+		 mu_i(i) = real(mt% Z(i))*(mu_n-mu_e+m_star)+real(mt% N(i))*mu_n-mt% BE(i) 
 		end do
 		
 		do i = 1,mt% Ntable	 
@@ -485,13 +523,16 @@
 		 m_nuc = real(mt% A(i))*amu_n       
      	 m_term = g*(m_nuc*kT/(twopi*hbarc_n**2))**(1.5)
 		 xmass(i) = real(mt% A(i))*m_term*exp((mu_i(i)+mt%BE(i))/kT)/n_b
+		! write(*,*) xmass(i)
 		 asum = asum + xmass(i)
 		 zsum = zsum + xmass(i)*real(mt% Z(i))/real(mt% A(i))
 	   end do	
 		
+		write(*,*) 'xmass', xmass(867)
+		
   		 !baryon and charge conservation 
          equ(1,1) = zsum - y_e
-         equ(2,1) = asum - 1.0  !+ y_n
+         equ(2,1) = asum - 1.0 + y_n
          
  		write(*,*) 'mu_e=', mu_e
  		write(*,*) 'n_e=', n_e 
@@ -502,6 +543,8 @@
 	    write(*,*) 'asum=', asum, 'equN_2=', equ(2,1)
 	    writE(*,*) 'zsum=', zsum, 'equN_1=', equ(1,1)
      	write(*,*) '------------------------------'                   
+
+		!stop
 
 		if (.not. skip_partials) then
  
