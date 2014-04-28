@@ -70,6 +70,7 @@
       real :: mterm
       real :: fac1, fac2, fac3
       real, parameter :: g=1.d0
+      real :: m_nuc
             
       contains
       
@@ -193,12 +194,13 @@
 		 close(mu_table_input_id)
          call free_iounit(mu_table_input_id)		 
 		 else 
-		         
+		 
+		 m_nuc = real(mt%A(867))*amu_n  		         
          mterm = g*(m_nuc*kT/(twopi*hbarc_n**2))**(1.5)
          fac1 = real(mt% A(867))/n_b
          fac2 = mterm
-         xold(1,1) = -(log(fac1*fac2)*kT + mt% BE(i))/real(mt% Z(i))
-         xold(2,1) = 0. 
+         xold(1,1) = (log(fac1*fac2)*kT + mt% BE(867))/real(mt% Z(867))
+         xold(2,1) = 0.
       
 		 !do j=1,mt% Ntable
 		 !xold(j,1) = -mt% BE(j)
@@ -418,6 +420,11 @@
 		 real :: X_Z(5549), X_A(5549)
 		 real :: zsum, asum
 		 real :: zs, as
+		 real :: xmass(5549)
+		 real :: dxdn(5549)
+		 real :: dxde(5549)
+		 real :: xnsum, xesum
+		 real :: yedn, yede
 
          ierr = 0
 
@@ -476,94 +483,51 @@
 		 sum_lnZ = 0. ; sum_lnZ_total = 0. ; sum_lnZ_final = 0.
 		 asum = 0. ; zsum = 0. 
 		 as = 0. ; zs = 0.
+		 xnsum = 0. ; xesum = 0. 
+		 yede = 0. ; yedn = 0. 
+		 
 
-
-        m_star = mn_n-mp_n
-		do i = 1, mt% Ntable
-		mu_i(i) = real(mt% Z(i))*(mu_n-mu_e+m_star)+real(mt% N(i))*mu_n-abs(mt% BE(i))
-		!mu_i(i) = real(mt%Z(i))*(-mu_e+m_star) - abs(mt% BE(i))
-		enddo
 
 		 do i = 1, mt% Ntable
-          !number density of isotopes
-		  m_nuc = real(mt%A(i))*amu_n       
-     	  m_term = g*(m_nuc*kT/(twopi*hbarc_n**2))**(1.5)
-
-		  X_Z(i) = real(mt%Z(i))*m_term/n_b * exp((mu_i(i)+real(mt%BE(i)))/kT)
-		  X_A(i) = real(mt%A(i))*m_term/n_b *exp((mu_i(i)+real(mt%BE(i)))/kT)
-		  asum = asum + X_A(i)
-		  zsum = zsum + X_Z(i)
-
-		  zs = zs + real(mt% Z(i))**2/kT*m_term/n_b * exp((mu_i(i)+real(mt%BE(i)))/kT)
-		  as = as + real(mt% A(i))**2/kT*m_term/n_b *exp((mu_i(i)+real(mt%BE(i)))/kT)
-		  !detailed balance
-		  !equ(i,1) = real(mt% Z(i))*(mu_n-mu_e+m_star)+real(mt% N(i))*mu_n-mu_i(i)-abs(mt% BE(i)) 
-		 enddo
-
-          
-          
-        !equ(1,1) = real(mt% Z(1))*(mu_n-mu_e+m_star)+real(mt% N(1))*mu_n-mu_i(1)-abs(mt% BE(1))
-
-		  		  
-		 !if (sum_lnA_final > 1.d100 .or. sum_lnZ_final > 1.d100) then
-		 !sum_lnA_final = 100.*Y_e ; sum_lnZ_final = 100.*Y_e
-		 !end if 	
-		 
-		 if (mu_e == 0.) then
-		 asum = 0. ; zsum = 0.
-		 end if	  
-		  		  
+         m_star = mn_n-mp_n-me_n
+		 mu_i(i) = real(mt% Z(i))*(mu_n-mu_e+m_star)+real(mt% N(i))*mu_n	 
+         !number density of isotopes
+		 m_nuc = real(mt%A(i))*amu_n       
+     	 m_term = g*(m_nuc*kT/(twopi*hbarc_n**2))**(1.5)
+		 xmass(i) = real(mt%A(i))*m_term*exp((mu_i(i)+mt%BE(i))/kT)/n_b
+		 asum = asum + xmass(i)
+		 zsum = zsum + xmass(i)*real(mt%Z(i))/real(mt% A(i))
+		
+		 dxdn(i) = xmass(i)*real(mt% A(i))/kT
+		 xnsum = xnsum + dxdn(i)
+		 yedn = yedn + dxdn(i)*real(mt%Z(i))/real(mt% A(i))
+		
+		 dxde(i) = xmass(i)*real(mt% Z(i))/kT
+		 xesum = xesum + dxde(i)
+		 yede = yede + dxde(i)*real(mt%Z(i))/real(mt% A(i))
+		 !write(*,*) asum, zsum, xmass(i), xnsum, xesum, dxde(i), dxdn(i)
+		enddo
+	  
   		 !baryon and charge conservation 
          equ(1,1) = zsum - Y_e 
-         equ(2,1) = asum - 1.0  + Y_n !+ log(n_n/(1.0-chi)) + log(1.0-n_b*(1.0-chi)/n_n)
-         !+ alog(1.0+exp(sum_lnA_final-log(n_b))) !+ log(Y_n/(1.0-chi))       
-
-		!write(*,*) log(n_n/(1.0-chi)), log(1.0-n_b*(1.0-chi)/n_n)
-
+         equ(2,1) = asum - 1.0  + Y_n
+         
  		write(*,*) 'mu_e=', mu_e
  		write(*,*) 'n_e=', n_e 
         write(*,*) 'mu_n=', mu_n
         write(*,*) 'n_n=', n_n 
         write(*,*) 'Y_n=', Y_n
 	    write(*,*) 'Y_e=', Y_e
-!	    write(*,*) 'mu_i', mu_i(1), mu_i(5549)
-	   ! write(*,*) 'sumZ=', sum_lnZ_final, 'log(n_e)=', log(n_e), 'equN_1=', equ(1,1)
-	   ! write(*,*) 'sumA=', sum_lnA_final, 'log(n_b)=', log(n_b),  'equN_2=', equ(2,1)
 	    write(*,*) 'asum=', asum, 'equN_2=', equ(2,1)
 	    writE(*,*) 'zsum=', zsum, 'equN_1=', equ(1,1)
      	write(*,*) '------------------------------'                   
 
 		if (.not. skip_partials) then
  
-     
-            dkdn_e = (1.0/3.0)*(n_e*threepisquare)**(-2.0/3.0)*(threepisquare)			
-			dmudk_e = (me_n/2.0)*(1.0+((ke*hbarc_n)/me_n)**2.0)**(-1.0/2.0) &
-				& *2.0*(ke*hbarc_n/me_n)*hbarc_n/me_n
-			dmudk_e = (hbarc_n**2.0*ke/me_n)*(1.0+((ke*hbarc_n)/me_n)**2.0)**(-1.0/2.0)
-										
-			dkdn_n = (1.0/3.0)*(n_n*threepisquare/2.0)**(-2.0/3.0)*(threepisquare/2.0)	
-			!dmudk_n = (cw0(0) + 2.0*kn*(cw0(1) + kn*(3.0*cw0(2) + 4.0*kn*cw0(3)))) + onethird*  &
-			!	& (cw0(0) + kn*(4.0*cw0(1) + kn*(9.0*cw0(2) + 16.0*kn*cw0(3))))				
-			dmudk_n = (4.0/3.0)*cw0(0)+(10.0/3.0)*cw0(1)*kn &
-				&	  + 6.0*cw0(2)*kn**2.0+(28.0/3.0)*cw0(3)*kn**3.0
-
-			dmudne=dkdn_e*dmudk_e
-			dmudnn=dkdn_n*dmudk_n
-
-            if (n_n .eq. 0.) then
-            dkdn_n = 0.
-            dmudk_n = 0.
-            end if
-            if (n_e .eq. 0.) then
-            dkdn_e = 0.
-            dmudk_e = 0. 
-            end if	
-
- 
- 			A(1, 1) = - 1.0/dmudne
- 			A(1, 2) =  1.0/dmudnn
- 			A(2, 1) =  - 1.0/dmudne
- 			A(2, 2) =  1.0/dmudnn
+ 			A(1, 1) = xesum
+ 			A(1, 2) = xnsum
+ 			A(2, 1) = yede
+ 			A(2, 2) = yedn
 
 !			A(1, 1) = -1.0/Y_e	
 !			A(1, 2) = 0.0			
