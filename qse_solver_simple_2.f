@@ -549,7 +549,7 @@
 	    writE(*,*) 'zsum=', zsum, 'equN_1=', equ(1,1)
      	write(*,*) '------------------------------'                   
 
-		stop
+		!stop
 
 		if (.not. skip_partials) then
  
@@ -567,9 +567,9 @@
 		enddo 
  
  			A(1, 1) = xesum
- 			A(1, 2) = xnsum
+ 			A(1, 2) = 0. !xnsum
  			A(2, 1) = yede
- 			A(2, 2) = yedn
+ 			A(2, 2) = 0. !yedn
 	
 		 end if
       end subroutine eval_equ

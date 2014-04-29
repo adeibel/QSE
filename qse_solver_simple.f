@@ -202,6 +202,7 @@
          fac1 = real(mt% A(867))/n_b
          fac2 = mterm
          xold(1,1) = (log(fac1*fac2)*kT+real(mt% Z(867))*m_star)/real(mt% Z(867))
+         !xold(1,1) = (log(fac1*fac2)*kT)/real(mt% Z(867))
          xold(2,1) = 0.
       
         write(*,*) xold(1,1)
@@ -210,7 +211,7 @@
       	write(*,*) exp((-real(mt% Z(867))*xold(1,1)+mt%BE(867))/kT)
       	write(*,*) fac1*fac2* &
       		& exp((-real(mt% Z(867))*xold(1,1)+real(mt% Z(867))*m_star)/kT )
-      
+            
 		 !do j=1,mt% Ntable
 		 !xold(j,1) = -mt% BE(j)
 		 !end do
@@ -430,11 +431,15 @@
 		 real :: zsum, asum
 		 real :: zs, as
 		 real :: xmass(5549)
-		 real :: dxdn(5549)
-		 real :: dxde(5549)
-		 real :: xnsum, xesum
-		 real :: yedn, yede
 		 real :: y_e_want
+
+		
+		if (mu_e > 100.) then
+		mu_e = log(mu_e)
+		end if
+		if (mu_n > 100.) then
+		mu_n = log(mu_n)
+		end if
 
          ierr = 0
 	     chi = use_default_nuclear_size
@@ -500,6 +505,7 @@
         mu_n = -abs(mu_n)
 		end if
 	
+
 		if (mu_n == 0.) then
 		kn=0.
 		n_n = 0.
@@ -509,10 +515,7 @@
 	
 		 asum = 0. ; zsum = 0. 
 		 as = 0. ; zs = 0.
-		 xnsum = 0. ; xesum = 0. 
-		 yede = 0. ; yedn = 0. 
-		 dxdn = 0. ; dxde = 0. 
-		 
+
 		do i = 1, mt% Ntable
          m_star = mn_n-mp_n-me_n
 		 mu_i(i) = real(mt% Z(i))*(mu_n-mu_e+m_star)+real(mt% N(i))*mu_n-mt% BE(i) 
@@ -526,7 +529,7 @@
 		! write(*,*) xmass(i)
 		 asum = asum + xmass(i)
 		 zsum = zsum + xmass(i)*real(mt% Z(i))/real(mt% A(i))
-	   end do	
+	    end do	
 		
 		write(*,*) 'xmass', xmass(867)
 		
@@ -544,29 +547,7 @@
 	    writE(*,*) 'zsum=', zsum, 'equN_1=', equ(1,1)
      	write(*,*) '------------------------------'                   
 
-		!stop
 
-		if (.not. skip_partials) then
- 
- 		do i = 1, mt% Ntable
-		 dxdn(i) = xmass(i)*real(mt% A(i))/kT
-		 xnsum = xnsum + dxdn(i)
-		
-		 dxde(i) = -xmass(i)*real(mt% Z(i))/kT
-		 xesum = xesum + dxde(i)
-		 
-		 yedn = yedn + dxdn(i)*real(mt%Z(i))/real(mt% A(i))		 
-		 yede = yede + dxde(i)*real(mt%Z(i))/real(mt% A(i))
-		 !write(*,*) '1', i, m_nuc, m_term, mu_i(i)
-		 !write(*,*) '2', asum, zsum, xmass(i), xnsum, xesum, dxde(i), dxdn(i)
-		enddo 
- 
- 			A(1, 1) = xesum
- 			A(1, 2) = xnsum
- 			A(2, 1) = yede
- 			A(2, 2) = yedn
-	
-		 end if
       end subroutine eval_equ
       
       
@@ -580,8 +561,52 @@
          integer, intent(inout) :: ipar(lipar)
          integer, intent(out) :: ierr         
 			logical, parameter :: skip_partials = .false.			
-         ierr = 0        
-			call eval_equ(nvar, nz, equ, skip_partials, A, lrpar, rpar, lipar, ipar, ierr)
+		 real :: xmass(5549)
+		 real :: dxdn(5549)
+		 real :: dxde(5549)
+		 real :: xnsum, xesum
+		 real :: yedn, yede
+		 real :: m_star, m_term, m_nuc
+		 
+         ierr = 0  
+         
+		 xnsum = 0. ; xesum = 0. 
+		 yede = 0. ; yedn = 0. 
+		 dxdn = 0. ; dxde = 0. 
+		 
+		do i = 1, mt% Ntable
+         m_star = mn_n-mp_n-me_n
+		 mu_i(i) = real(mt% Z(i))*(mu_n-mu_e)+real(mt% N(i))*mu_n-mt% BE(i) 
+		end do
+		
+		do i = 1,mt% Ntable	 
+         !number density of isotopes
+		 m_nuc = real(mt% A(i))*amu_n       
+     	 m_term = g*(m_nuc*kT/(twopi*hbarc_n**2))**(1.5)
+		 xmass(i) = real(mt% A(i))*m_term*exp((mu_i(i)+mt%BE(i))/kT)/n_b
+		! write(*,*) xmass(i)
+		 asum = asum + xmass(i)
+		 zsum = zsum + xmass(i)*real(mt% Z(i))/real(mt% A(i))
+	   end do	 
+ 
+ 		do i = 1, mt% Ntable
+		 dxdn(i) = xmass(i)*real(mt% A(i))/kT
+		 xnsum = xnsum + dxdn(i)
+		
+		 dxde(i) = -xmass(i)*real(mt% Z(i))/kT
+		 xesum = xesum + dxde(i)
+		 
+		 yedn = yedn + dxdn(i)*real(mt%Z(i))/real(mt% A(i))		 
+		 yede = yede + dxde(i)*real(mt%Z(i))/real(mt% A(i))
+		enddo 
+ 
+ 			A(1, 1) = xesum
+ 			A(1, 2) = xnsum
+ 			A(2, 1) = yede
+ 			A(2, 2) = yedn
+	                  
+	    write(*,*) A(1,1), A(1,2), A(2,1), A(2,2)
+	                      
       end subroutine eval_jacobian
       
 
