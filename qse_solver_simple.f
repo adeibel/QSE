@@ -15,8 +15,8 @@
 
       ! dimensions
       integer, parameter :: nz = 1 ! number of zones
-      integer, parameter :: nvar = 2  ! number of variables per zone
-      integer, parameter :: neq = nz*nvar
+      integer, parameter :: nvar = 1  ! number of variables per zone
+      integer, parameter :: neq = 2 !nz*nvar
 
       ! information about the bandwidth of the jacobian matrix
       ! we have a square matrix, so set number zones sub and super both to 0
@@ -180,7 +180,7 @@
             if (.not. okay_to_use_mkl_pardiso()) which_decsol = lapack
          end if
          
-         allocate(equ(nvar,nz), x(nvar,nz), xold(nvar,nz), dx(nvar,nz), xscale(nvar,nz), y(ldy, nsec), stat=ierr)
+         allocate(equ(neq,nz), x(nvar,nz), xold(nvar,nz), dx(nvar,nz), xscale(nvar,nz), y(ldy, nsec), stat=ierr)
          if (ierr /= 0) stop 1
 
 55 continue 
@@ -196,14 +196,15 @@
          call free_iounit(mu_table_input_id)		 
 		 else 
 		
-		 m_star = mn_n-mp_n-me_n
+		 m_star = mn_n-mp_n !-me_n
 		 m_nuc = real(mt% A(867))*amu_n  		         
          mterm = g*(m_nuc*kT/(twopi*hbarc_n**2))**(1.5)
          fac1 = real(mt% A(867))/n_b
          fac2 = mterm
-         xold(1,1) = (log(fac1*fac2)*kT+real(mt% Z(867))*m_star)/real(mt% Z(867))
+         xold(1,1) = (log(fac1*fac2)*kT+real(mt% Z(867))*m_star&
+         	& + mt%BE(i))/real(mt% Z(867))
          !xold(1,1) = (log(fac1*fac2)*kT)/real(mt% Z(867))
-         xold(2,1) = 0.
+        ! xold(2,1) = 0.
       
         write(*,*) xold(1,1)
         write(*,*) (-real(mt% Z(867))*xold(1,1)+mt%BE(867))/kT
@@ -356,7 +357,7 @@
 !		 mu_i(i) = x(i,1)
 !		 enddo
 		 mu_e = x(1,1)		 
-		 mu_n = x(2,1)
+		 !mu_n = x(2,1)
       end subroutine set_primaries
       
 
@@ -391,7 +392,7 @@
          real*8, intent(inout) :: rpar(lrpar)
          integer, intent(inout) :: ipar(lipar)
          integer, intent(out) :: ierr
-      	 real*8, dimension(nvar*nz, nvar*nz) :: A ! square matrix for jacobian
+      	 real*8, dimension(neq, nvar*nz) :: A ! square matrix for jacobian
 		 logical, parameter :: skip_partials = .true.			
 		 call eval_equ(nvar, nz, equ, skip_partials, A, lrpar, rpar, lipar, ipar, ierr)         
       end subroutine eval_equations
@@ -405,7 +406,7 @@
          integer, intent(in) :: nvar, nz
          real*8, pointer, dimension(:,:) :: equ
 		 logical, intent(in) :: skip_partials
-      	 real*8, dimension(nvar*nz, nvar*nz) :: A 
+      	 real*8, dimension(neq, nvar*nz) :: A 
          integer, intent(in) :: lrpar, lipar
          real*8, intent(inout) :: rpar(lrpar)
          integer, intent(inout) :: ipar(lipar)
@@ -517,8 +518,8 @@
 		 as = 0. ; zs = 0.
 
 		do i = 1, mt% Ntable
-         m_star = mn_n-mp_n-me_n
-		 mu_i(i) = real(mt% Z(i))*(mu_n-mu_e+m_star)+real(mt% N(i))*mu_n-mt% BE(i) 
+         m_star = mn_n-mp_n !-me_n
+		 mu_i(i) = real(mt% Z(i))*(mu_n-mu_e+m_star)+real(mt% N(i))*mu_n !-mt% BE(i) 
 		end do
 		
 		do i = 1,mt% Ntable	 
@@ -535,7 +536,7 @@
 		
   		 !baryon and charge conservation 
          equ(1,1) = zsum - y_e
-         equ(2,1) = asum - 1.0 + y_n
+         equ(2,1) = asum - 1.0 !+ y_n
          
  		write(*,*) 'mu_e=', mu_e
  		write(*,*) 'n_e=', n_e 
@@ -553,7 +554,7 @@
       
       subroutine eval_jacobian(ldA, A, idiag, lrpar, rpar, lipar, ipar, ierr)
          integer, intent(in) :: ldA ! leading dimension of A
-         real*8 :: A(ldA, nvar*nz) ! the jacobian matrix
+         real*8 :: A(neq, nvar*nz) ! the jacobian matrix
          ! A(idiag+q-v, v) = partial of equation(q) wrt variable(v)
          integer, intent(inout) :: idiag 
          integer, intent(in) :: lrpar, lipar
@@ -601,11 +602,11 @@
 		enddo 
  
  			A(1, 1) = xesum
- 			A(1, 2) = xnsum
+ 			!A(1, 2) = xnsum
  			A(2, 1) = yede
- 			A(2, 2) = yedn
+ 			!A(2, 2) = yedn
 	                  
-	    write(*,*) A(1,1), A(1,2), A(2,1), A(2,2)
+	    !write(*,*) A(1,1), A(1,2), A(2,1), A(2,2)
 	                      
       end subroutine eval_jacobian
       
