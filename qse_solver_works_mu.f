@@ -103,6 +103,8 @@
       integer :: mu_table_input_id, mu_table_output_id
       logical, save :: mass_table_is_loaded = .FALSE.
       logical, save :: ye_set = .FALSE.
+      real :: mterm, fac1, fac2, m_nuc, m_star
+      real, parameter :: g = 1.d0
 
       namelist /range/ n_b_start, kT, have_mu_table, &
       	&	do_numerical_jacobian, which_decsol_in
@@ -160,7 +162,7 @@
 	  write(abundance_id,'(A13)') 'n_i [fm^-3]'
 
   	  ! solve for qse distribution at each n_b  	  
-  	  do i=1,2
+  	  do i=1,1
   	     n_b = n_b_start*real(i)  
 
   	     write(*,*) 'n_b =', n_b
@@ -194,6 +196,17 @@
 		 close(mu_table_input_id)
          call free_iounit(mu_table_input_id)		 
 		 else 
+ 
+ 		 xold(mt% Ntable+2,1) = 0.
+		 m_star = mn_n-mp_n-me_n
+		 m_nuc = real(mt% A(867))*amu_n  		         
+         mterm = g*(m_nuc*kT/(twopi*hbarc_n**2))**(1.5)
+         fac1 = real(mt% A(867))/n_b
+         fac2 = mterm
+!         xold(1,1) = (log(fac1*fac2)*kT+real(mt% Z(867))*m_star&
+!         	& + mt%BE(i)+real(mt%A(867))*xold(2,1))/real(mt% Z(867))
+         xold(mt% Ntable+1,1) = (log(fac1*fac2)*kT+real(mt% Z(867))*m_star&
+         	& +real(mt%A(867))*xold(2,1))/real(mt% Z(867))
 		 
 		 
 		 do j=1,mt% Ntable
@@ -201,8 +214,8 @@
 		 end do
 		 !xold(867,1) = -492.3833 !mu_56 at 5.E-8
 		 !xold(867,1) = -492.360361 !mu_56 at 5.E-7
-		 xold(mt% Ntable+1, 1) = 1.
-		 xold(mt% Ntable+2, 1) = -1.d-3
+!		 xold(mt% Ntable+1, 1) = 1.
+!		 xold(mt% Ntable+2, 1) = -1.d-3
 		 end if
 
          dx = 0 ! a not very good starting "guess" for the solution
@@ -442,25 +455,18 @@
         xacc=1.d-5
         kn=root_bisection(kn_solve,x1,x2,xacc,ierr,hist) !returns in fm**-1
         if (io_failure(ierr,'Error in bisection for kn wave vector')) stop   
-        n_n = -2.0*kn**3/threepisquare               
+        n_n = 2.0*kn**3/threepisquare               
         Y_n = n_n*(1.-chi)/n_b   
 		mu_n = -mu_n 
 		end if
-		
-		 !nearly converges in outer crust with
-		 ! Y_n free and mu_n = 0 forced
- 		 if (rho < 4.11d11) then
- 		 mu_n = -abs(mu_n)
- 		 !mu_n = 0.
- 		n_n = 0.
- 		 end if
+
 
 		 Asum = 0. ; Zsum = 0. 
 		 Ai = 0. ; Zi = 0.
 
 		 do i = 1, mt% Ntable
           !number density of isotopes
-		  m_star = mn_n-mp_n !does not contain m_e because mu_e has rest mass in definition 
+		  m_star = mn_n-mp_n-me_n !does not contain m_e because mu_e has rest mass in definition 
 		  m_nuc = real(mt% Z(i))*mp_n + real(mt% N(i))*mn_n         
      	  m_term = g*(twopi*hbarc_n**2/(m_nuc*kT))**(-3.0/2.0)
 		  !for baryon conservation
@@ -472,7 +478,7 @@
 		  Zsum = Zsum + zs(i)
 		  Zi = Zi + zs(i)/n_b
 		  !detailed balance
-		  equ(i,1) = real(mt% Z(i))*(mu_n-mu_e+m_star)+real(mt% N(i))*mu_n-mu_i(i)-abs(mt% BE(i)) 
+		  equ(i,1) = real(mt% Z(i))*(mu_n-mu_e+m_star)+real(mt% N(i))*mu_n-mu_i(i) !-abs(mt% BE(i)) 
 		 enddo
 		  		  
   		 !baryon and charge conservation 

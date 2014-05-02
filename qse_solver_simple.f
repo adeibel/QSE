@@ -57,7 +57,7 @@
 
 	  ! for crust
       type(mass_table_type), pointer :: mt
-      real*8 :: mu_e, mu_n, mu_i(5549), n_i(5549)
+      real*8 :: mu_e, mu_n, mu_i(5267), n_i(5267)
       real*8 :: Y_e, Y_n 
    	  real*8 :: n_b, n_e, n_n
       real*8 :: ke, kn
@@ -96,8 +96,8 @@
       integer :: which_decsol_in, decsol    
  
  	  ! for crust
- 	  !character(len=*), parameter :: mass_table_name = 'nucchem_trunc.data'   
-      character(len=*), parameter :: mass_table_name = 'nucchem.data'
+ 	  character(len=*), parameter :: mass_table_name = 'nucchem_trunc.data'   
+      !character(len=*), parameter :: mass_table_name = 'nucchem.data'
       character(len=*), parameter :: output_file = 'qse_output.data'
    	  character(len=*), parameter :: abundance_file = 'qse_abun.data'
    	  character(len=*), parameter :: default_infile = 'qse.inlist'
@@ -420,16 +420,16 @@
 		 real :: dmudk_n, dmudk_e, dkdn_n, dkdn_e
 		 real :: dmudne, dmudnn
 		 !for equations in log space
-		 real :: sum_lnZ(5549), sum_lnA(5549) 
+		 real :: sum_lnZ(5267), sum_lnA(5267) 
 		 real :: sum_lnZ_total, sum_lnZ_final 
 		 real :: sum_lnA_total, sum_lnA_final
 		 real :: logZ_exponent
 		 real :: logA_exponent 
 		 real :: der_Asum, der_Zsum
-		 real :: X_Z(5549), X_A(5549)
+		 real :: X_Z(5267), X_A(5267)
 		 real :: zsum, asum
 		 real :: zs, as
-		 real :: xmass(5549)
+		 real :: xmass(5267)
 		 real :: y_e_want
 !
 		 if(mu_set .eqv. .false.) then
@@ -508,7 +508,8 @@
         mu_n = mu_n_prev
         end if
         n_n = 2.0*kn**3/threepisquare              
-        Y_n = n_n*(1.-chi)/n_b   
+        !Y_n = n_n*(1.-chi)/n_b   
+		Y_n = n_n/n_b
 		end if
 	
 
@@ -531,7 +532,7 @@
 		 m_nuc = real(mt% A(i))*amu_n       
      	 m_term = g*(m_nuc*kT/(twopi*hbarc_n**2))**(1.5)
 		 xmass(i) = real(mt% A(i))*m_term*exp((mu_i(i)+mt%BE(i))/kT)/n_b
-		! write(*,*) xmass(i)
+!		 write(*,*) xmass(i), zsum 
 		 asum = asum + xmass(i)
 		 zsum = zsum + xmass(i)*real(mt% Z(i))/real(mt% A(i))
 	    end do	
@@ -570,9 +571,9 @@
          integer, intent(inout) :: ipar(lipar)
          integer, intent(out) :: ierr         
 		 logical, parameter :: skip_partials = .false.			
-		 real :: xmass(5549)
-		 real :: dxdn(5549)
-		 real :: dxde(5549)
+		 real :: xmass(5267)
+		 real :: dxdn(5267)
+		 real :: dxde(5267)
 		 real :: xnsum, xesum
 		 real :: yedn, yede
 		 real :: m_star, m_term, m_nuc
