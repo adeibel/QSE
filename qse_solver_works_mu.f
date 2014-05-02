@@ -437,29 +437,81 @@
 	     chi = use_default_nuclear_size
          rho = (n_b*amu_n)*(mev_to_ergs/clight2)/(1.d-39) ! cgs
             
-        ! electron wave vector fm^-1
+		if (mu_e < 0. ) then
+		mu_e = abs(mu_e)
+		! electron wave vector fm^-1
         x1=0.0
-        x2=10.0
-        xacc=1.d-5
+        x2=10.
+        xacc=1.d-15
         ke=root_bisection(ke_solve,x1,x2,xacc,ierr,hist) !returns in fm**-1
-        if (io_failure(ierr,'Error in bisection for ke wave vector')) stop
+        if (io_failure(ierr,'Error in bisection for ke wave vector')) then
+        write(*,*) 'mu_e < 0', mu_e
+        ke = ke_prev
+        mu_e = mu_e_prev
+        end if
         n_e = ke**3/threepisquare               
         Y_e = n_e/n_b   
+        mu_e = -mu_e
+		end if
+		
+		if (mu_e > 0.) then                
+        ! electron wave vector fm^-1
+        x1=0.0
+        x2=10.
+        xacc=1.d-15
+        ke=root_bisection(ke_solve,x1,x2,xacc,ierr,hist) !returns in fm**-1
+        if (io_failure(ierr,'Error in bisection for ke wave vector')) then
+        write(*,*) 'mu_e > 0', mu_e, ke
+        ke= ke_prev
+        mu_e = mu_e_prev
+        end if
+        n_e = ke**3/threepisquare               
+        Y_e = n_e/n_b   
+        end if
+        
+        if (mu_e == 0.) then
+        ke = 0. 
+        n_e = 0. 
+        Y_e = 0.
+        end if
 
-		if (mu_n == 0.) then
-		kn = 0.
-		else
+		if (mu_n < 0.) then
 		mu_n = abs(mu_n)
         x1=0.0
-        x2=10.0
-        xacc=1.d-5
+        x2=10.
+        xacc=1.d-15
         kn=root_bisection(kn_solve,x1,x2,xacc,ierr,hist) !returns in fm**-1
-        if (io_failure(ierr,'Error in bisection for kn wave vector')) stop   
-        n_n = 2.0*kn**3/threepisquare               
+        if (io_failure(ierr,'Error in bisection for kn wave vector')) then
+        write(*,*) 'mu_n<0', 'mu_n=', mu_n, kn
+        kn = kn_prev
+        mu_n = mu_n_prev
+        end if   
+        n_n = 2.0*kn**3/threepisquare !-2.0*kn**3/threepisquare               
         Y_n = n_n*(1.-chi)/n_b   
-		mu_n = -mu_n 
+		mu_n = -abs(mu_n) 
 		end if
+		
+		if (mu_n > 0.) then
+        x1=0.0
+        x2=10.
+        xacc=1.d-15
+        kn=root_bisection(kn_solve,x1,x2,xacc,ierr,hist) !returns in fm**-1
+        if (io_failure(ierr,'Error in bisection for kn wave vector')) then
+        write(*,*) 'mu_n>0', 'mu_n=', mu_n, kn
+        kn = kn_prev
+        mu_n = mu_n_prev
+        end if
+        n_n = 2.0*kn**3/threepisquare              
+        !Y_n = n_n*(1.-chi)/n_b   
+		Y_n = n_n/n_b
+		end if
+	
 
+		if (mu_n == 0.) then
+		kn=0.
+		n_n = 0.
+		Y_n = 0.
+		end if 
 
 		 Asum = 0. ; Zsum = 0. 
 		 Ai = 0. ; Zi = 0.
