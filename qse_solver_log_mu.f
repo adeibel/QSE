@@ -6,7 +6,7 @@
       use utils_lib
       use phys_constants
       use mass_table 
-!      use rootfind      
+      use rootfind      
       use crust_eos_lib       
 
       implicit none
@@ -67,6 +67,8 @@
  	  real, save :: zsum_save = 0.
  	  real :: asum, zsum
       real :: kT
+		 real :: ke_prev, kn_prev
+		 real :: mu_e_prev, mu_n_prev
             
       contains
       
@@ -100,6 +102,9 @@
       integer :: inlist_id, output_id, abundance_id  
       integer :: mu_table_input_id, mu_table_output_id
       logical, save :: mass_table_is_loaded = .FALSE.
+      real :: mterm, fac1, fac2, m_nuc, m_star
+      real, parameter :: g = 1.d0
+
 
       namelist /range/ n_b_start, kT, have_mu_table, &
       	&	do_numerical_jacobian, which_decsol_in
@@ -191,15 +196,24 @@
 		 close(mu_table_input_id)
          call free_iounit(mu_table_input_id)		 
 		 else 
+
+ 		 xold(mt% Ntable+2,1) = 0.
+		 m_star = mn_n-mp_n-me_n
+		 m_nuc = real(mt% A(867))*amu_n  		         
+         mterm = g*(m_nuc*kT/(twopi*hbarc_n**2))**(1.5)
+         fac1 = real(mt% A(867))/n_b
+         fac2 = mterm
+         xold(mt% Ntable+1,1) = (log(fac1*fac2)*kT+real(mt% Z(867))*m_star&
+         	& + mt%BE(867)+real(mt%A(867))*xold(mt% Ntable+2,1))/real(mt% Z(867))
+!         xold(mt% Ntable+1,1) = (log(fac1*fac2)*kT+real(mt% Z(867))*m_star&
+!        	& +real(mt%A(867))*xold(mt% Ntable+2,1))/real(mt% Z(867))
 		 
 		 
 		 do j=1,mt% Ntable
-		 xold(j,1) = -mt% BE(j)
-		 end do
-		 xold(867,1) = -492.3833 !mu_56 at 5.E-8
-		 !xold(867,1) = -492.360361 !mu_56 at 5.E-7
-		 xold(mt% Ntable+1, 1) = 0.5
-		 xold(mt% Ntable+2, 1) = 0.0		 
+		 xold(j,1) = -mt% BE(j) !- 1.0
+		 end do		 
+		 
+	 
 		 end if
 
          dx = 0 ! a not very good starting "guess" for the solution
@@ -331,8 +345,8 @@
 		 do i = 1, mt% Ntable
 		 mu_i(i) = x(i,1)
 		 enddo
-		 Y_e = x((mt% Ntable)+1,1)		 
-		 Y_n = x((mt% Ntable)+2,1)
+		 mu_e = x((mt% Ntable)+1,1)		 
+		 mu_n = x((mt% Ntable)+2,1)
       end subroutine set_primaries
       
 
@@ -405,34 +419,85 @@
 		 real :: ni_Zsum, ni_Asum
 		 real :: n_i(5549)
 
+
          ierr = 0
-
-		 Y_e = abs(Y_e)
-		 Y_n = abs(Y_n)
-
 	     chi = use_default_nuclear_size
          rho = (n_b*amu_n)*(mev_to_ergs/clight2)/(1.d-39) ! cgs
 
-		 n_n = Y_n*n_b/(1.0-chi) 
-		 n_e = Y_e*n_b	
+		if (mu_e < 0. ) then
+		mu_e = abs(mu_e)
+		! electron wave vector fm^-1
+        x1=0.0
+        x2=10.
+        xacc=1.d-15
+        ke=root_bisection(ke_solve,x1,x2,xacc,ierr,hist) !returns in fm**-1
+        if (io_failure(ierr,'Error in bisection for ke wave vector')) then
+        write(*,*) 'mu_e < 0', mu_e
+        ke = ke_prev
+        mu_e = mu_e_prev
+        end if
+        n_e = ke**3/threepisquare               
+        Y_e = n_e/n_b   
+        mu_e = -mu_e
+		end if
+		
+		if (mu_e > 0.) then                
+        ! electron wave vector fm^-1
+        x1=0.0
+        x2=10.
+        xacc=1.d-15
+        ke=root_bisection(ke_solve,x1,x2,xacc,ierr,hist) !returns in fm**-1
+        if (io_failure(ierr,'Error in bisection for ke wave vector')) then
+        write(*,*) 'mu_e > 0', mu_e, ke
+        ke= ke_prev
+        mu_e = mu_e_prev
+        end if
+        n_e = ke**3/threepisquare               
+        Y_e = n_e/n_b   
+        end if
+        
+        if (mu_e == 0.) then
+        ke = 0. 
+        n_e = 0. 
+        Y_e = 0.
+        end if
 
-		 ke = (n_e*threepisquare)**onethird
-		 mu_e = electron_chemical_potential(ke)
-
-!		 if (Y_e .lt. 0.) then
-!		 n_e = abs(Y_e)*n_b
-!		 ke = (abs(n_e)*threepisquare)**onethird
-!		 mu_e = -electron_chemical_potential(ke) 
-!		 end if
-!
-!		 if (Y_n .lt. 0.) then
-!		 n_n = abs(Y_n)*n_b/(1.0-chi) 		
-!		 kn = (0.5*n_n*threepisquare)**onethird
-!		 mu_n = -neutron_chemical_potential(kn)
-!		 end if
-
-		 kn = (0.5*n_n*threepisquare)**onethird
-		 mu_n = neutron_chemical_potential(kn)
+		if (mu_n < 0.) then
+		mu_n = abs(mu_n)
+        x1=0.0
+        x2=10.
+        xacc=1.d-15
+        kn=root_bisection(kn_solve,x1,x2,xacc,ierr,hist) !returns in fm**-1
+        if (io_failure(ierr,'Error in bisection for kn wave vector')) then
+        write(*,*) 'mu_n<0', 'mu_n=', mu_n, kn
+        kn = kn_prev
+        mu_n = mu_n_prev
+        end if   
+        n_n = 2.0*kn**3/threepisquare !-2.0*kn**3/threepisquare               
+        Y_n = n_n*(1.-chi)/n_b   
+		mu_n = -abs(mu_n) 
+		end if
+		
+		if (mu_n > 0.) then
+        x1=0.0
+        x2=10.
+        xacc=1.d-15
+        kn=root_bisection(kn_solve,x1,x2,xacc,ierr,hist) !returns in fm**-1
+        if (io_failure(ierr,'Error in bisection for kn wave vector')) then
+        write(*,*) 'mu_n>0', 'mu_n=', mu_n, kn
+        kn = kn_prev
+        mu_n = mu_n_prev
+        end if
+        n_n = 2.0*kn**3/threepisquare              
+        Y_n = n_n*(1.-chi)/n_b   
+		!Y_n = n_n/n_b
+		end if
+	
+		if (mu_n == 0.) then
+		kn=0.
+		n_n = 0.
+		Y_n = 0.
+		end if 
 
 		 sum_lnA = 0. ; sum_lnA_total = 0. ; sum_lnA_final = 0. 
 		 sum_lnZ = 0. ; sum_lnZ_total = 0. ; sum_lnZ_final = 0. 
@@ -455,10 +520,10 @@
 		  sum_lnZ(i) = exp(sum_lnZ(i)-sum_lnZ(1))
 		  sum_lnZ_total = sum_lnZ(i) + sum_lnZ_total
 		  !detailed balance
-		  equ(i,1) = real(mt% Z(i))*(mu_n-mu_e+m_star)+real(mt% N(i))*mu_n-mu_i(i)-abs(mt% BE(i)) 
+		  equ(i,1) = real(mt% Z(i))*(mu_n-mu_e+m_star)+real(mt% N(i))*mu_n-mu_i(i) !-abs(mt% BE(i)) 
 		 enddo
 
-          equ(1,1) = real(mt% Z(1))*(mu_n-mu_e+m_star)+real(mt% N(1))*mu_n-mu_i(1)-abs(mt% BE(1))
+          equ(1,1) = real(mt% Z(1))*(mu_n-mu_e+m_star)+real(mt% N(1))*mu_n-mu_i(1) !-abs(mt% BE(1))
          	
 		  sum_lnA_final = sum_lnA(1) + log(1.0+sum_lnA_total)
     	  sum_lnZ_final = sum_lnZ(1) + log(1.0+sum_lnZ_total) 
@@ -505,13 +570,91 @@
 		 real :: logA_exponent 
 		 real :: ni_Zsum, ni_Asum
 		 real :: n_i(5549)
+
 		 
          ierr = 0        
+	     chi = use_default_nuclear_size
+         rho = (n_b*amu_n)*(mev_to_ergs/clight2)/(1.d-39) ! cgs
+
+		if (mu_e < 0. ) then
+		mu_e = abs(mu_e)
+		! electron wave vector fm^-1
+        x1=0.0
+        x2=10.
+        xacc=1.d-15
+        ke=root_bisection(ke_solve,x1,x2,xacc,ierr,hist) !returns in fm**-1
+        if (io_failure(ierr,'Error in bisection for ke wave vector')) then
+        write(*,*) 'mu_e < 0', mu_e
+        ke = ke_prev
+        mu_e = mu_e_prev
+        end if
+        n_e = ke**3/threepisquare               
+        Y_e = n_e/n_b   
+        mu_e = -mu_e
+		end if
+		
+		if (mu_e > 0.) then                
+        ! electron wave vector fm^-1
+        x1=0.0
+        x2=10.
+        xacc=1.d-15
+        ke=root_bisection(ke_solve,x1,x2,xacc,ierr,hist) !returns in fm**-1
+        if (io_failure(ierr,'Error in bisection for ke wave vector')) then
+        write(*,*) 'mu_e > 0', mu_e, ke
+        ke= ke_prev
+        mu_e = mu_e_prev
+        end if
+        n_e = ke**3/threepisquare               
+        Y_e = n_e/n_b   
+        end if
+        
+        if (mu_e == 0.) then
+        ke = 0. 
+        n_e = 0. 
+        Y_e = 0.
+        end if
+
+		if (mu_n < 0.) then
+		mu_n = abs(mu_n)
+        x1=0.0
+        x2=10.
+        xacc=1.d-15
+        kn=root_bisection(kn_solve,x1,x2,xacc,ierr,hist) !returns in fm**-1
+        if (io_failure(ierr,'Error in bisection for kn wave vector')) then
+        write(*,*) 'mu_n<0', 'mu_n=', mu_n, kn
+        kn = kn_prev
+        mu_n = mu_n_prev
+        end if   
+        n_n = 2.0*kn**3/threepisquare !-2.0*kn**3/threepisquare               
+        Y_n = n_n*(1.-chi)/n_b   
+		mu_n = -abs(mu_n) 
+		end if
+		
+		if (mu_n > 0.) then
+        x1=0.0
+        x2=10.
+        xacc=1.d-15
+        kn=root_bisection(kn_solve,x1,x2,xacc,ierr,hist) !returns in fm**-1
+        if (io_failure(ierr,'Error in bisection for kn wave vector')) then
+        write(*,*) 'mu_n>0', 'mu_n=', mu_n, kn
+        kn = kn_prev
+        mu_n = mu_n_prev
+        end if
+        n_n = 2.0*kn**3/threepisquare              
+        Y_n = n_n*(1.-chi)/n_b   
+		!Y_n = n_n/n_b
+		end if
+	
+		if (mu_n == 0.) then
+		kn=0.
+		n_n = 0.
+		Y_n = 0.
+		end if 
+
 
 		 sum_lnA = 0. ; sum_lnA_total = 0. ; sum_lnA_final = 0. 
 		 sum_lnZ = 0. ; sum_lnZ_total = 0. ; sum_lnZ_final = 0. 
-	     chi = use_default_nuclear_size
-         rho = (n_b*amu_n)*(mev_to_ergs/clight2)/(1.d-39) ! cgs
+
 
 		 do i = 2, mt% Ntable
           !number density of isotopes
