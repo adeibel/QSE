@@ -565,6 +565,8 @@
 			A(i, mt% Ntable+1) = -real(mt% Z(i))*dmudk_e*dkdn_e*n_b			 ! MeV		    
 			A(i, mt% Ntable+2) = real(mt% A(i))*dmudk_n*dkdn_n*n_b/(1.0-chi) ! MeV
      	
+     	end do
+     	
      		!last two rows
      		!A(mt% Ntable+1, i) = real(mt% Z(i))*n_i(i)/(kT*ni_Zsum)
      		!A(mt% Ntable+2, i) = real(mt% A(i))*n_i(i)/(kT*ni_Asum)
@@ -589,7 +591,6 @@
 			!A(i, mt% Ntable+2) = real(mt% A(i))*dmudk_n*dkdn_n*n_b/(1.0-chi) ! MeV
 			!A(mt% Ntable+2, mt% Ntable+2) = 1.0/((1.0-chi)-Y_n)
 
-		 enddo 
 		 end if
       end subroutine eval_equ
       
