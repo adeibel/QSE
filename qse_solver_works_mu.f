@@ -68,7 +68,10 @@
  	  real, save :: zsum_save = 0.
  	  real :: asum, zsum
       real :: kT
-            
+      real :: mu_n_prev
+      real :: ke_prev, kn_prev
+
+                    
       contains
       
       subroutine do_test_newton
@@ -203,10 +206,10 @@
          mterm = g*(m_nuc*kT/(twopi*hbarc_n**2))**(1.5)
          fac1 = real(mt% A(867))/n_b
          fac2 = mterm
-!         xold(1,1) = (log(fac1*fac2)*kT+real(mt% Z(867))*m_star&
-!         	& + mt%BE(i)+real(mt%A(867))*xold(2,1))/real(mt% Z(867))
          xold(mt% Ntable+1,1) = (log(fac1*fac2)*kT+real(mt% Z(867))*m_star&
-         	& +real(mt%A(867))*xold(2,1))/real(mt% Z(867))
+         	& + mt%BE(867)+real(mt%A(867))*xold(mt% Ntable+2,1))/real(mt% Z(867))
+!         xold(mt% Ntable+1,1) = (log(fac1*fac2)*kT+real(mt% Z(867))*m_star&
+!        	& +real(mt%A(867))*xold(mt% Ntable+2,1))/real(mt% Z(867))
 		 
 		 
 		 do j=1,mt% Ntable
@@ -414,10 +417,6 @@
 		 real :: m_star 
 		 real :: m_nuc, m_nuc1
 		 real :: m_term, m_term1		 
-		 !for analytical jacobian
-	     real, dimension(0:3), parameter :: cw0 = [ 1.2974, 15.0298, -15.2343, 7.4663 ]		
-		 real :: dmudk_n, dmudk_e, dkdn_n, dkdn_e
-		 real :: dmudne, dmudnn
 		 !for equations in log space
 		 real :: sum_lnZ(5549), sum_lnA(5549) 
 		 real :: sum_lnZ_total, sum_lnZ_final 
@@ -502,11 +501,10 @@
         mu_n = mu_n_prev
         end if
         n_n = 2.0*kn**3/threepisquare              
-        !Y_n = n_n*(1.-chi)/n_b   
-		Y_n = n_n/n_b
+        Y_n = n_n*(1.-chi)/n_b   
+		!Y_n = n_n/n_b
 		end if
 	
-
 		if (mu_n == 0.) then
 		kn=0.
 		n_n = 0.
@@ -515,6 +513,7 @@
 
 		 Asum = 0. ; Zsum = 0. 
 		 Ai = 0. ; Zi = 0.
+		 ni_Asum = 0. ; ni_Zsum = 0.
 
 		 do i = 1, mt% Ntable
           !number density of isotopes
@@ -524,13 +523,15 @@
 		  !for baryon conservation
 		  as(i) = real(mt% A(i))*m_term*exp((mu_i(i)+mt%BE(i))/kT)	 
 		  Asum = Asum + as(i) 
+		  ni_Asum = ni_Asum + m_term*exp((mu_i(i)+mt%BE(i))/kT)	
 		  Ai = Ai + as(i)/n_b
 		  !for charge conservation
 		  zs(i) = real(mt% Z(i))*m_term*exp((mu_i(i)+mt%BE(i))/kT)
 		  Zsum = Zsum + zs(i)
+		  ni_Zsum = ni_Zsum + m_term*exp((mu_i(i)+mt%BE(i))/kT)	
 		  Zi = Zi + zs(i)/n_b
 		  !detailed balance
-		  equ(i,1) = real(mt% Z(i))*(mu_n-mu_e+m_star)+real(mt% N(i))*mu_n-mu_i(i) !-abs(mt% BE(i)) 
+		  equ(i,1) = real(mt% Z(i))*(mu_n-mu_e+m_star)+real(mt% N(i))*mu_n-mu_i(i) !-(mt%BE(i))
 		 enddo
 		  		  
   		 !baryon and charge conservation 
@@ -544,67 +545,15 @@
 	    write(*,*) 'mu_i', mu_i(1), mu_i(5549)
 	    write(*,*) 'sumZ=', Zsum, 'n_e=', n_e, 'equN_1=', equ(mt% Ntable+1,1)
 	    write(*,*) 'sumA=', Asum, 'n_b=', n_b, 'n_n=', n_n,  'equN_2=', equ(mt% Ntable+2,1)
-	    write(*,*) 'Zi=', Zi, 'Ai=', Ai
+	    write(*,*) 'Zi=', Zi/ni_Zsum, 'Ai=', Ai/ni_Asum
      	write(*,*) '------------------------------'                   
+       
+      	 mu_e_prev = mu_e
+		 mu_n_prev = mu_n
+		 ke_prev = ke
+		 kn_prev = kn 
                           
-        !log space analytical jacobian
-		 if (.not. skip_partials) then
-
-		 do i=1, mt% Ntable
-		 	do j=1, mt% Ntable
-		 	 ! diagonal jacobian => d(equ)/dmu_i	 	
-		 	 if(i==j) then
-		 	 A(i,j)= -1.0
-		 	 else
-		 	 A(i,j)=0.0
-		 	 endif
-		    enddo
-		 enddo
-		 
-		 do i=1, mt% Ntable    
-		 
-		  m_nuc = real(mt% Z(i))*mp_n + real(mt% N(i))*mn_n         
-     	  m_term = g*(twopi*hbarc_n**2/(m_nuc*kT))**(-3.0/2.0)
-		    
-            dkdn_e = (1.0/3.0)*(n_e*threepisquare)**(-2.0/3.0)*(threepisquare)			
-			dmudk_e = (me_n/2.0)*(1.0+((ke*hbarc_n)/me_n)**2.0)**(-1.0/2.0) &
-				& *2.0*(ke*hbarc_n/me_n)*hbarc_n/me_n
-			dmudk_e = (hbarc_n**2.0*ke/me_n)*(1.0+((ke*hbarc_n)/me_n)**2.0)**(-1.0/2.0)
-										
-			dkdn_n = (1.0/3.0)*(n_n*threepisquare/2.0)**(-2.0/3.0)*(threepisquare/2.0)			
-			dmudk_n = (4.0/3.0)*cw0(0)+(10.0/3.0)*cw0(1)*kn &
-				&	  + 6.0*cw0(2)*kn**2.0+(28.0/3.0)*cw0(3)*kn**3.0
-
-			dmudne=dkdn_e*dmudk_e
-			dmudnn=dkdn_n*dmudk_n
-
-            if (n_n .eq. 0.) then
-            dkdn_n = 0.
-            dmudk_n = 0.
-            end if
-            if (n_e .eq. 0.) then
-            dkdn_e = 0.
-            dmudk_e = 0. 
-            end if	
-            		   
-  		    !last two rows of jacobian, derivatives wrt the conservation equations 
-     		! n=0 term
-     		A(mt% Ntable+1, i) = real(mt% Z(i))*m_term*exp((mu_i(i)+mt%BE(i))/kT)/kT	
-     		A(mt% Ntable+2, i) = real(mt% A(i))*m_term*exp((mu_i(i)+mt%BE(i))/kT)/kT	
-
-		    !last two columns 
-			A(i, mt% Ntable+1) = -real(mt% Z(i))		 ! MeV		    
-			A(i, mt% Ntable+2) = real(mt% N(i)) ! MeV
-
-			A(mt% Ntable+1, mt% Ntable+1) = 0.			
-			A(mt% Ntable+1, mt% Ntable+2) = 0.			
-			A(mt% Ntable+2, mt% Ntable+2) = 0. 
-			A(mt% Ntable+2, mt% Ntable+1) = 0.
-
-			!write(*,*) A(mt% Ntable+1, i), A(mt% Ntable+2, i), A(i, mt% Ntable+1), A(i, mt% Ntable+2) 
-			
-		 enddo 
-		 end if
+	
       end subroutine eval_equ
       
       
@@ -617,9 +566,135 @@
          real*8, intent(inout) :: rpar(lrpar)
          integer, intent(inout) :: ipar(lipar)
          integer, intent(out) :: ierr         
-			logical, parameter :: skip_partials = .false.			
+		 logical, parameter :: skip_partials = .false.			
+		 real :: chi
+      	!real :: mu_e_prev, mu_n_prev
+      	!real :: ke_prev, kn_prev
+      	real :: m_term, m_nuc
+      	real, parameter :: g = 1.0d0
+      	real :: asum2, zsum2	
+      	real :: sumn, sume 
+		 
          ierr = 0        
-			call eval_equ(nvar, nz, equ, skip_partials, A, lrpar, rpar, lipar, ipar, ierr)
+
+	     chi = use_default_nuclear_size
+         !rho = (n_b*amu_n)*(mev_to_ergs/clight2)/(1.d-39) ! cgs
+            
+		if (mu_e < 0. ) then
+		mu_e = abs(mu_e)
+		! electron wave vector fm^-1
+        x1=0.0
+        x2=10.
+        xacc=1.d-15
+        ke=root_bisection(ke_solve,x1,x2,xacc,ierr,hist) !returns in fm**-1
+        if (io_failure(ierr,'Error in bisection for ke wave vector')) then
+        write(*,*) 'mu_e < 0', mu_e
+        ke = ke_prev
+        mu_e = mu_e_prev
+        end if
+        n_e = ke**3/threepisquare               
+        Y_e = n_e/n_b   
+        mu_e = -mu_e
+		end if
+		
+		if (mu_e > 0.) then                
+        ! electron wave vector fm^-1
+        x1=0.0
+        x2=10.
+        xacc=1.d-15
+        ke=root_bisection(ke_solve,x1,x2,xacc,ierr,hist) !returns in fm**-1
+        if (io_failure(ierr,'Error in bisection for ke wave vector')) then
+        write(*,*) 'mu_e > 0', mu_e, ke
+        ke= ke_prev
+        mu_e = mu_e_prev
+        end if
+        n_e = ke**3/threepisquare               
+        Y_e = n_e/n_b   
+        end if
+        
+        if (mu_e == 0.) then
+        ke = 0. 
+        n_e = 0. 
+        Y_e = 0.
+        end if
+
+		if (mu_n < 0.) then
+		mu_n = abs(mu_n)
+        x1=0.0
+        x2=10.
+        xacc=1.d-15
+        kn=root_bisection(kn_solve,x1,x2,xacc,ierr,hist) !returns in fm**-1
+        if (io_failure(ierr,'Error in bisection for kn wave vector')) then
+        write(*,*) 'mu_n<0', 'mu_n=', mu_n, kn
+        kn = kn_prev
+        mu_n = mu_n_prev
+        end if   
+        n_n = 2.0*kn**3/threepisquare !-2.0*kn**3/threepisquare               
+        Y_n = n_n*(1.-chi)/n_b   
+		mu_n = -abs(mu_n) 
+		end if
+		
+		if (mu_n > 0.) then
+        x1=0.0
+        x2=10.
+        xacc=1.d-15
+        kn=root_bisection(kn_solve,x1,x2,xacc,ierr,hist) !returns in fm**-1
+        if (io_failure(ierr,'Error in bisection for kn wave vector')) then
+        write(*,*) 'mu_n>0', 'mu_n=', mu_n, kn
+        kn = kn_prev
+        mu_n = mu_n_prev
+        end if
+        n_n = 2.0*kn**3/threepisquare              
+        Y_n = n_n*(1.-chi)/n_b   
+		!Y_n = n_n/n_b
+		end if
+
+		if (mu_n == 0.) then
+		kn=0.
+		n_n = 0.
+		Y_n = 0.
+		end if 
+		 
+		 do i=1, mt% Ntable
+		 	do j=1, mt% Ntable
+		 	 ! diagonal jacobian => d(equ)/dmu_i	 	
+		 	 if(i==j) then
+		 	 A(i,j)= -1.0
+		 	 else
+		 	 A(i,j)=0.0
+		 	 endif
+		    enddo
+		 enddo
+		 
+		 asum2 = 0. ; zsum2 = 0.
+		 sumn = 0. ; sume = 0.
+		 
+		 do i=1, mt% Ntable    
+		 
+		  m_nuc = real(mt% Z(i))*mp_n + real(mt% N(i))*mn_n         
+     	  m_term = g*(twopi*hbarc_n**2/(m_nuc*kT))**(-3.0/2.0)
+		    
+  		    !last two rows of jacobian, derivatives wrt the conservation equations 
+     		! n=0 term
+     		A(mt% Ntable+1, i) = real(mt% Z(i))*m_term*exp((mu_i(i)+mt%BE(i))/kT)/kT	
+     		A(mt% Ntable+2, i) = real(mt% A(i))*m_term*exp((mu_i(i)+mt%BE(i))/kT)/kT	
+
+			asum2 = asum2 + real(mt% A(i))**2*m_term*exp((mu_i(i)+mt%BE(i))/kT)/kT**2
+			zsum2 = zsum2 + real(mt% Z(i))**2*m_term*exp((mu_i(i)+mt%BE(i))/kT)/kT**2
+			sume = sume +real(mt% Z(i))*real(mt%A(i))*m_term*exp((mu_i(i)+mt%BE(i))/kT)/kT**2
+			sumn = sumn + real(mt% Z(i))*real(mt%A(i))*m_term*exp((mu_i(i)+mt%BE(i))/kT)/kT**2
+
+		    !last two columns 
+			A(i, mt% Ntable+1) = -real(mt% Z(i))		 ! MeV		    
+			A(i, mt% Ntable+2) = real(mt% A(i)) 		 ! MeV
+
+		end do
+
+			A(mt% Ntable+1, mt% Ntable+1) = 0. !-zsum2			
+			A(mt% Ntable+1, mt% Ntable+2) = 0. !sumn		
+			A(mt% Ntable+2, mt% Ntable+2) = 0. !asum2 
+			A(mt% Ntable+2, mt% Ntable+1) = 0. !-sume
+
       end subroutine eval_jacobian
       
 
