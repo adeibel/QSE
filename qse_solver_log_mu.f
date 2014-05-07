@@ -504,7 +504,7 @@
 
 		 do i = 2, mt% Ntable
           !number density of isotopes
-		  m_star = mn_n-mp_n !does not contain m_e because mu_e has rest mass in definition 
+		  m_star = mn_n-mp_n-me_n !does not contain m_e because mu_e has rest mass in definition 
 		  m_nuc = real(mt% Z(i))*mp_n + real(mt% N(i))*mn_n         
      	  m_term = g*(twopi*hbarc_n**2/(m_nuc*kT))**(-3.0/2.0)
      	  m_nuc1 = real(mt% Z(1))*mp_n + real(mt% N(1))*mn_n 
@@ -671,6 +671,7 @@
 		 enddo
 
 		n_i = 0. ; ni_Zsum = 0. ; ni_Asum = 0.
+		dmudnn = 0. ; dmudne = 0.
 
 		do i = 1, mt% Ntable
 		  m_nuc = real(mt% Z(i))*mp_n + real(mt% N(i))*mn_n         
