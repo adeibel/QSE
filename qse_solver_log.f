@@ -430,16 +430,6 @@
 
 		 kn = (0.5*n_n*threepisquare)**onethird
 		 mu_n = neutron_chemical_potential(kn)
-		
-		 !nearly converges in outer crust with
-		 ! Y_n free and mu_n = 0 forced
- 		 if (rho < 4.11d11) then
- 		 !Y_n = 0.
- 		 mu_n = -abs(mu_n)
- 		 !mu_n = 0.
- 		 n_n = 0.
- 		 !kn=0. 
- 		 end if
 
 		 sum_lnA = 0. ; sum_lnA_total = 0. ; sum_lnA_final = 0. 
 		 sum_lnZ = 0. ; sum_lnZ_total = 0. ; sum_lnZ_final = 0. 
