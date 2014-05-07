@@ -203,10 +203,10 @@
          mterm = g*(m_nuc*kT/(twopi*hbarc_n**2))**(1.5)
          fac1 = real(mt% A(867))/n_b
          fac2 = mterm
-         xold(mt% Ntable+1,1) = (log(fac1*fac2)*kT+real(mt% Z(867))*m_star&
-         	& + mt%BE(867)+real(mt%A(867))*xold(mt% Ntable+2,1))/real(mt% Z(867))
 !         xold(mt% Ntable+1,1) = (log(fac1*fac2)*kT+real(mt% Z(867))*m_star&
-!        	& +real(mt%A(867))*xold(mt% Ntable+2,1))/real(mt% Z(867))
+!         	& + mt%BE(867)+real(mt%A(867))*xold(mt% Ntable+2,1))/real(mt% Z(867))
+         xold(mt% Ntable+1,1) = (log(fac1*fac2)*kT+real(mt% Z(867))*m_star&
+        	& +real(mt%A(867))*xold(mt% Ntable+2,1))/real(mt% Z(867))
 		 
 		 
 		 do j=1,mt% Ntable
@@ -742,21 +742,21 @@
      		!A(mt% Ntable+2, 1) = (1.0/kT)-(1.0/kT)*sum_lnA_total*(1.0+sum_lnA_total)**(-1.0)
 
 		    !last two columns 
-			A(i, mt% Ntable+1) = -real(mt% Z(i))*dmudk_e*dkdn_e*n_b			 ! MeV		    
-			A(i, mt% Ntable+2) = real(mt% A(i))*dmudk_n*dkdn_n*n_b/(1.0-chi) ! MeV
+			A(i, mt% Ntable+1) = -real(mt% Z(i)) !*dmudk_e*dkdn_e*n_b			 ! MeV		    
+			A(i, mt% Ntable+2) = real(mt% A(i)) !*dmudk_n*dkdn_n*n_b/(1.0-chi) ! MeV
      
    			enddo  	
      		!last two rows
      		!A(mt% Ntable+1, i) = real(mt% Z(i))*n_i(i)/(kT*ni_Zsum)
      		!A(mt% Ntable+2, i) = real(mt% A(i))*n_i(i)/(kT*ni_Asum)
      			 	    		       	
-			A(mt% Ntable+1, mt% Ntable+1) = -1.0/Y_e			
-			A(mt% Ntable+1, mt% Ntable+2) = (1.0/ni_Zsum)*real(mt%Z(i))*n_i(i) &
-				& *real(mt%A(i))/kT*dmudnn*n_b/(1.0-chi)		
+			A(mt% Ntable+1, mt% Ntable+1) = 0. !-1.0/Y_e			
+!			A(mt% Ntable+1, mt% Ntable+2) = (1.0/ni_Zsum)*real(mt%Z(i))*n_i(i) &
+!				& *real(mt%A(i))/kT*dmudnn*n_b/(1.0-chi)		
 				
-			A(mt% Ntable+2, mt% Ntable+2) = 1.0 /((1.0-chi)-Y_n)  
-			A(mt% Ntable+2, mt% Ntable+1) = (1.0/ni_Asum)*real(mt%A(i))*n_i(i) &
-				& *(-real(mt%Z(i)))/kT*dmudne*n_b	
+			A(mt% Ntable+2, mt% Ntable+2) = 0. !1.0 /((1.0-chi)-Y_n)  
+!			A(mt% Ntable+2, mt% Ntable+1) = (1.0/ni_Asum)*real(mt%A(i))*n_i(i) &
+!				& *(-real(mt%Z(i)))/kT*dmudne*n_b	
 						
 			!try
 			!A(i, mt% Ntable+1) = 0.

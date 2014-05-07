@@ -205,10 +205,10 @@
          mterm = g*(m_nuc*kT/(twopi*hbarc_n**2))**(1.5)
          fac1 = real(mt% A(867))/n_b
          fac2 = mterm
-!         xold(1,1) = (log(fac1*fac2)*kT+real(mt% Z(867))*m_star&
-!         	& + mt%BE(i)+real(mt%A(867))*xold(2,1))/real(mt% Z(867))
          xold(1,1) = (log(fac1*fac2)*kT+real(mt% Z(867))*m_star&
-         	& +real(mt%A(867))*xold(2,1))/real(mt% Z(867))
+         	& + mt%BE(867)+real(mt%A(867))*xold(2,1))/real(mt% Z(867))
+!         xold(1,1) = (log(fac1*fac2)*kT+real(mt% Z(867))*m_star&
+!         	& +real(mt%A(867))*xold(2,1))/real(mt% Z(867))
 
 
 		 !do j=1,mt% Ntable
@@ -508,8 +508,7 @@
         mu_n = mu_n_prev
         end if
         n_n = 2.0*kn**3/threepisquare              
-        !Y_n = n_n*(1.-chi)/n_b   
-		Y_n = n_n/n_b
+        Y_n = n_n*(1.-chi)/n_b   
 		end if
 	
 
