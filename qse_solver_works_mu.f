@@ -678,13 +678,13 @@
      		A(mt% Ntable+1, i) = real(mt% Z(i))*m_term*exp((mu_i(i)+mt%BE(i))/kT)/kT	
      		A(mt% Ntable+2, i) = real(mt% A(i))*m_term*exp((mu_i(i)+mt%BE(i))/kT)/kT	
 
-	asum2 = asum2 + real(mt% A(i))**2*m_term*exp((mu_i(i)+mt%BE(i))/kT)/kT**2
-	zsum2 = zsum2 + real(mt% Z(i))**2*m_term*exp((mu_i(i)+mt%BE(i))/kT)/kT**2
-	sume = sume + real(mt% Z(i))*real(mt%A(i))*m_term*exp((mu_i(i)+mt%BE(i))/kT)/kT**2
+	asum2 = asum2 + real(mt% A(i))**2*m_term*exp((mu_i(i)+mt%BE(i))/kT)/kT
+	zsum2 = zsum2 + real(mt% Z(i))**2*m_term*exp((mu_i(i)+mt%BE(i))/kT)/kT
+	sume = sume + real(mt% Z(i))*real(mt%A(i))*m_term*exp((mu_i(i)+mt%BE(i))/kT)/kT
 
 		    !last two columns 
-			A(i, mt% Ntable+1) = -real(mt% Z(i))		 ! MeV		    
-			A(i, mt% Ntable+2) = real(mt% A(i)) 		 ! MeV
+			A(i, mt% Ntable+1) = -real(mt% Z(i)) !-2.*real(mt% Z(i))		 ! MeV		    
+			A(i, mt% Ntable+2) = -real(mt% A(i))  !real(mt% A(i)) 		 ! MeV
 
 		end do
 
