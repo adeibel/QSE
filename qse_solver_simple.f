@@ -708,6 +708,13 @@
  			A(1, 2) = xnsum
  			A(2, 1) = yede
  			A(2, 2) = yedn
+ 			
+ 	   !add scale
+ 	   
+ 	   A(1, 1) = A(1, 1)*xscale(1,1)
+ 	   A(2, 1) = A(2, 1)*xscale(1,1)
+ 	   A(1, 2) = A(1, 2)*xscale(2,1)
+ 	   A(2, 2) = A(2, 2)*xscale(2,1)		
 	                  
 	    !write(*,*) A(1,1), A(1,2), A(2,1), A(2,2)
 	  		mu_e_prev = mu_e
