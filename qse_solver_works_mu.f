@@ -206,10 +206,10 @@
          mterm = g*(m_nuc*kT/(twopi*hbarc_n**2))**(1.5)
          fac1 = real(mt% A(867))/n_b
          fac2 = mterm
-         xold(mt% Ntable+1,1) = (log(fac1*fac2)*kT+real(mt% Z(867))*m_star&
-         	& + mt%BE(867)+real(mt%A(867))*xold(mt% Ntable+2,1))/real(mt% Z(867))
 !         xold(mt% Ntable+1,1) = (log(fac1*fac2)*kT+real(mt% Z(867))*m_star&
-!        	& +real(mt%A(867))*xold(mt% Ntable+2,1))/real(mt% Z(867))
+!         	& + mt%BE(867)+real(mt%A(867))*xold(mt% Ntable+2,1))/real(mt% Z(867))
+         xold(mt% Ntable+1,1) = (log(fac1*fac2)*kT+real(mt% Z(867))*m_star&
+        	& +real(mt%A(867))*xold(mt% Ntable+2,1))/real(mt% Z(867))
 		 
 		 
 		 do j=1,mt% Ntable
@@ -450,7 +450,7 @@
         end if
         n_e = ke**3/threepisquare               
         Y_e = n_e/n_b   
-        mu_e = -mu_e
+        mu_e = -abs(mu_e)
 		end if
 		
 		if (mu_e > 0.) then                
@@ -502,7 +502,6 @@
         end if
         n_n = 2.0*kn**3/threepisquare              
         Y_n = n_n*(1.-chi)/n_b   
-		!Y_n = n_n/n_b
 		end if
 	
 		if (mu_n == 0.) then
@@ -531,7 +530,7 @@
 		  ni_Zsum = ni_Zsum + m_term*exp((mu_i(i)+mt%BE(i))/kT)	
 		  Zi = Zi + zs(i)/n_b
 		  !detailed balance
-		  equ(i,1) = real(mt% Z(i))*(mu_n-mu_e+m_star)+real(mt% N(i))*mu_n-mu_i(i) !-(mt%BE(i))
+		  equ(i,1) = real(mt% Z(i))*(mu_n-mu_e+m_star)+real(mt% N(i))*mu_n-mu_i(i)-(mt%BE(i))
 		 enddo
 		  		  
   		 !baryon and charge conservation 
@@ -594,7 +593,7 @@
         end if
         n_e = ke**3/threepisquare               
         Y_e = n_e/n_b   
-        mu_e = -mu_e
+        mu_e = -abs(mu_e)
 		end if
 		
 		if (mu_e > 0.) then                
@@ -679,10 +678,9 @@
      		A(mt% Ntable+1, i) = real(mt% Z(i))*m_term*exp((mu_i(i)+mt%BE(i))/kT)/kT	
      		A(mt% Ntable+2, i) = real(mt% A(i))*m_term*exp((mu_i(i)+mt%BE(i))/kT)/kT	
 
-			asum2 = asum2 + real(mt% A(i))**2*m_term*exp((mu_i(i)+mt%BE(i))/kT)/kT**2
-			zsum2 = zsum2 + real(mt% Z(i))**2*m_term*exp((mu_i(i)+mt%BE(i))/kT)/kT**2
-			sume = sume +real(mt% Z(i))*real(mt%A(i))*m_term*exp((mu_i(i)+mt%BE(i))/kT)/kT**2
-			sumn = sumn + real(mt% Z(i))*real(mt%A(i))*m_term*exp((mu_i(i)+mt%BE(i))/kT)/kT**2
+	asum2 = asum2 + real(mt% A(i))**2*m_term*exp((mu_i(i)+mt%BE(i))/kT)/kT**2
+	zsum2 = zsum2 + real(mt% Z(i))**2*m_term*exp((mu_i(i)+mt%BE(i))/kT)/kT**2
+	sume = sume + real(mt% Z(i))*real(mt%A(i))*m_term*exp((mu_i(i)+mt%BE(i))/kT)/kT**2
 
 		    !last two columns 
 			A(i, mt% Ntable+1) = -real(mt% Z(i))		 ! MeV		    
@@ -690,10 +688,10 @@
 
 		end do
 
-			A(mt% Ntable+1, mt% Ntable+1) = 0. !-zsum2			
-			A(mt% Ntable+1, mt% Ntable+2) = 0. !sumn		
-			A(mt% Ntable+2, mt% Ntable+2) = 0. !asum2 
-			A(mt% Ntable+2, mt% Ntable+1) = 0. !-sume
+			A(mt% Ntable+1, mt% Ntable+1) = -zsum2			
+			A(mt% Ntable+1, mt% Ntable+2) = sume
+			A(mt% Ntable+2, mt% Ntable+2) = asum2 
+			A(mt% Ntable+2, mt% Ntable+1) = -sume
 
       end subroutine eval_jacobian
       
