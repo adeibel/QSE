@@ -683,8 +683,8 @@
 	sume = sume + real(mt% Z(i))*real(mt%A(i))*m_term*exp((mu_i(i)+mt%BE(i))/kT)/kT
 
 		    !last two columns 
-			A(i, mt% Ntable+1) = -real(mt% Z(i)) !-2.*real(mt% Z(i))		 ! MeV		    
-			A(i, mt% Ntable+2) = -real(mt% A(i))  !real(mt% A(i)) 		 ! MeV
+			A(i, mt% Ntable+1) = 0. !-real(mt% Z(i)) !-2.*real(mt% Z(i))		 ! MeV		    
+			A(i, mt% Ntable+2) = 0. !-real(mt% A(i))  !real(mt% A(i)) 		 ! MeV
 
 		end do
 
@@ -692,6 +692,16 @@
 			A(mt% Ntable+1, mt% Ntable+2) = sume
 			A(mt% Ntable+2, mt% Ntable+2) = asum2 
 			A(mt% Ntable+2, mt% Ntable+1) = -sume
+
+!			A(mt% Ntable+1, mt% Ntable+1) = 0.		
+!			A(mt% Ntable+1, mt% Ntable+2) = 0.
+!			A(mt% Ntable+2, mt% Ntable+2) = 0. 
+!			A(mt% Ntable+2, mt% Ntable+1) = 0.
+			
+		do i = 1, mt% Ntable+2
+		A(:, i) = A(:, i)*xscale(i,1)
+		end do	
+			
 
       end subroutine eval_jacobian
       

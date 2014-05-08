@@ -522,7 +522,7 @@
 		 as = 0. ; zs = 0.
 
 		do i = 1, mt% Ntable
-         m_star = mn_n-mp_n-me_n
+         m_star = mn_n-mp_n -me_n
 		 mu_i(i) = real(mt% Z(i))*(mu_n-mu_e+m_star)+real(mt% N(i))*mu_n-mt% BE(i) 
 		end do
 		
