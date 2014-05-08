@@ -205,10 +205,10 @@
          mterm = g*(m_nuc*kT/(twopi*hbarc_n**2))**(1.5)
          fac1 = real(mt% A(867))/n_b
          fac2 = mterm
-         xold(1,1) = (log(fac1*fac2)*kT+real(mt% Z(867))*m_star&
-         	& + mt%BE(867)+real(mt%A(867))*xold(2,1))/real(mt% Z(867))
 !         xold(1,1) = (log(fac1*fac2)*kT+real(mt% Z(867))*m_star&
-!         	& +real(mt%A(867))*xold(2,1))/real(mt% Z(867))
+!         	& + mt%BE(867)+real(mt%A(867))*xold(2,1))/real(mt% Z(867))
+         xold(1,1) = (log(fac1*fac2)*kT+real(mt% Z(867))*m_star&
+         	& +real(mt%A(867))*xold(2,1))/real(mt% Z(867))
 
 
 		 !do j=1,mt% Ntable
@@ -494,7 +494,7 @@
         end if   
         n_n = 2.0*kn**3/threepisquare !-2.0*kn**3/threepisquare               
         Y_n = n_n*(1.-chi)/n_b   
-		mu_n = -abs(mu_n) 
+		mu_n = -mu_n 
 		end if
 		
 		if (mu_n > 0.) then
@@ -531,7 +531,6 @@
 		 m_nuc = real(mt% A(i))*amu_n       
      	 m_term = g*(m_nuc*kT/(twopi*hbarc_n**2))**(1.5)
 		 xmass(i) = real(mt% A(i))*m_term*exp((mu_i(i)+mt%BE(i))/kT)/n_b
-!		 write(*,*) xmass(i), zsum 
 		 asum = asum + xmass(i)
 		 zsum = zsum + xmass(i)*real(mt% Z(i))/real(mt% A(i))
 	    end do	
@@ -579,7 +578,8 @@
 		 real :: chi
 		 real :: mu_e_prev, mu_n_prev
 		 real :: ke_prev, kn_prev
-  
+		real :: frac
+
 		 if(mu_set .eqv. .false.) then
 		 mu_e_prev=0. ; mu_n_prev=0.
 		 ke_prev=0. ; kn_prev	= 0.	
@@ -648,7 +648,7 @@
         end if   
         n_n = 2.0*kn**3/threepisquare !-2.0*kn**3/threepisquare               
         Y_n = n_n*(1.-chi)/n_b   
-		mu_n = -abs(mu_n) 
+		mu_n = -mu_n 
 		end if
 		
 		if (mu_n > 0.) then
@@ -692,14 +692,16 @@
 	   end do	 
  
  		do i = 1, mt% Ntable
-		 dxdn(i) = xmass(i)*real(mt% A(i))/kT
+ 		 frac = real(mt % Z(i))/real(mt% A(i))
+		
+		 dxdn(i) = frac*xmass(i)*real(mt% A(i))/kT
 		 xnsum = xnsum + dxdn(i)
 		
-		 dxde(i) = -xmass(i)*real(mt% Z(i))/kT
+		 dxde(i) = -frac*xmass(i)*real(mt% Z(i))/kT
 		 xesum = xesum + dxde(i)
 		 
-		 yedn = yedn + dxdn(i)*real(mt%Z(i))/real(mt% A(i))		 
-		 yede = yede + dxde(i)*real(mt%Z(i))/real(mt% A(i))
+		 yedn = yedn + xmass(i)*real(mt% A(i))/kT	 
+		 yede = yede + xmass(i)*real(mt% Z(i))/kT
 		enddo 
  
  			A(1, 1) = xesum
