@@ -70,9 +70,9 @@
  	  real :: asum, zsum
       real :: kT
       real :: mterm
-      real :: fac1, fac2, fac3
+      real :: fac1, fac2
       real, parameter :: g=1.d0
-      real :: m_nuc, m_star
+      real :: m_nuc, m_star, m_term
       logical, save :: mu_set = .false.     
 	  real :: mu_e_prev, mu_n_prev
 	  real :: ke_prev, kn_prev
@@ -209,19 +209,18 @@
 	  call free_iounit(mu_table_input_id)		 
 	  else 
 		
-		!form initial guess for chemical potentials 
-		 xold(2,1) = 0.
-		 m_star = mn_n-mp_n-me_n
-		 m_nuc = real(mt% A(867))*amu_n  		         
-         mterm = g*(m_nuc*kT/(twopi*hbarc_n**2))**(1.5)
-         fac1 = real(mt% A(867))/n_b
-         fac2 = mterm
+	  !form initial guess for chemical potentials 
+	  xold(2,1) = 0.
+	  m_star = mn_n-mp_n-me_n
+	  m_nuc = real(mt% A(867))*amu_n  		         
+      m_term = g*(m_nuc*kT/(twopi*hbarc_n**2))**(1.5)
+      fac1 = real(mt% A(867))/n_b
+      fac2 = m_term
 !         xold(1,1) = (log(fac1*fac2)*kT+real(mt% Z(867))*m_star&
 !         	& + mt%BE(867)+real(mt%A(867))*xold(2,1))/real(mt% Z(867))
-         xold(1,1) = (log(fac1*fac2)*kT+real(mt% Z(867))*m_star&
-         	& +real(mt%A(867))*xold(2,1))/real(mt% Z(867))
-	 
-		 end if
+      xold(1,1) = (log(fac1*fac2)*kT+real(mt% Z(867))*m_star&
+         & +real(mt%A(867))*xold(2,1))/real(mt% Z(867))
+	  end if
 
          dx = 0 ! a not very good starting "guess" for the solution
          x = xold
