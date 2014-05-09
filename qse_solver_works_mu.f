@@ -522,20 +522,20 @@
 		  !for baryon conservation
 		  as(i) = real(mt% A(i))*m_term*exp((mu_i(i)+mt%BE(i))/kT)	 
 		  Asum = Asum + as(i) 
-		  ni_Asum = ni_Asum + m_term*exp((mu_i(i)+mt%BE(i))/kT)	
+		  ni_Asum = ni_Asum + m_term*exp((mu_i(i)+mt%BE(i))/kT)/n_b	
 		  Ai = Ai + as(i)/n_b
 		  !for charge conservation
 		  zs(i) = real(mt% Z(i))*m_term*exp((mu_i(i)+mt%BE(i))/kT)
 		  Zsum = Zsum + zs(i)
-		  ni_Zsum = ni_Zsum + m_term*exp((mu_i(i)+mt%BE(i))/kT)	
+		  ni_Zsum = ni_Zsum + m_term*exp((mu_i(i)+mt%BE(i))/kT)/n_b	
 		  Zi = Zi + zs(i)/n_b
 		  !detailed balance
 		  equ(i,1) = real(mt% Z(i))*(mu_n-mu_e+m_star)+real(mt% N(i))*mu_n-mu_i(i)-(mt%BE(i))
 		 enddo
 		  		  
   		 !baryon and charge conservation 
-         equ(mt% Ntable+1,1) = Zsum - n_e
-         equ(mt% Ntable+2,1) = Asum - n_b + n_n !- log(1.0 - Y_n/(1.0-chi))     
+         equ(mt% Ntable+1,1) = Zsum - y_e
+         equ(mt% Ntable+2,1) = Asum - 1.0 + y_n !- log(1.0 - Y_n/(1.0-chi))     
         ! equ(mt% Ntable+3,1) = sum_lnA_final - log(n_b-me_n*n_e/amu_n)   log(n_b-me_n*n_e/amu_n-n_n)!
 
 		write(*,*) 'n_b=', n_b
@@ -675,12 +675,12 @@
 		    
   		    !last two rows of jacobian, derivatives wrt the conservation equations 
      		! n=0 term
-     		A(mt% Ntable+1, i) = real(mt% Z(i))*m_term*exp((mu_i(i)+mt%BE(i))/kT)/kT	
-     		A(mt% Ntable+2, i) = real(mt% A(i))*m_term*exp((mu_i(i)+mt%BE(i))/kT)/kT	
+     		A(mt% Ntable+1, i) = real(mt% Z(i))*m_term*exp((mu_i(i)+mt%BE(i))/kT)/kT/n_b	
+     		A(mt% Ntable+2, i) = real(mt% A(i))*m_term*exp((mu_i(i)+mt%BE(i))/kT)/kT/n_b	
 
-	asum2 = asum2 + real(mt% A(i))**2*m_term*exp((mu_i(i)+mt%BE(i))/kT)/kT
-	zsum2 = zsum2 + real(mt% Z(i))**2*m_term*exp((mu_i(i)+mt%BE(i))/kT)/kT
-	sume = sume + real(mt% Z(i))*real(mt%A(i))*m_term*exp((mu_i(i)+mt%BE(i))/kT)/kT
+	asum2 = asum2 + real(mt% A(i))**2*m_term*exp((mu_i(i)+mt%BE(i))/kT)/kT/n_b
+	zsum2 = zsum2 + real(mt% Z(i))**2*m_term*exp((mu_i(i)+mt%BE(i))/kT)/kT/n_b
+	sume = sume + real(mt% Z(i))*real(mt%A(i))*m_term*exp((mu_i(i)+mt%BE(i))/kT)/kT/n_b
 
 		    !last two columns 
 			A(i, mt% Ntable+1) = 0. !-real(mt% Z(i)) !-2.*real(mt% Z(i))		 ! MeV		    
