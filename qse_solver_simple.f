@@ -6,6 +6,7 @@
       use utils_lib
       use phys_constants
       use mass_table 
+      use short_table
       use rootfind      
       use crust_eos_lib       
 
@@ -57,6 +58,7 @@
 
 	  ! for crust
       type(mass_table_type), pointer :: mt
+      type(short_table_type), pointer :: st
       real*8 :: mu_e, mu_n, mu_i(5267), n_i(5267)
       real*8 :: Y_e, Y_n 
    	  real*8 :: n_b, n_e, n_n
@@ -78,10 +80,11 @@
 		             
       contains
       
-      subroutine do_test_newton
+      subroutine do_test_newton(nucleus_index)
          use mtx_lib
          use mtx_def
         
+      real, integer(in) :: nucleus_index(:)  
       integer :: ierr, liwork, lwork, lid, lrd, which_decsol
       integer, dimension(:), pointer :: iwork
       real*8, dimension(:), pointer :: work 
@@ -126,11 +129,10 @@
       do_numerical_jacobian = .true.
       decsol = lapack
     
-      ! read in the inputs
+      ! read in the inputs from inlist file
  	  ierr = 0
   	  inlist_id = alloc_iounit(ierr)
- 	  if (io_failure(ierr,'allocating unit for namelist')) stop
-   
+ 	  if (io_failure(ierr,'allocating unit for namelist')) stop   
   	  open(unit=inlist_id, file=infile, iostat=ios, status="old", action="read")
   	  if (io_failure(ios,'opening inlist file'//trim(infile))) stop   
  	  read(inlist_id,nml=range,iostat=ios)
@@ -150,7 +152,19 @@
       end if
       mt => winvn_mass_table    
  	  write(*,*) 'Loaded mass table'
+ 	  
+ 	  !set short table
+ 	  do i = 1, mt% Ntable
+ 	   do j = 1, size(nucleus_index)
+ 	    if (i == j) then
+ 	    st% Z(i) = mt% Z(i)
+ 	    st% A(i) = mt% Z(i)
+ 	    st% BE(i) = st% BE(i)
+ 	    endif
+ 	   enddo
+ 	  enddo
    
+      !set general output file   
  	  output_id = alloc_iounit(ierr)
   	  if (io_failure(ierr,'allocating unit for output nuclei file')) stop
   	  open(unit=output_id, file=output_file, iostat=ios, status="unknown")
@@ -158,47 +172,44 @@
 	  write(output_id,'(7A13)') 'n_b [fm^-3]', 'k_e [fm^-1]', &
    			& 'k_n [fm^-1]', 'mu_e [MeV]', 'mu_n [MeV]', 'Z_bar', 'A_bar'
 
+	  !set abundance file
 	  abundance_id = alloc_iounit(ierr)
 	  if (io_failure(ierr, 'allocating unit for abundance file')) stop
 	  open(unit=abundance_id, file=abundance_file, iostat=ios, status="unknown")
 	  if (io_failure(ios,'opening abundance file')) stop
 	  write(abundance_id,'(A13)') 'n_i [fm^-3]'
 
-  	  ! solve for qse distribution at each n_b  	  
-  	  do i=1,1
-  	     n_b = n_b_start*real(i)  
-
-  	     write(*,*) 'n_b =', n_b
-  	     write(*,*) 'numerical jacobian? =', do_numerical_jacobian
-  	     write(*,*) 'have mu table? =', have_mu_table
-         write(*,*) 'decsol option', decsol     
+  	  write(*,*) 'n_b =', n_b
+  	  write(*,*) 'numerical jacobian? =', do_numerical_jacobian
+  	  write(*,*) 'have mu table? =', have_mu_table
+      write(*,*) 'decsol option', decsol     
               
-         which_decsol = which_decsol_in
-         call decsol_option_str(which_decsol, decsol_option_name, ierr)
-         write(*,*) which_decsol, trim(decsol_option_name), ierr
-         if (ierr /= 0) return
-         write(*,*) 'use ' // trim(decsol_option_name)
+      !numerical solver to use        
+      which_decsol = which_decsol_in
+      call decsol_option_str(which_decsol, decsol_option_name, ierr)
+      write(*,*) which_decsol, trim(decsol_option_name), ierr
+      if (ierr /= 0) return
+      write(*,*) 'use ' // trim(decsol_option_name)
 
-         if (which_decsol == mkl_pardiso) then
-            if (.not. okay_to_use_mkl_pardiso()) which_decsol = lapack
-         end if
+      if (which_decsol == mkl_pardiso) then
+     	if (.not. okay_to_use_mkl_pardiso()) which_decsol = lapack
+      end if
          
-         allocate(equ(neq,nz), x(nvar,nz), xold(nvar,nz), dx(nvar,nz), xscale(nvar,nz), y(ldy, nsec), stat=ierr)
-         if (ierr /= 0) stop 1
+      allocate(equ(neq,nz), x(nvar,nz), xold(nvar,nz), dx(nvar,nz), xscale(nvar,nz), y(ldy, nsec), stat=ierr)
+      if (ierr /= 0) stop 1
 
-55 continue 
-
-         numerical_jacobian = do_numerical_jacobian
-         if (have_mu_table .eqv. .true.) then
-		 mu_table_input_id = alloc_iounit(ierr)
-		 if (io_failure(ierr, 'allocating unit for mu table read')) stop		 
-		 open(mu_table_input_id,file=mu_table_name, iostat=ios, status='unknown')
-		 read(mu_table_input_id,*) xold(1,1)
-		 read(mu_table_input_id,*) xold(2,1)
-		 close(mu_table_input_id)
-         call free_iounit(mu_table_input_id)		 
-		 else 
+	  numerical_jacobian = do_numerical_jacobian
+	  if (have_mu_table .eqv. .true.) then
+	  mu_table_input_id = alloc_iounit(ierr)
+	  if (io_failure(ierr, 'allocating unit for mu table read')) stop		 
+	  open(mu_table_input_id,file=mu_table_name, iostat=ios, status='unknown')
+	  read(mu_table_input_id,*) xold(1,1)
+	  read(mu_table_input_id,*) xold(2,1)
+	  close(mu_table_input_id)
+	  call free_iounit(mu_table_input_id)		 
+	  else 
 		
+		!form initial guess for chemical potentials 
 		 xold(2,1) = 0.
 		 m_star = mn_n-mp_n-me_n
 		 m_nuc = real(mt% A(867))*amu_n  		         
@@ -209,15 +220,7 @@
 !         	& + mt%BE(867)+real(mt%A(867))*xold(2,1))/real(mt% Z(867))
          xold(1,1) = (log(fac1*fac2)*kT+real(mt% Z(867))*m_star&
          	& +real(mt%A(867))*xold(2,1))/real(mt% Z(867))
-
-
-		 !do j=1,mt% Ntable
-		 !xold(j,1) = -mt% BE(j)
-		 !end do
-		! xold(867,1) = -492.3833 !mu_56 at 5.E-8
-		 !xold(867,1) = -492.360361 !mu_56 at 5.E-7
-		! xold(1, 1) = 1.3 !+me_n
-		 !xold(2, 1) = 0. !-1.d-3		 
+	 
 		 end if
 
          dx = 0 ! a not very good starting "guess" for the solution
@@ -233,7 +236,6 @@
          tol_residual_norm = 1d99
          
          epsder = 1d-6 ! relative variation to compute derivatives
-         !epsder = 1.d-5
          
          doing_jacobian = .false.
          
@@ -286,7 +288,6 @@
          
          if (nonconv) then !stop 1
          have_mu_table = .true.
-         goto 55
          end if
          
          write(*,*) 'finished n_b', i
@@ -309,10 +310,6 @@
 	        call free_iounit(mu_table_output_id) 
 	        have_mu_table = .true.                   
                   
-         stop
-         
-         enddo 
-         
          contains         
          
          subroutine do_newt(decsol, decsolblk, decsols)
@@ -351,9 +348,6 @@
          integer, intent(inout) :: ipar(lipar)
          integer, intent(out) :: ierr
          ierr = 0
-!		 do i = 1, mt% Ntable
-!		 mu_i(i) = x(i,1)
-!		 enddo
 		 mu_e = x(1,1)		 
 		 mu_n = x(2,1)
       end subroutine set_primaries
