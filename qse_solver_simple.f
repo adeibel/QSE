@@ -420,7 +420,7 @@
 		 real :: zs, as
 		 real :: xmass(5267)
 		 real :: y_e_want
-!
+
 		 if(mu_set .eqv. .false.) then
 		 mu_e_prev=0. ; mu_n_prev=0.
 		 ke_prev=0. ; kn_prev	= 0.	
@@ -430,7 +430,7 @@
          ierr = 0
 	     chi = use_default_nuclear_size
          !rho = (n_b*amu_n)*(mev_to_ergs/clight2)/(1.d-39) ! cgs
-		 rho = n_b*amu_n
+		 rho = n_b*amu_n ! MeV
 
 		if (mu_e < 0. ) then
 		mu_e = abs(mu_e)
@@ -675,7 +675,6 @@
 		 m_nuc = real(mt% A(i))*amu_n       
      	 m_term = g*(m_nuc*kT/(twopi*hbarc_n**2))**(1.5)
 		 xmass(i) = real(mt% A(i))*m_term*exp((mu_i(i)+mt%BE(i))/kT)/n_b
-		! write(*,*) xmass(i)
 		 asum = asum + xmass(i)
 		 zsum = zsum + xmass(i)*real(mt% Z(i))/real(mt% A(i))
 	   end do	 
@@ -705,14 +704,11 @@
  	   A(1, 2) = A(1, 2)*xscale(2,1)
  	   A(2, 2) = A(2, 2)*xscale(2,1)		
 	                  
-	    !write(*,*) A(1,1), A(1,2), A(2,1), A(2,2)
-	  		mu_e_prev = mu_e
+	  	mu_e_prev = mu_e
 		mu_n_prev = mu_n
 		ke_prev = ke
 		kn_prev = kn
-
-	  
-	                      
+                      
       end subroutine eval_jacobian
       
 
