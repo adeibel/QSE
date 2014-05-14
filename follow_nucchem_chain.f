@@ -22,6 +22,8 @@ program follow_chain
 		real :: Snr, S2nr, Spr, S2pr, Br, ecthreshr, bthreshr, VNr
 		real :: alpha(2), beta(2), gamma(2), delta(2), epsilon(2)
 		real :: mu_n_range
+		real :: A_sum
+		real :: m_term, m_nuc
 		integer :: i, j, i_enter
 		integer :: Z, A, Zr, Ar, inlist_id
 		integer :: ierr, id, ios, iter, iZ, iZb, iZe, iEq(1)
@@ -148,10 +150,10 @@ program follow_chain
 		 mu_e = 30.383329
 		 mu_n = 2.4670114897d-8
 	
-			!initial nuclei accreted to the given pressure 
-			do k = 1, size(Z_int)
-			Z = Z_int(k)
-			A = A_int(k)
+		 !initial nuclei accreted to the given pressure 
+		 do k = 1, size(Z_int)
+		  Z = Z_int(k)
+		  A = A_int(k)
 	 
 		  neutron_capture = .FALSE.
 		  neutron_emission = .FALSE.
@@ -162,7 +164,7 @@ program follow_chain
 		  ne_rxn = .FALSE.
 		  nne_rxn = .FALSE.  
 	 
-		  ! loop over rxns 
+		  ! loop over reactions
 		  do iter = 1, max_iterations
 		  !get properties of nucleus that is being pushed deeper
 		  call get_nucleus_properties(Z,A,id,B,Sn,S2n,Sp,S2p,ecthresh,bthresh,VN,ierr)
@@ -350,24 +352,28 @@ program follow_chain
 	!      .and. epsilon(ineg) >= 0.0) cycle
 
 		  ! begin check for mass density increase
-	  
-		  ! end check for mass density increase 
-
-		goto 1
+	  	  if (Z_int(k) .ne. Z_fin(k)) then
+	  	   !recalculate mu_n if strong reaction goes
+		   do l = 1, size(Z_int)	
+	  	   A_sum = A_sum + 
+	  	  
+	  	   end do
+	      endif ! end check for mass density increase 
 
 		  ! begin check for baryon conservation	  	  	  
 		  if (count(neutron_capture) /= count(neutron_emission)) then
 		  write(*,*) count(neutron_capture), count(neutron_emission), Z, A
 		  if (count(neutron_capture) > count(neutron_emission)) then
+
 		  !scan for neutron emissions from initial nuclei array
 			do l = 1, size(Z_int)
 			 A = A_int(l) ; Z = Z_int(l)
 			 Ar = A-1; Zr = Z 
 			 call get_nucleus_properties(Zr,Ar,id,Br,Snr,S2nr,Spr,S2pr,ecthreshr,bthreshr,VNr,ierr)
 			 if (ierr /= 0) then
-			 ! write(error_unit,'(a)') 'unable to find nucleus'
-			 ! stop
-			 ! exit
+			  write(error_unit,'(a)') 'unable to find nucleus'
+			  stop
+			  exit
 			 cycle
 			 end if
 			 gamma(ipos) = mu_n + (B-Br)
@@ -426,8 +432,6 @@ program follow_chain
 		  endif
 		  endif
 		  ! end of check for baryon conservation 
-
-	1 continue 
 
 		  end do  ! end of iteration loop
 	  
