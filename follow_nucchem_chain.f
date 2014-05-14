@@ -351,12 +351,17 @@ program follow_chain
 	!      .and. delta(ineg) >= 0.0 .and. delta(ipos) >= 0.0 &
 	!      .and. epsilon(ineg) >= 0.0) cycle
 
+		  A_sum = 0.
+
 		  ! begin check for mass density increase
 	  	  if (Z_int(k) .ne. Z_fin(k)) then
 	  	   !recalculate mu_n if strong reaction goes
-		   do l = 1, size(Z_int)	
-	  	   A_sum = A_sum + 
-	  	  
+		   do l = 1, size(Z_int)
+            !number density of isotopes
+		    m_nuc = real(mt% A(i))*amu_n       
+     	    m_term = g*(m_nuc*kT/(twopi*hbarc_n**2))**(1.5)
+		    xmass(i) = real(mt% A(i))*m_term*exp((mu_i(i)+mt%BE(i))/kT)/n_b		   	
+	  	    A_sum = A_sum + xmass(i)
 	  	   end do
 	      endif ! end check for mass density increase 
 
