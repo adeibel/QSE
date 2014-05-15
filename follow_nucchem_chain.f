@@ -24,6 +24,7 @@ program follow_chain
 		real :: mu_n_range
 		real :: A_sum
 		real :: m_term, m_nuc
+		real, dimension(:), allocatable :: xmass
 		integer :: i, j, i_enter
 		integer :: Z, A, Zr, Ar, inlist_id
 		integer :: ierr, id, ios, iter, iZ, iZb, iZe, iEq(1)
@@ -352,6 +353,9 @@ program follow_chain
 	!      .and. epsilon(ineg) >= 0.0) cycle
 
 		  A_sum = 0.
+		  ! size of xmass array should be equal to the number
+		  !  of nuclei in the distribution being compressed
+          allocate(xmass(size(Z_fin)))
 
 		  ! begin check for mass density increase
 	  	  if (Z_int(k) .ne. Z_fin(k)) then
