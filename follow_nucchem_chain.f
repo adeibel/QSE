@@ -24,14 +24,13 @@ program follow_chain
 		real :: mu_n_range
 		real :: A_sum
 		real :: m_term, m_nuc
+		real :: mu_n_new
 		real, dimension(:), allocatable :: xmass
+		integer, dimension(:), allocatable :: Z_int, A_int
+		integer, dimension(:), allocatable :: Z_fin, A_fin 
 		integer :: i, j, i_enter
 		integer :: Z, A, Zr, Ar, inlist_id
 		integer :: ierr, id, ios, iter, iZ, iZb, iZe, iEq(1)
-		integer :: Z_int(1), A_int(1)
-		integer :: Z_fin(1), A_fin(1)
-		!integer :: Z_int(5549), A_int(5549)
-		!integer :: Z_fin(5549), A_fin(5549)
 		integer :: k, l, final_id
 		integer, parameter :: ineg = 1, ipos = 2
 		integer, parameter :: fid = output_unit, max_iterations = 100
@@ -120,8 +119,10 @@ program follow_chain
 	   !main loop over pressure (pushes nucleus to higher pressures)   
    
 		! make table of nuclei the first initial nuclei array 
-		Z_int =  Z !mt% Z
-		A_int =  A !mt% A
+		!Z_int =  Z !mt% Z
+		!A_int =  A !mt% A
+		! allocate size of arrays equal to the distribution of nuclei compressed 
+   		allocate(Z_int(size(Z)), A_int(size(A)), Z_fin(size(Z)), A_fin(size(A)))
    
 	   do i = 1,1000
 		pressure = pressure_start*real(i) !*hbarc_n	! MeV fm**-3
@@ -341,16 +342,11 @@ program follow_chain
 			 cycle
 		  end if 
 
-		  ! won't reach here, will be 'unable to find nucleus' and it will
-		  ! then exit the above reaction loop 
+		  ! end of nucleus stability check 
 		  Z_fin(k) = Z
 		  A_fin(k) = A
-						 
-	!      if (delta(ineg) >= 0.0 .and. delta(ipos) >= 0.0 &
-	!      .and. beta(ineg) >= 0.0 .and. beta(ipos) >= 0.0 &
-	!      .and. gamma(ineg) >= 0.0 .and. gamma(ipos) >= 0.0 &
-	!      .and. delta(ineg) >= 0.0 .and. delta(ipos) >= 0.0 &
-	!      .and. epsilon(ineg) >= 0.0) cycle
+
+		  end do !end iterations over reactions
 
 		  A_sum = 0.
 		  ! size of xmass array should be equal to the number
@@ -367,6 +363,14 @@ program follow_chain
 		    xmass(i) = real(mt% A(i))*m_term*exp((mu_i(i)+mt%BE(i))/kT)/n_b		   	
 	  	    A_sum = A_sum + xmass(i)
 	  	   end do
+	  	  n_n_new = n_b - A_sum  
+	  	  x1=0.0
+          x2=10.0
+          xacc=1.d-15
+	  	  mu_n_new = root_bisection(neutron_chemical_potential,x1,x2,xacc,ierr,hist) 
+          if (io_failure(ierr,'Error in bisection for mu_n')) then
+          stop
+          end if
 	      endif ! end check for mass density increase 
 
 		  ! begin check for baryon conservation	  	  	  
@@ -442,12 +446,9 @@ program follow_chain
 		  endif
 		  ! end of check for baryon conservation 
 
-		  end do  ! end of iteration loop
-	  
-		  !write(*,*) Z, A, count(neutron_capture), count(neutron_emission)
-  
-		  Z_fin(k) = Z
-		  A_fin(k) = A
+! Z and A after reactions stored in Z_fin, A_fin arrays
+!		  Z_fin(k) = Z
+!		  A_fin(k) = A
 		 
 		end do  ! end of nuclei loop 
   
