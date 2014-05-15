@@ -15,7 +15,7 @@
 
       ! dimensions
       integer, parameter :: nz = 1 ! number of zones
-      integer, parameter :: nvar = 5549+2 !5284+2  ! number of variables per zone
+      integer, parameter :: nvar = 5549+3 !5284+2  ! number of variables per zone
       integer, parameter :: neq = nz*nvar
 
       ! information about the bandwidth of the jacobian matrix
@@ -429,6 +429,7 @@
 		 real :: Asum, Zsum
 		 real :: As(5549), Zs(5549)
 		 real :: Zi, Ai
+		 real :: Pressure, P_ext
 
                 
          ierr = 0
@@ -536,6 +537,7 @@
   		 !baryon and charge conservation 
          equ(mt% Ntable+1,1) = Zsum - y_e
          equ(mt% Ntable+2,1) = Asum - 1.0 + y_n !- log(1.0 - Y_n/(1.0-chi))     
+         equ(mt% Ntable+3,1) = Pressure - P_ext
         ! equ(mt% Ntable+3,1) = sum_lnA_final - log(n_b-me_n*n_e/amu_n)   log(n_b-me_n*n_e/amu_n-n_n)!
 
 		write(*,*) 'n_b=', n_b
@@ -573,6 +575,7 @@
       	real, parameter :: g = 1.0d0
       	real :: asum2, zsum2	
       	real :: sumn, sume 
+      	real :: Pressure, P_ext
 		 
          ierr = 0        
 
