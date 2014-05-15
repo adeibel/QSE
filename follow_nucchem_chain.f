@@ -24,7 +24,7 @@ program follow_chain
 		real :: mu_n_range
 		real :: A_sum
 		real :: m_term, m_nuc
-		real :: mu_n_new
+		real :: mu_n_new, n_n_new
 		real, dimension(:), allocatable :: xmass
 		integer, dimension(:), allocatable :: Z_int, A_int
 		integer, dimension(:), allocatable :: Z_fin, A_fin 
@@ -368,7 +368,7 @@ program follow_chain
           x2=10.0
           xacc=1.d-15
 	  	  mu_n_new = root_bisection(neutron_chemical_potential,x1,x2,xacc,ierr,hist) 
-          if (io_failure(ierr,'Error in bisection for mu_n')) then
+          if (io_failure(ierr,'error in bisection for mu_n')) then
           stop
           end if
 	      endif ! end check for mass density increase 
@@ -448,10 +448,10 @@ program follow_chain
 
 ! Z and A after reactions stored in Z_fin, A_fin arrays
 !		  Z_fin(k) = Z
-!		  A_fin(k) = A
-		 
-		end do  ! end of nuclei loop 
+!		  A_fin(k) = A		 
+!		end do  ! end of nuclei loop 
   
+  		  ! output chain to file 	
 		  do l= 1, size(Z_fin)
 		  write(final_id,'(3(e10.5,2x),4(I10,2x))') pressure, mu_e, mu_n, Z_int(l), A_int(l),&
 				& Z_fin(l), A_fin(l)
