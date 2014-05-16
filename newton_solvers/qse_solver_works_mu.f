@@ -122,7 +122,7 @@
       end if
       
       ! set defaults 
-      P_ext_start = 5.d-10 !fm^-4
+      P_ext_start = 5.d-10!fm^-4
       n_b_start = 5.0d-8 !fm^-3
       kT = 1.0d-2  !MeV
       have_mu_table = .false.
@@ -438,9 +438,11 @@
                 
          ierr = 0
 
+ 		n_b = abs(n_b)
+
 	     chi = use_default_nuclear_size
          rho = (n_b*amu_n)*(mev_to_ergs/clight2)/(1.d-39) ! cgs
-            
+                        
 		if (mu_e < 0. ) then
 		mu_e = abs(mu_e)
 		! electron wave vector fm^-1
@@ -539,9 +541,9 @@
 		 enddo
 		  		  
   		 !baryon and charge conservation 
-         equ(mt% Ntable+1,1) = Zsum - y_e
-         equ(mt% Ntable+2,1) = Asum - 1.0 + y_n !- log(1.0 - Y_n/(1.0-chi))     
-         equ(mt% Ntable+3,1) = electron_pressure(ke) - neutron_pressure(kn) - P_ext
+         equ(mt% Ntable+1,1) = Zsum - n_e
+         equ(mt% Ntable+2,1) = Asum - n_b + n_n !- log(1.0 - Y_n/(1.0-chi))     
+         equ(mt% Ntable+3,1) = electron_pressure(ke) + neutron_pressure(kn) - P_ext
         ! equ(mt% Ntable+3,1) = sum_lnA_final - log(n_b-me_n*n_e/amu_n)   log(n_b-me_n*n_e/amu_n-n_n)!
 
 		write(*,*) 'n_b=', n_b
