@@ -61,6 +61,7 @@
       real*8 :: mu_e_prev, Y_e_prev
       real*8 :: Y_e, Y_n 
    	  real*8 :: n_b, n_e, n_n
+   	  real*8 :: p_ext
       real*8 :: ke, kn
       real,dimension(:),pointer :: hist
       real :: x1, x2, xacc
@@ -86,7 +87,7 @@
       real*8, target :: rpar(lrpar)
       character (len=64) :: decsol_option_name
       !namelist
-      real :: P_ext
+      real :: p_ext_start
       real :: n_b_start
       logical :: have_mu_table
       logical :: do_numerical_jacobian
@@ -110,7 +111,7 @@
       real :: mterm, fac1, fac2, m_nuc, m_star
       real, parameter :: g = 1.d0
 
-      namelist /range/ P_ext, n_b_start, kT, have_mu_table, &
+      namelist /range/ P_ext_start, n_b_start, kT, have_mu_table, &
       	&	do_numerical_jacobian, which_decsol_in
      
       ! set the name of the inlist file name  
@@ -121,7 +122,7 @@
       end if
       
       ! set defaults 
-      P_ext = 5.d-10 !fm^-4
+      P_ext_start = 5.d-10 !fm^-4
       n_b_start = 5.0d-8 !fm^-3
       kT = 1.0d-2  !MeV
       have_mu_table = .false.
@@ -169,6 +170,7 @@
   	  ! solve for qse distribution at each n_b  	  
   	  do i=1,1
   	     n_b = n_b_start*real(i)  
+  	     p_ext = p_ext_start
 
 		 write(*,*) 'P_ext=', P_ext
   	     write(*,*) 'n_b =', n_b
@@ -203,7 +205,8 @@
          call free_iounit(mu_table_input_id)		 
 		 else 
  
- 		 xold(mt% Ntable+2,1) = 0.
+ 		 xold(mt% Ntable+2,1) = n_b
+		 xold(mt% Ntable+3, 1) = 0. 		 
 		 m_star = mn_n-mp_n-me_n
 		 m_nuc = real(mt% A(867))*amu_n  		         
          mterm = g*(m_nuc*kT/(twopi*hbarc_n**2))**(1.5)
@@ -212,9 +215,8 @@
 !         xold(mt% Ntable+1,1) = (log(fac1*fac2)*kT+real(mt% Z(867))*m_star&
 !         	& + mt%BE(867)+real(mt%A(867))*xold(mt% Ntable+2,1))/real(mt% Z(867))
          xold(mt% Ntable+1,1) = (log(fac1*fac2)*kT+real(mt% Z(867))*m_star&
-        	& +real(mt%A(867))*xold(mt% Ntable+2,1))/real(mt% Z(867))
-		 xold(mt% Ntable+3, 1) = n_b
-		 
+        	& +real(mt%A(867))*xold(mt% Ntable+3,1))/real(mt% Z(867))
+	 
 		 do j=1,mt% Ntable
 		 xold(j,1) = -mt% BE(j) !- 1.0
 		 end do
@@ -433,7 +435,6 @@
 		 real :: Asum, Zsum
 		 real :: As(5549), Zs(5549)
 		 real :: Zi, Ai
-		 real :: Pressure, P_ext
                 
          ierr = 0
 
@@ -833,15 +834,12 @@
      end function neutron_pressure    
 
      function electron_pressure(k) result(P)
-			use phys_constants
-			real, intent(in) :: k   ! fm**-1
-			real :: P       ! MeV fm**-3
-			real :: n
-			
-			n = k**3/threepisquare
-			P = 0.25*n*k*hbarc_n
+		use phys_constants
+		real, intent(in) :: k   ! fm**-1
+		real :: P       ! MeV fm**-3
+		real :: n			
+		n = k**3/threepisquare
+		P = 0.25*n*k*hbarc_n
      end function electron_pressure
-    
-    
-      
+          
     end module qse_solver
