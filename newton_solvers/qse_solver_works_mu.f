@@ -7,8 +7,7 @@
       use phys_constants
       use mass_table 
       use rootfind      
-      use crust_eos_lib     
-      use mb77  
+      use crust_eos_lib      
 
       implicit none
       
@@ -822,5 +821,15 @@
       real :: ke_solve    
       ke_solve = electron_chemical_potential(x) - mu_e  
      end function ke_solve  
+     
+     function neutron_pressure(k) result(P)
+		use phys_constants
+		real, intent(in) :: k   ! fm**-1
+		real :: P       ! MeV fm**-3
+		real :: dWdk
+        real, dimension(0:3), parameter :: cw0 = [ 1.2974, 15.0298, -15.2343, 7.4663 ]			
+		dWdk = k*(cw0(0) + k*(2.0*cw0(1) + k*(3.0*cw0(2) + k*4.0*cw0(3))))
+		P = 2.0*onethird/threepisquare* k**4 * dWdk
+    end function neutron_pressure    
       
     end module qse_solver
