@@ -830,6 +830,18 @@
         real, dimension(0:3), parameter :: cw0 = [ 1.2974, 15.0298, -15.2343, 7.4663 ]			
 		dWdk = k*(cw0(0) + k*(2.0*cw0(1) + k*(3.0*cw0(2) + k*4.0*cw0(3))))
 		P = 2.0*onethird/threepisquare* k**4 * dWdk
-    end function neutron_pressure    
+     end function neutron_pressure    
+
+     function electron_pressure(k) result(P)
+			use phys_constants
+			real, intent(in) :: k   ! fm**-1
+			real :: P       ! MeV fm**-3
+			real :: n
+			
+			n = k**3/threepisquare
+			P = 0.25*n*k*hbarc_n
+     end function electron_pressure
+    
+    
       
     end module qse_solver
