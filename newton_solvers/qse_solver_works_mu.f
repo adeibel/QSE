@@ -7,7 +7,8 @@
       use phys_constants
       use mass_table 
       use rootfind      
-      use crust_eos_lib       
+      use crust_eos_lib     
+      use mb77  
 
       implicit none
       
@@ -86,6 +87,7 @@
       real*8, target :: rpar(lrpar)
       character (len=64) :: decsol_option_name
       !namelist
+      real :: P_ext
       real :: n_b_start
       logical :: have_mu_table
       logical :: do_numerical_jacobian
@@ -109,7 +111,7 @@
       real :: mterm, fac1, fac2, m_nuc, m_star
       real, parameter :: g = 1.d0
 
-      namelist /range/ n_b_start, kT, have_mu_table, &
+      namelist /range/ P_ext, n_b_start, kT, have_mu_table, &
       	&	do_numerical_jacobian, which_decsol_in
      
       ! set the name of the inlist file name  
@@ -120,6 +122,7 @@
       end if
       
       ! set defaults 
+      P_ext = 5.d-10 !fm^-4
       n_b_start = 5.0d-8 !fm^-3
       kT = 1.0d-2  !MeV
       have_mu_table = .false.
@@ -168,6 +171,7 @@
   	  do i=1,1
   	     n_b = n_b_start*real(i)  
 
+		 write(*,*) 'P_ext=', P_ext
   	     write(*,*) 'n_b =', n_b
   	     write(*,*) 'numerical jacobian? =', do_numerical_jacobian
   	     write(*,*) 'have mu table? =', have_mu_table
@@ -210,7 +214,7 @@
 !         	& + mt%BE(867)+real(mt%A(867))*xold(mt% Ntable+2,1))/real(mt% Z(867))
          xold(mt% Ntable+1,1) = (log(fac1*fac2)*kT+real(mt% Z(867))*m_star&
         	& +real(mt%A(867))*xold(mt% Ntable+2,1))/real(mt% Z(867))
-		 
+		 xold(mt% Ntable+3, 1) = n_b
 		 
 		 do j=1,mt% Ntable
 		 xold(j,1) = -mt% BE(j) !- 1.0
@@ -356,8 +360,9 @@
 		 do i = 1, mt% Ntable
 		 mu_i(i) = x(i,1)
 		 enddo
-		 mu_e = x((mt% Ntable)+1,1)		 
-		 mu_n = x((mt% Ntable)+2,1)
+		 mu_e = x((mt% Ntable)+1,1)
+		 n_b = x((mt% Ntable)+2, 1)		 
+		 mu_n = x((mt% Ntable)+3,1)
       end subroutine set_primaries
       
 
@@ -430,7 +435,6 @@
 		 real :: As(5549), Zs(5549)
 		 real :: Zi, Ai
 		 real :: Pressure, P_ext
-
                 
          ierr = 0
 
@@ -537,7 +541,7 @@
   		 !baryon and charge conservation 
          equ(mt% Ntable+1,1) = Zsum - y_e
          equ(mt% Ntable+2,1) = Asum - 1.0 + y_n !- log(1.0 - Y_n/(1.0-chi))     
-         equ(mt% Ntable+3,1) = Pressure - P_ext
+         equ(mt% Ntable+3,1) = electron_pressure(ke) - neutron_pressure(kn) - P_ext
         ! equ(mt% Ntable+3,1) = sum_lnA_final - log(n_b-me_n*n_e/amu_n)   log(n_b-me_n*n_e/amu_n-n_n)!
 
 		write(*,*) 'n_b=', n_b
