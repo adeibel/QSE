@@ -15,7 +15,7 @@
 
       ! dimensions
       integer, parameter :: nz = 1 ! number of zones
-      integer, parameter :: nvar = 5549+3 !5284+2  ! number of variables per zone
+      integer, parameter :: nvar = 5549+2 !5284+2  ! number of variables per zone
       integer, parameter :: neq = nz*nvar
 
       ! information about the bandwidth of the jacobian matrix
@@ -170,7 +170,7 @@
   	  ! solve for qse distribution at each n_b  	  
   	  do i=1,1
   	     n_b = n_b_start*real(i)  
-  	     p_ext = p_ext_start
+  	     p_ext = p_ext_start*hbarc_n
 
 		 write(*,*) 'P_ext=', P_ext
   	     write(*,*) 'n_b =', n_b
@@ -205,8 +205,8 @@
          call free_iounit(mu_table_input_id)		 
 		 else 
  
- 		 xold(mt% Ntable+2,1) = n_b
-		 xold(mt% Ntable+3, 1) = 0. 		 
+ 		 !xold(mt% Ntable+3,1) = n_b
+		 xold(mt% Ntable+2, 1) = 0. 		 
 		 m_star = mn_n-mp_n-me_n
 		 m_nuc = real(mt% A(867))*amu_n  		         
          mterm = g*(m_nuc*kT/(twopi*hbarc_n**2))**(1.5)
@@ -215,7 +215,7 @@
 !         xold(mt% Ntable+1,1) = (log(fac1*fac2)*kT+real(mt% Z(867))*m_star&
 !         	& + mt%BE(867)+real(mt%A(867))*xold(mt% Ntable+2,1))/real(mt% Z(867))
          xold(mt% Ntable+1,1) = (log(fac1*fac2)*kT+real(mt% Z(867))*m_star&
-        	& +real(mt%A(867))*xold(mt% Ntable+3,1))/real(mt% Z(867))
+        	& +real(mt%A(867))*xold(mt% Ntable+2,1))/real(mt% Z(867))
 	 
 		 do j=1,mt% Ntable
 		 xold(j,1) = -mt% BE(j) !- 1.0
@@ -361,9 +361,9 @@
 		 do i = 1, mt% Ntable
 		 mu_i(i) = x(i,1)
 		 enddo
-		 mu_e = x((mt% Ntable)+1,1)
-		 n_b = x((mt% Ntable)+2, 1)		 
-		 mu_n = x((mt% Ntable)+3,1)
+		 mu_e = x((mt% Ntable)+1,1)	 
+		 mu_n = x((mt% Ntable)+2,1)
+		 !n_b = x((mt% Ntable)+3, 1)			 
       end subroutine set_primaries
       
 
@@ -438,7 +438,7 @@
                 
          ierr = 0
 
- 		n_b = abs(n_b)
+ 		 !n_b = abs(n_b)
 
 	     chi = use_default_nuclear_size
          rho = (n_b*amu_n)*(mev_to_ergs/clight2)/(1.d-39) ! cgs
@@ -543,8 +543,7 @@
   		 !baryon and charge conservation 
          equ(mt% Ntable+1,1) = Zsum - n_e
          equ(mt% Ntable+2,1) = Asum - n_b + n_n !- log(1.0 - Y_n/(1.0-chi))     
-         equ(mt% Ntable+3,1) = electron_pressure(ke) + neutron_pressure(kn) - P_ext
-        ! equ(mt% Ntable+3,1) = sum_lnA_final - log(n_b-me_n*n_e/amu_n)   log(n_b-me_n*n_e/amu_n-n_n)!
+         !equ(mt% Ntable+3,1) = electron_pressure(ke) + neutron_pressure(kn) - P_ext
 
 		write(*,*) 'n_b=', n_b
  		write(*,*) 'Y_e=', Y_e, 'mu_e=', mu_e, 'n_e=', n_e, 'ke=', ke
@@ -552,6 +551,8 @@
 	    write(*,*) 'mu_i', mu_i(1), mu_i(5549)
 	    write(*,*) 'sumZ=', Zsum, 'n_e=', n_e, 'equN_1=', equ(mt% Ntable+1,1)
 	    write(*,*) 'sumA=', Asum, 'n_b=', n_b, 'n_n=', n_n,  'equN_2=', equ(mt% Ntable+2,1)
+	    write(*,*) 'pressure=', electron_pressure(ke) + neutron_pressure(kn), &
+	    	& 'P_ext=', P_ext,'equN_3=', equ(mt% Ntable+3,1)
 	    write(*,*) 'Zi=', Zi/ni_Zsum, 'Ai=', Ai/ni_Asum
      	write(*,*) '------------------------------'                   
        
@@ -803,7 +804,7 @@
 
 	 function neutron_chemical_potential(k) result(mu)
 		use phys_constants
-		real, intent(in) :: k	! (fm**-3)
+		real, intent(in) :: k	! (fm**-1)
 		real :: mu	! MeV
 		real :: W
 	    ! eq. 3.7
