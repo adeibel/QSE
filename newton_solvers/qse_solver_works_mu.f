@@ -578,8 +578,10 @@
 	    write(*,*) 'mu_i', mu_i(1), mu_i(5549)
 	    write(*,*) 'sumZ=', Zsum, 'n_e=', n_e, 'equN_1=', equ(mt% Ntable+1,1)
 	    write(*,*) 'sumA=', Asum, 'n_b=', n_b, 'n_n=', n_n,  'equN_2=', equ(mt% Ntable+2,1)
-	    write(*,*) 'pressure=', electron_pressure(ke) + neutron_pressure(kn), &
-	    	& 'P_ext=', P_ext,'equN_3=', equ(mt% Ntable+3,1)
+		write(*,*) 'pressure=', electron_pressure(ke) + neutron_pressure(kn), 
+			& 'P_ext=', P_ext
+!	    write(*,*) 'pressure=', electron_pressure(ke) + neutron_pressure(kn), &
+!	    	& 'P_ext=', P_ext,'equN_3=', equ(mt% Ntable+3,1)
 	    write(*,*) 'Zi=', Zi/ni_Zsum, 'Ai=', Ai/ni_Asum
      	write(*,*) '------------------------------'                   
        
