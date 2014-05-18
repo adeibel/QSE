@@ -435,6 +435,7 @@
 		 real :: Asum, Zsum
 		 real :: As(5549), Zs(5549)
 		 real :: Zi, Ai
+		 real :: pres_n 
                 
          ierr = 0
 
@@ -483,9 +484,8 @@
 
 !!!! pressure constraint
 
-		p_n = p_ext - electron_pressure(ke)
+		pres_n = p_ext - electron_pressure(ke)
 		
-
 !!!
 
       if (pres_n == 0.) then
@@ -504,8 +504,8 @@
        write(*,*) 'Error in bisection for kn wave vector'
 	   stop
        endif
-  	  n=2.0*kn**3/threepisquare 
-  	  mu_n = neutron_chemical_potential(n) !returns in MeV
+  	  n_n=2.0*kn**3/threepisquare 
+  	  mu_n = neutron_chemical_potential(n_n) !returns in MeV
   	  end if 
 
 !		if (mu_n < 0.) then
