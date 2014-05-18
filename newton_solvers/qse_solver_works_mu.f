@@ -439,7 +439,7 @@
          ierr = 0
 
  		 !n_b = abs(n_b)
-
+		 
 	     chi = use_default_nuclear_size
          rho = (n_b*amu_n)*(mev_to_ergs/clight2)/(1.d-39) ! cgs
                         
@@ -481,41 +481,68 @@
         Y_e = 0.
         end if
 
-		if (mu_n < 0.) then
-		mu_n = abs(mu_n)
-        x1=0.0
-        x2=10.
-        xacc=1.d-15
-        kn=root_bisection(kn_solve,x1,x2,xacc,ierr,hist) !returns in fm**-1
-        if (io_failure(ierr,'Error in bisection for kn wave vector')) then
-        write(*,*) 'mu_n<0', 'mu_n=', mu_n, kn
-        kn = kn_prev
-        mu_n = mu_n_prev
-        end if   
-        n_n = 2.0*kn**3/threepisquare !-2.0*kn**3/threepisquare               
-        Y_n = n_n*(1.-chi)/n_b   
-		mu_n = -abs(mu_n) 
-		end if
+!!!! pressure constraint
+
+		p_n = p_ext - electron_pressure(ke)
 		
-		if (mu_n > 0.) then
-        x1=0.0
-        x2=10.
-        xacc=1.d-15
-        kn=root_bisection(kn_solve,x1,x2,xacc,ierr,hist) !returns in fm**-1
-        if (io_failure(ierr,'Error in bisection for kn wave vector')) then
-        write(*,*) 'mu_n>0', 'mu_n=', mu_n, kn
-        kn = kn_prev
-        mu_n = mu_n_prev
-        end if
-        n_n = 2.0*kn**3/threepisquare              
-        Y_n = n_n*(1.-chi)/n_b   
-		end if
-	
-		if (mu_n == 0.) then
-		kn=0.
-		n_n = 0.
-		Y_n = 0.
-		end if 
+
+!!!
+
+      if (pres_n == 0.) then
+      mu_n = 0.0
+      endif
+       
+      if (pres_n < 0.) cycle
+       
+      if (pres_n > 0.) then
+      x1=0.0
+      x2=10.0
+      xacc=1.d-20
+      !need neutron pressure for this next rootfind
+      kn = root_bisection(neutron_k, x1, x2, xacc, ierr, hist) !returns in fm**-1
+       if (ierr /= 0) then
+       write(*,*) 'Error in bisection for kn wave vector'
+	   stop
+       endif
+  	  n=2.0*kn**3/threepisquare 
+  	  mu_n = neutron_chemical_potential(n) !returns in MeV
+  	  end if 
+
+!		if (mu_n < 0.) then
+!		mu_n = abs(mu_n)
+!        x1=0.0
+!        x2=10.
+!        xacc=1.d-15
+!        kn=root_bisection(kn_solve,x1,x2,xacc,ierr,hist) !returns in fm**-1
+!        if (io_failure(ierr,'Error in bisection for kn wave vector')) then
+!        write(*,*) 'mu_n<0', 'mu_n=', mu_n, kn
+!        kn = kn_prev
+!        mu_n = mu_n_prev
+!        end if   
+!        n_n = 2.0*kn**3/threepisquare !-2.0*kn**3/threepisquare               
+!        Y_n = n_n*(1.-chi)/n_b   
+!		mu_n = -abs(mu_n) 
+!		end if
+!		
+!		if (mu_n > 0.) then
+!        x1=0.0
+!        x2=10.
+!        xacc=1.d-15
+!        kn=root_bisection(kn_solve,x1,x2,xacc,ierr,hist) !returns in fm**-1
+!        if (io_failure(ierr,'Error in bisection for kn wave vector')) then
+!        write(*,*) 'mu_n>0', 'mu_n=', mu_n, kn
+!        kn = kn_prev
+!        mu_n = mu_n_prev
+!        end if
+!        n_n = 2.0*kn**3/threepisquare              
+!        Y_n = n_n*(1.-chi)/n_b   
+!		end if
+!	
+!		if (mu_n == 0.) then
+!		kn=0.
+!		n_n = 0.
+!		Y_n = 0.
+!		end if 
 
 		 Asum = 0. ; Zsum = 0. 
 		 Ai = 0. ; Zi = 0.
@@ -844,5 +871,11 @@
 		n = k**3/threepisquare
 		P = 0.25*n*k*hbarc_n
      end function electron_pressure
+          
+     function neutron_k(x)
+      real, intent(in) :: x
+      real :: neutron_k      
+      neutron_k = neutron_pressure(x) - pres_n     
+     end function neutron_k          
           
     end module qse_solver
