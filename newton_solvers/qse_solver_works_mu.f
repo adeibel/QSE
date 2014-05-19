@@ -71,6 +71,7 @@
       real :: kT
       real :: mu_n_prev
       real :: ke_prev, kn_prev
+      real :: pres_n
 
                     
       contains
@@ -435,7 +436,6 @@
 		 real :: Asum, Zsum
 		 real :: As(5549), Zs(5549)
 		 real :: Zi, Ai
-		 real :: pres_n 
                 
          ierr = 0
 
@@ -492,7 +492,10 @@
       mu_n = 0.0
       endif
        
-      if (pres_n < 0.) cycle
+      if (pres_n < 0.) then
+      write(*,*) 'negative pressure'
+      stop
+      end if
        
       if (pres_n > 0.) then
       x1=0.0
@@ -578,7 +581,7 @@
 	    write(*,*) 'mu_i', mu_i(1), mu_i(5549)
 	    write(*,*) 'sumZ=', Zsum, 'n_e=', n_e, 'equN_1=', equ(mt% Ntable+1,1)
 	    write(*,*) 'sumA=', Asum, 'n_b=', n_b, 'n_n=', n_n,  'equN_2=', equ(mt% Ntable+2,1)
-		write(*,*) 'pressure=', electron_pressure(ke) + neutron_pressure(kn), 
+		write(*,*) 'pressure=', electron_pressure(ke) + neutron_pressure(kn), &
 			& 'P_ext=', P_ext
 !	    write(*,*) 'pressure=', electron_pressure(ke) + neutron_pressure(kn), &
 !	    	& 'P_ext=', P_ext,'equN_3=', equ(mt% Ntable+3,1)
