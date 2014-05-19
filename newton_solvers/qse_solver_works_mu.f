@@ -15,7 +15,7 @@
 
       ! dimensions
       integer, parameter :: nz = 1 ! number of zones
-      integer, parameter :: nvar = 5549+2 !5284+2  ! number of variables per zone
+      integer, parameter :: nvar = 5549+3 !5284+2  ! number of variables per zone
       integer, parameter :: neq = nz*nvar
 
       ! information about the bandwidth of the jacobian matrix
@@ -206,8 +206,8 @@
          call free_iounit(mu_table_input_id)		 
 		 else 
  
- 		 !xold(mt% Ntable+3,1) = n_b
-		 xold(mt% Ntable+2, 1) = 0. 		 
+ 		 xold(mt% Ntable+2,1) = n_b
+		 !xold(mt% Ntable+3, 1) = 0. 		 
 		 m_star = mn_n-mp_n-me_n
 		 m_nuc = real(mt% A(867))*amu_n  		         
          mterm = g*(m_nuc*kT/(twopi*hbarc_n**2))**(1.5)
@@ -215,8 +215,10 @@
          fac2 = mterm
 !         xold(mt% Ntable+1,1) = (log(fac1*fac2)*kT+real(mt% Z(867))*m_star&
 !         	& + mt%BE(867)+real(mt%A(867))*xold(mt% Ntable+2,1))/real(mt% Z(867))
+!         xold(mt% Ntable+1,1) = (log(fac1*fac2)*kT+real(mt% Z(867))*m_star&
+!        	& +real(mt%A(867))*xold(mt% Ntable+3,1))/real(mt% Z(867))
          xold(mt% Ntable+1,1) = (log(fac1*fac2)*kT+real(mt% Z(867))*m_star&
-        	& +real(mt%A(867))*xold(mt% Ntable+2,1))/real(mt% Z(867))
+        	& )/real(mt% Z(867))        	
 	 
 		 do j=1,mt% Ntable
 		 xold(j,1) = -mt% BE(j) !- 1.0
@@ -363,8 +365,8 @@
 		 mu_i(i) = x(i,1)
 		 enddo
 		 mu_e = x((mt% Ntable)+1,1)	 
-		 mu_n = x((mt% Ntable)+2,1)
-		 !n_b = x((mt% Ntable)+3, 1)			 
+		 !mu_n = x((mt% Ntable)+3,1)
+		 n_b = x((mt% Ntable)+2, 1)			 
       end subroutine set_primaries
       
 
@@ -436,6 +438,7 @@
 		 real :: Asum, Zsum
 		 real :: As(5549), Zs(5549)
 		 real :: Zi, Ai
+		 real :: pressure
                 
          ierr = 0
 
@@ -482,18 +485,12 @@
         Y_e = 0.
         end if
 
-!!!! pressure constraint
-
+! pressure constraint
+!
 		pres_n = p_ext - electron_pressure(ke)
-		
-!!!
-
-      if (pres_n == 0.) then
-      mu_n = 0.0
-      endif
-       
-      if (pres_n < 0.) then
-      write(*,*) 'negative pressure'
+		       
+      if (pres_n <= 0.) then
+      write(*,*) 'negative or zero pressure'
       stop
       end if
        
@@ -508,10 +505,10 @@
 	   stop
        endif
   	  n_n=2.0*kn**3/threepisquare 
-  	  mu_n = neutron_chemical_potential(n_n) !returns in MeV
+  	  mu_n = neutron_chemical_potential(kn) !returns in MeV
   	  y_n = n_n/n_b
   	  end if 
-
+!
 !		if (mu_n < 0.) then
 !		mu_n = abs(mu_n)
 !        x1=0.0
@@ -574,7 +571,7 @@
   		 !baryon and charge conservation 
          equ(mt% Ntable+1,1) = Zsum - n_e
          equ(mt% Ntable+2,1) = Asum - n_b + n_n !- log(1.0 - Y_n/(1.0-chi))     
-         !equ(mt% Ntable+3,1) = electron_pressure(ke) + neutron_pressure(kn) - P_ext
+!         equ(mt% Ntable+3,1) = electron_pressure(ke) + neutron_pressure(kn) - P_ext
 
 		write(*,*) 'n_b=', n_b
  		write(*,*) 'Y_e=', Y_e, 'mu_e=', mu_e, 'n_e=', n_e, 'ke=', ke

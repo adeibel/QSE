@@ -210,7 +210,8 @@
 	 p_ext = p_ext_start*hbarc_n
 		
 	  !form initial guess for chemical potentials 
-	  xold(2,1) = 0.
+	  !xold(2,1) = 0.
+	  xold(2,1) = n_b
 	  m_star = mn_n-mp_n-me_n
 	  m_nuc = real(mt% A(867))*amu_n  		         
       m_term = g*(m_nuc*kT/(twopi*hbarc_n**2))**(1.5)
@@ -218,8 +219,10 @@
       fac2 = m_term
 !         xold(1,1) = (log(fac1*fac2)*kT+real(mt% Z(867))*m_star&
 !         	& + mt%BE(867)+real(mt%A(867))*xold(2,1))/real(mt% Z(867))
+!      xold(1,1) = (log(fac1*fac2)*kT+real(mt% Z(867))*m_star&
+!         & +real(mt%A(867))*xold(2,1))/real(mt% Z(867))
       xold(1,1) = (log(fac1*fac2)*kT+real(mt% Z(867))*m_star&
-         & +real(mt%A(867))*xold(2,1))/real(mt% Z(867))
+         & )/real(mt% Z(867))         
 	  end if
 
   	  write(*,*) 'n_b =', n_b
@@ -351,7 +354,8 @@
          integer, intent(out) :: ierr
          ierr = 0
 		 mu_e = x(1,1)		 
-		 mu_n = x(2,1)
+		 !mu_n = x(2,1)
+		n_b = x(2,1)
       end subroutine set_primaries
       
 
@@ -504,7 +508,7 @@
 	   stop
        endif
   	  n_n=2.0*kn**3/threepisquare 
-  	  mu_n = neutron_chemical_potential(n_n) !returns in MeV
+  	  mu_n = neutron_chemical_potential(kn) !returns in MeV
   	  y_n = n_n/n_b
   	  end if 
 
@@ -565,9 +569,10 @@
 		write(*,*) 'xmass', xmass(867)
 		
   		 !baryon and charge conservation 
-         equ(1,1) = zsum - y_e
-         equ(2,1) = asum - 1.0 + y_n
+         equ(1,1) = zsum*n_b - n_e
+         equ(2,1) = asum*n_b - n_b + n_n
          
+        write(*,*) 'n_b=', n_b 
  		write(*,*) 'mu_e=', mu_e
  		write(*,*) 'n_e=', n_e 
         write(*,*) 'mu_n=', mu_n
