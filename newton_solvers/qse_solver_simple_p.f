@@ -210,6 +210,9 @@
 	  close(mu_table_input_id)
 	  call free_iounit(mu_table_input_id)		 
 	  else 
+
+	 n_b = n_b_start
+	 p_ext = p_ext_start
 		
 	  !form initial guess for chemical potentials 
 	  xold(2,1) = 0.
@@ -223,6 +226,7 @@
       xold(1,1) = (log(fac1*fac2)*kT+real(mt% Z(867))*m_star&
          & +real(mt%A(867))*xold(2,1))/real(mt% Z(867))
 	  end if
+
 
 	 dx = 0 ! a not very good starting "guess" for the solution
 	 x = xold
