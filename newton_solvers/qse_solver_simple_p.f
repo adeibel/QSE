@@ -76,6 +76,7 @@
       logical, save :: mu_set = .false.     
 	  real :: mu_e_prev, mu_n_prev
 	  real :: ke_prev, kn_prev
+	  real :: pres_n, p_ext 
 		 
 		             
       contains
@@ -93,7 +94,7 @@
       real*8, target :: rpar(lrpar)
       character (len=64) :: decsol_option_name
       !namelist
-      real :: n_b_start
+      real :: n_b_start, p_ext_start
       logical :: have_mu_table
       logical :: do_numerical_jacobian
       integer :: which_decsol_in, decsol    
@@ -112,7 +113,7 @@
       integer :: inlist_id, output_id, abundance_id  
       integer :: mu_table_input_id, mu_table_output_id
 
-      namelist /range/ n_b_start, kT, have_mu_table, &
+      namelist /range/ P_ext_start, n_b_start, kT, have_mu_table, &
       	&	do_numerical_jacobian, which_decsol_in
      
       ! set the name of the inlist file name  
@@ -123,6 +124,7 @@
       end if
       
       ! set defaults 
+      P_ext_start = 5.d-10!fm^-4      
       n_b_start = 5.0d-10 !fm^-3
       kT = 1.0d-2  !MeV
       have_mu_table = .false.
@@ -470,42 +472,71 @@
         Y_e = 0.
         end if
 
-		if (mu_n < 0.) then
-		mu_n = abs(mu_n)
-        x1=0.0
-        x2=10.
-        xacc=1.d-15
-        kn=root_bisection(kn_solve,x1,x2,xacc,ierr,hist) !returns in fm**-1
-        if (io_failure(ierr,'Error in bisection for kn wave vector')) then
-        write(*,*) 'mu_n<0', 'mu_n=', mu_n, kn
-        kn = kn_prev
-        mu_n = mu_n_prev
-        end if   
-        n_n = 2.0*kn**3/threepisquare !-2.0*kn**3/threepisquare               
-        Y_n = n_n*(1.-chi)/n_b   
-		mu_n = -mu_n 
-		end if
-		
-		if (mu_n > 0.) then
-        x1=0.0
-        x2=10.
-        xacc=1.d-15
-        kn=root_bisection(kn_solve,x1,x2,xacc,ierr,hist) !returns in fm**-1
-        if (io_failure(ierr,'Error in bisection for kn wave vector')) then
-        write(*,*) 'mu_n>0', 'mu_n=', mu_n, kn
-        kn = kn_prev
-        mu_n = mu_n_prev
-        end if
-        n_n = 2.0*kn**3/threepisquare              
-        Y_n = n_n*(1.-chi)/n_b   
-		end if
-	
+!!!! pressure constraint
 
-		if (mu_n == 0.) then
-		kn=0.
-		n_n = 0.
-		Y_n = 0.
-		end if 
+		pres_n = p_ext - electron_pressure(ke)
+		
+!!!
+
+      if (pres_n == 0.) then
+      mu_n = 0.0
+      endif
+       
+      if (pres_n < 0.) then
+      write(*,*) 'negative pressure'
+      stop
+      end if
+       
+      if (pres_n > 0.) then
+      x1=0.0
+      x2=10.0
+      xacc=1.d-20
+      !need neutron pressure for this next rootfind
+      kn = root_bisection(neutron_k, x1, x2, xacc, ierr, hist) !returns in fm**-1
+       if (ierr /= 0) then
+       write(*,*) 'Error in bisection for kn wave vector'
+	   stop
+       endif
+  	  n_n=2.0*kn**3/threepisquare 
+  	  mu_n = neutron_chemical_potential(n_n) !returns in MeV
+  	  end if 
+
+!		if (mu_n < 0.) then
+!		mu_n = abs(mu_n)
+!        x1=0.0
+!        x2=10.
+!        xacc=1.d-15
+!        kn=root_bisection(kn_solve,x1,x2,xacc,ierr,hist) !returns in fm**-1
+!        if (io_failure(ierr,'Error in bisection for kn wave vector')) then
+!        write(*,*) 'mu_n<0', 'mu_n=', mu_n, kn
+!        kn = kn_prev
+!        mu_n = mu_n_prev
+!        end if   
+!        n_n = 2.0*kn**3/threepisquare !-2.0*kn**3/threepisquare               
+!        Y_n = n_n*(1.-chi)/n_b   
+!		mu_n = -mu_n 
+!		end if
+!		
+!		if (mu_n > 0.) then
+!        x1=0.0
+!        x2=10.
+!        xacc=1.d-15
+!        kn=root_bisection(kn_solve,x1,x2,xacc,ierr,hist) !returns in fm**-1
+!        if (io_failure(ierr,'Error in bisection for kn wave vector')) then
+!        write(*,*) 'mu_n>0', 'mu_n=', mu_n, kn
+!        kn = kn_prev
+!        mu_n = mu_n_prev
+!        end if
+!        n_n = 2.0*kn**3/threepisquare              
+!        Y_n = n_n*(1.-chi)/n_b   
+!		end if
+!	
+!
+!		if (mu_n == 0.) then
+!		kn=0.
+!		n_n = 0.
+!		Y_n = 0.
+!		end if 
 	
 		 asum = 0. ; zsum = 0. 
 		 as = 0. ; zs = 0.
@@ -622,44 +653,73 @@
         n_e = 0. 
         Y_e = 0.
         end if
+        
+!!!! pressure constraint
 
-		if (mu_n < 0.) then
-		mu_n = abs(mu_n)
-        x1=0.0
-        x2=10.
-        xacc=1.d-15
-        kn=root_bisection(kn_solve,x1,x2,xacc,ierr,hist) !returns in fm**-1
-        if (io_failure(ierr,'Error in bisection for kn wave vector')) then
-        kn = kn_prev
-        mu_n = abs(mu_n_prev)
-        ke= ke_prev
-        mu_e = mu_e_prev        
-        end if   
-        n_n = 2.0*kn**3/threepisquare !-2.0*kn**3/threepisquare               
-        Y_n = n_n*(1.-chi)/n_b   
-		mu_n = -mu_n 
-		end if
+		pres_n = p_ext - electron_pressure(ke)
 		
-		if (mu_n > 0.) then
-        x1=0.0
-        x2=10.
-        xacc=1.d-15
-        kn=root_bisection(kn_solve,x1,x2,xacc,ierr,hist) !returns in fm**-1
-        if (io_failure(ierr,'Error in bisection for kn wave vector')) then
-        kn = kn_prev
-        mu_n = mu_n_prev
-        ke= ke_prev
-        mu_e = mu_e_prev        
-        end if
-        n_n = 2.0*kn**3/threepisquare              
-        Y_n = n_n*(1.-chi)/n_b   
-		end if
-	
-		if (mu_n == 0.) then
-		kn=0.
-		n_n = 0.
-		Y_n = 0.
-		end if 
+!!!
+
+      if (pres_n == 0.) then
+      mu_n = 0.0
+      endif
+       
+      if (pres_n < 0.) then
+      write(*,*) 'negative pressure'
+      stop
+      end if
+       
+      if (pres_n > 0.) then
+      x1=0.0
+      x2=10.0
+      xacc=1.d-20
+      !need neutron pressure for this next rootfind
+      kn = root_bisection(neutron_k, x1, x2, xacc, ierr, hist) !returns in fm**-1
+       if (ierr /= 0) then
+       write(*,*) 'Error in bisection for kn wave vector'
+	   stop
+       endif
+  	  n_n=2.0*kn**3/threepisquare 
+  	  mu_n = neutron_chemical_potential(n_n) !returns in MeV
+  	  end if         
+
+!		if (mu_n < 0.) then
+!		mu_n = abs(mu_n)
+!        x1=0.0
+!        x2=10.
+!        xacc=1.d-15
+!        kn=root_bisection(kn_solve,x1,x2,xacc,ierr,hist) !returns in fm**-1
+!        if (io_failure(ierr,'Error in bisection for kn wave vector')) then
+!        kn = kn_prev
+!        mu_n = abs(mu_n_prev)
+!        ke= ke_prev
+!        mu_e = mu_e_prev        
+!        end if   
+!        n_n = 2.0*kn**3/threepisquare !-2.0*kn**3/threepisquare               
+!        Y_n = n_n*(1.-chi)/n_b   
+!		mu_n = -mu_n 
+!		end if
+!		
+!		if (mu_n > 0.) then
+!        x1=0.0
+!        x2=10.
+!        xacc=1.d-15
+!        kn=root_bisection(kn_solve,x1,x2,xacc,ierr,hist) !returns in fm**-1
+!        if (io_failure(ierr,'Error in bisection for kn wave vector')) then
+!        kn = kn_prev
+!        mu_n = mu_n_prev
+!        ke= ke_prev
+!        mu_e = mu_e_prev        
+!        end if
+!        n_n = 2.0*kn**3/threepisquare              
+!        Y_n = n_n*(1.-chi)/n_b   
+!		end if
+!	
+!		if (mu_n == 0.) then
+!		kn=0.
+!		n_n = 0.
+!		Y_n = 0.
+!		end if 
 
 		 xnsum = 0. ; xesum = 0. 
 		 yede = 0. ; yedn = 0. 
