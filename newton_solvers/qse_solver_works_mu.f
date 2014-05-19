@@ -509,6 +509,7 @@
        endif
   	  n_n=2.0*kn**3/threepisquare 
   	  mu_n = neutron_chemical_potential(n_n) !returns in MeV
+  	  y_n = n_n/n_b
   	  end if 
 
 !		if (mu_n < 0.) then

@@ -6,7 +6,7 @@
       use utils_lib
       use phys_constants
       use mass_table 
-      use short_table
+!      use short_table
       use rootfind      
       use crust_eos_lib       
 
@@ -58,8 +58,8 @@
 
 	  ! for crust
       type(mass_table_type), pointer :: mt
-      type(short_table_type), pointer :: st
-      real*8 :: mu_e, mu_n, mu_i(5267), n_i(5267)
+!      type(short_table_type), pointer :: st
+      real*8 :: mu_e, mu_n, mu_i(5549), n_i(5549)
       real*8 :: Y_e, Y_n 
    	  real*8 :: n_b, n_e, n_n
       real*8 :: ke, kn
@@ -81,11 +81,11 @@
 		             
       contains
       
-      subroutine do_test_newton(nucleus_index)
+      subroutine do_test_newton
          use mtx_lib
          use mtx_def
         
-      real, integer(in) :: nucleus_index(:)  
+     
       integer :: ierr, liwork, lwork, lid, lrd, which_decsol
       integer, dimension(:), pointer :: iwork
       real*8, dimension(:), pointer :: work 
@@ -100,8 +100,8 @@
       integer :: which_decsol_in, decsol    
  
  	  ! for crust
- 	  character(len=*), parameter :: mass_table_name = 'nucchem_trunc.data'   
-      !character(len=*), parameter :: mass_table_name = 'nucchem.data'
+ 	  !character(len=*), parameter :: mass_table_name = 'nucchem_trunc.data'   
+      character(len=*), parameter :: mass_table_name = 'nucchem.data'
       character(len=*), parameter :: output_file = 'qse_output.data'
    	  character(len=*), parameter :: abundance_file = 'qse_abun.data'
    	  character(len=*), parameter :: default_infile = 'qse.inlist'
@@ -155,16 +155,16 @@
       mt => winvn_mass_table    
  	  write(*,*) 'Loaded mass table'
  	  
- 	  !set short table
- 	  do i = 1, mt% Ntable
- 	   do j = 1, size(nucleus_index)
- 	    if (i == j) then
- 	    st% Z(i) = mt% Z(i)
- 	    st% A(i) = mt% Z(i)
- 	    st% BE(i) = st% BE(i)
- 	    endif
- 	   enddo
- 	  enddo
+!set short table
+! 	  do i = 1, mt% Ntable
+! 	   do j = 1, size(nucleus_index)
+! 	    if (i == j) then
+! 	    st% Z(i) = mt% Z(i)
+! 	    st% A(i) = mt% Z(i)
+! 	    st% BE(i) = st% BE(i)
+! 	    endif
+! 	   enddo
+! 	  enddo
    
       !set general output file   
  	  output_id = alloc_iounit(ierr)
@@ -181,11 +181,6 @@
 	  if (io_failure(ios,'opening abundance file')) stop
 	  write(abundance_id,'(A13)') 'n_i [fm^-3]'
 
-  	  write(*,*) 'n_b =', n_b
-  	  write(*,*) 'numerical jacobian? =', do_numerical_jacobian
-  	  write(*,*) 'have mu table? =', have_mu_table
-      write(*,*) 'decsol option', decsol     
-              
       !numerical solver to use        
       which_decsol = which_decsol_in
       call decsol_option_str(which_decsol, decsol_option_name, ierr)
@@ -212,7 +207,7 @@
 	  else 
 
 	 n_b = n_b_start
-	 p_ext = p_ext_start
+	 p_ext = p_ext_start*hbarc_n
 		
 	  !form initial guess for chemical potentials 
 	  xold(2,1) = 0.
@@ -226,6 +221,13 @@
       xold(1,1) = (log(fac1*fac2)*kT+real(mt% Z(867))*m_star&
          & +real(mt%A(867))*xold(2,1))/real(mt% Z(867))
 	  end if
+
+  	  write(*,*) 'n_b =', n_b
+  	  write(*,*) 'numerical jacobian? =', do_numerical_jacobian
+  	  write(*,*) 'have mu table? =', have_mu_table
+      write(*,*) 'decsol option', decsol     
+      write(*,*) 'mu_e = ', xold(1,1)
+      write(*,*) 'mu_n = ', xold(2,1)
 
 
 	 dx = 0 ! a not very good starting "guess" for the solution
@@ -279,7 +281,6 @@
 		close(mu_table_output_id) 
 		call free_iounit(mu_table_output_id) 
 		have_mu_table = .true. 
-		goto 55
 		stop 2
 	 end if
 
@@ -415,16 +416,16 @@
 		 real :: dmudk_n, dmudk_e, dkdn_n, dkdn_e
 		 real :: dmudne, dmudnn
 		 !for equations in log space
-		 real :: sum_lnZ(5267), sum_lnA(5267) 
+		 real :: sum_lnZ(5549), sum_lnA(5549) 
 		 real :: sum_lnZ_total, sum_lnZ_final 
 		 real :: sum_lnA_total, sum_lnA_final
 		 real :: logZ_exponent
 		 real :: logA_exponent 
 		 real :: der_Asum, der_Zsum
-		 real :: X_Z(5267), X_A(5267)
+		 real :: X_Z(5549), X_A(5549)
 		 real :: zsum, asum
 		 real :: zs, as
-		 real :: xmass(5267)
+		 real :: xmass(5549)
 		 real :: y_e_want
 
 		 if(mu_set .eqv. .false.) then
@@ -488,6 +489,7 @@
        
       if (pres_n < 0.) then
       write(*,*) 'negative pressure'
+      write(*,*) 'Pext=', p_ext, 'Pe = ', electron_pressure(ke)
       stop
       end if
        
@@ -503,6 +505,7 @@
        endif
   	  n_n=2.0*kn**3/threepisquare 
   	  mu_n = neutron_chemical_potential(n_n) !returns in MeV
+  	  y_n = n_n/n_b
   	  end if 
 
 !		if (mu_n < 0.) then
@@ -593,9 +596,9 @@
          integer, intent(inout) :: ipar(lipar)
          integer, intent(out) :: ierr         
 		 logical, parameter :: skip_partials = .false.			
-		 real :: xmass(5267)
-		 real :: dxdn(5267)
-		 real :: dxde(5267)
+		 real :: xmass(5549)
+		 real :: dxdn(5549)
+		 real :: dxde(5549)
 		 real :: xnsum, xesum
 		 real :: yedn, yede
 		 real :: m_star, m_term, m_nuc
@@ -885,5 +888,30 @@
       real :: ke_solve    
       ke_solve = electron_chemical_potential(x) - mu_e  
     end function ke_solve  
+
+     function neutron_pressure(k) result(P)
+		use phys_constants
+		real, intent(in) :: k   ! fm**-1
+		real :: P       ! MeV fm**-3
+		real :: dWdk
+        real, dimension(0:3), parameter :: cw0 = [ 1.2974, 15.0298, -15.2343, 7.4663 ]			
+		dWdk = k*(cw0(0) + k*(2.0*cw0(1) + k*(3.0*cw0(2) + k*4.0*cw0(3))))
+		P = 2.0*onethird/threepisquare* k**4 * dWdk
+     end function neutron_pressure    
+
+     function electron_pressure(k) result(P)
+		use phys_constants
+		real, intent(in) :: k   ! fm**-1
+		real :: P       ! MeV fm**-3
+		real :: n			
+		n = k**3/threepisquare
+		P = 0.25*n*k*hbarc_n
+     end function electron_pressure
+          
+     function neutron_k(x)
+      real, intent(in) :: x
+      real :: neutron_k      
+      neutron_k = neutron_pressure(x) - pres_n     
+     end function neutron_k        
       
     end module qse_solver
