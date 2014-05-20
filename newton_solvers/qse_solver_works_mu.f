@@ -206,8 +206,8 @@
          call free_iounit(mu_table_input_id)		 
 		 else 
  
- 		 xold(mt% Ntable+2,1) = n_b
-		 !xold(mt% Ntable+3, 1) = 0. 		 
+ 		 !xold(mt% Ntable+2,1) = n_b
+		 xold(mt% Ntable+2, 1) = 0. 		 
 		 m_star = mn_n-mp_n-me_n
 		 m_nuc = real(mt% A(867))*amu_n  		         
          mterm = g*(m_nuc*kT/(twopi*hbarc_n**2))**(1.5)
@@ -365,8 +365,9 @@
 		 mu_i(i) = x(i,1)
 		 enddo
 		 mu_e = x((mt% Ntable)+1,1)	 
-		 !mu_n = x((mt% Ntable)+3,1)
-		 n_b = x((mt% Ntable)+2, 1)			 
+		 mu_n = x((mt% Ntable)+2,1)
+		 p_ext = p_ext
+		 !n_b = x((mt% Ntable)+2, 1)			 
       end subroutine set_primaries
       
 
@@ -487,63 +488,63 @@
 
 ! pressure constraint
 !
-		pres_n = p_ext - electron_pressure(ke)
-		       
-      if (pres_n <= 0.) then
-      write(*,*) 'negative or zero pressure'
-      stop
-      end if
-       
-      if (pres_n > 0.) then
-      x1=0.0
-      x2=10.0
-      xacc=1.d-20
-      !need neutron pressure for this next rootfind
-      kn = root_bisection(neutron_k, x1, x2, xacc, ierr, hist) !returns in fm**-1
-       if (ierr /= 0) then
-       write(*,*) 'Error in bisection for kn wave vector'
-	   stop
-       endif
-  	  n_n=2.0*kn**3/threepisquare 
-  	  mu_n = neutron_chemical_potential(kn) !returns in MeV
-  	  y_n = n_n/n_b
-  	  end if 
+!		pres_n = p_ext - electron_pressure(ke)
+!		       
+!      if (pres_n <= 0.) then
+!      write(*,*) 'negative or zero pressure'
+!      stop
+!      end if
+!       
+!      if (pres_n > 0.) then
+!      x1=0.0
+!      x2=10.0
+!      xacc=1.d-20
+!      !need neutron pressure for this next rootfind
+!      kn = root_bisection(neutron_k, x1, x2, xacc, ierr, hist) !returns in fm**-1
+!       if (ierr /= 0) then
+!       write(*,*) 'Error in bisection for kn wave vector'
+!	   stop
+!       endif
+!  	  n_n=2.0*kn**3/threepisquare 
+!  	  mu_n = neutron_chemical_potential(kn) !returns in MeV
+!  	  y_n = n_n/n_b
+!  	  end if 
 !
-!		if (mu_n < 0.) then
-!		mu_n = abs(mu_n)
-!        x1=0.0
-!        x2=10.
-!        xacc=1.d-15
-!        kn=root_bisection(kn_solve,x1,x2,xacc,ierr,hist) !returns in fm**-1
-!        if (io_failure(ierr,'Error in bisection for kn wave vector')) then
-!        write(*,*) 'mu_n<0', 'mu_n=', mu_n, kn
-!        kn = kn_prev
-!        mu_n = mu_n_prev
-!        end if   
-!        n_n = 2.0*kn**3/threepisquare !-2.0*kn**3/threepisquare               
-!        Y_n = n_n*(1.-chi)/n_b   
-!		mu_n = -abs(mu_n) 
-!		end if
-!		
-!		if (mu_n > 0.) then
-!        x1=0.0
-!        x2=10.
-!        xacc=1.d-15
-!        kn=root_bisection(kn_solve,x1,x2,xacc,ierr,hist) !returns in fm**-1
-!        if (io_failure(ierr,'Error in bisection for kn wave vector')) then
-!        write(*,*) 'mu_n>0', 'mu_n=', mu_n, kn
-!        kn = kn_prev
-!        mu_n = mu_n_prev
-!        end if
-!        n_n = 2.0*kn**3/threepisquare              
-!        Y_n = n_n*(1.-chi)/n_b   
-!		end if
-!	
-!		if (mu_n == 0.) then
-!		kn=0.
-!		n_n = 0.
-!		Y_n = 0.
-!		end if 
+		if (mu_n < 0.) then
+		mu_n = abs(mu_n)
+        x1=0.0
+        x2=10.
+        xacc=1.d-15
+        kn=root_bisection(kn_solve,x1,x2,xacc,ierr,hist) !returns in fm**-1
+        if (io_failure(ierr,'Error in bisection for kn wave vector')) then
+        write(*,*) 'mu_n<0', 'mu_n=', mu_n, kn
+        kn = kn_prev
+        mu_n = mu_n_prev
+        end if   
+        n_n = 2.0*kn**3/threepisquare !-2.0*kn**3/threepisquare               
+        Y_n = n_n*(1.-chi)/n_b   
+		mu_n = -abs(mu_n) 
+		end if
+		
+		if (mu_n > 0.) then
+        x1=0.0
+        x2=10.
+        xacc=1.d-15
+        kn=root_bisection(kn_solve,x1,x2,xacc,ierr,hist) !returns in fm**-1
+        if (io_failure(ierr,'Error in bisection for kn wave vector')) then
+        write(*,*) 'mu_n>0', 'mu_n=', mu_n, kn
+        kn = kn_prev
+        mu_n = mu_n_prev
+        end if
+        n_n = 2.0*kn**3/threepisquare              
+        Y_n = n_n*(1.-chi)/n_b   
+		end if
+	
+		if (mu_n == 0.) then
+		kn=0.
+		n_n = 0.
+		Y_n = 0.
+		end if 
 
 		 Asum = 0. ; Zsum = 0. 
 		 Ai = 0. ; Zi = 0.
@@ -571,7 +572,7 @@
   		 !baryon and charge conservation 
          equ(mt% Ntable+1,1) = Zsum - n_e
          equ(mt% Ntable+2,1) = Asum - n_b + n_n !- log(1.0 - Y_n/(1.0-chi))     
-!         equ(mt% Ntable+3,1) = electron_pressure(ke) + neutron_pressure(kn) - P_ext
+         equ(mt% Ntable+3,1) = electron_pressure(ke) + neutron_pressure(kn) - P_ext
 
 		write(*,*) 'n_b=', n_b
  		write(*,*) 'Y_e=', Y_e, 'mu_e=', mu_e, 'n_e=', n_e, 'ke=', ke
@@ -732,13 +733,15 @@
 			A(mt% Ntable+1, mt% Ntable+2) = sume
 			A(mt% Ntable+2, mt% Ntable+2) = asum2 
 			A(mt% Ntable+2, mt% Ntable+1) = -sume
+			
+			A(:, mt% Ntable+3) = 0. 
 
 !			A(mt% Ntable+1, mt% Ntable+1) = 0.		
 !			A(mt% Ntable+1, mt% Ntable+2) = 0.
 !			A(mt% Ntable+2, mt% Ntable+2) = 0. 
 !			A(mt% Ntable+2, mt% Ntable+1) = 0.
 			
-		do i = 1, mt% Ntable+2
+		do i = 1, mt% Ntable+3
 		A(:, i) = A(:, i)*xscale(i,1)
 		end do	
 			
@@ -862,7 +865,8 @@
 		real :: P       ! MeV fm**-3
 		real :: dWdk
         real, dimension(0:3), parameter :: cw0 = [ 1.2974, 15.0298, -15.2343, 7.4663 ]			
-		dWdk = k*(cw0(0) + k*(2.0*cw0(1) + k*(3.0*cw0(2) + k*4.0*cw0(3))))
+		!dWdk = k*(cw0(0) + k*(2.0*cw0(1) + k*(3.0*cw0(2) + k*4.0*cw0(3))))
+		dWdk =  (cw0(0) + k*(2.0*cw0(1) + k*(3.0*cw0(2) + k*4.0*cw0(3))))
 		P = 2.0*onethird/threepisquare* k**4 * dWdk
      end function neutron_pressure    
 
