@@ -227,14 +227,13 @@
 	  end if
 	  
 	  xold(3,1) = p_ext
-
+      
   	  write(*,*) 'n_b =', n_b
   	  write(*,*) 'numerical jacobian? =', do_numerical_jacobian
   	  write(*,*) 'have mu table? =', have_mu_table
       write(*,*) 'decsol option', decsol     
       write(*,*) 'mu_e = ', xold(1,1)
       write(*,*) 'mu_n = ', xold(2,1)
-
 
 	 dx = 0 ! a not very good starting "guess" for the solution
 	 x = xold
@@ -435,6 +434,8 @@
 		 real :: zs, as
 		 real :: xmass(5549)
 		 real :: y_e_want
+		 real :: Z_average, A_average
+		 real :: Z_ni, A_ni, ni_sum
 
 		 if(mu_set .eqv. .false.) then
 		 mu_e_prev=0. ; mu_n_prev=0.
@@ -554,6 +555,7 @@
 	
 		 asum = 0. ; zsum = 0. 
 		 as = 0. ; zs = 0.
+		 Z_ni = 0. ; A_ni = 0. ; ni_sum = 0.
 
 		do i = 1, mt% Ntable
          m_star = mn_n-mp_n-me_n
@@ -567,14 +569,22 @@
 		 xmass(i) = real(mt% A(i))*m_term*exp((mu_i(i)+mt%BE(i))/kT)/n_b
 		 asum = asum + xmass(i)
 		 zsum = zsum + xmass(i)*real(mt% Z(i))/real(mt% A(i))
+		 Z_ni = Z_ni + xmass(i)*real(mt% Z(i))/real(mt% A(i))
+		 A_ni = A_ni + xmass(i)
+		 ni_sum = ni_sum+xmass(i)/(mt% A(i))
 	    end do	
 		
+		Z_average=Z_ni/ni_sum
+		A_average=A_ni/ni_sum
+		
+		write(*,*) Z_ni/ni_sum, A_ni/ni_sum
 		write(*,*) 'xmass', xmass(867)
 		
   		 !baryon and charge conservation 
          equ(1,1) = zsum - y_e
          equ(2,1) = asum - 1.0 + y_n*(1.0-chi)
-         equ(3,1) = electron_pressure(ke)+neutron_pressure(kn)-p_ext
+!         equ(3,1) = electron_pressure(ke)+neutron_pressure(kn) &
+ !        	&	+ lattice_pressure(Z_average,A_average,n)-p_ext
          
         write(*,*) 'n_b=', n_b 
  		write(*,*) 'mu_e=', mu_e
@@ -947,6 +957,15 @@
 		n = k**3/threepisquare
 		P = 0.25*n*k*hbarc_n
      end function electron_pressure
+     
+     function lattice_pressure(Z_average,A_average,n) result(P)
+     	use phys_constants
+     	real, intent(in) :: Z_average,A_average,n
+     	real :: P, p_f
+     	real, parameter :: C_l = 3.40665d-3
+     	p_f = (threepisquare*n)**onethird
+     	P = -(n/3.0)*C_l*(Z_average**2/A_average**(4.0/3.0))*p_f
+     end function lattice_pressure 
           
      function neutron_k(x)
       real, intent(in) :: x

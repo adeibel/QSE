@@ -206,7 +206,7 @@
          call free_iounit(mu_table_input_id)		 
 		 else 
  
- 		 !xold(mt% Ntable+2,1) = n_b
+ 		 xold(mt% Ntable+3,1) = n_b
 		 xold(mt% Ntable+2, 1) = 0. 		 
 		 m_star = mn_n-mp_n-me_n
 		 m_nuc = real(mt% A(867))*amu_n  		         
@@ -366,8 +366,8 @@
 		 enddo
 		 mu_e = x((mt% Ntable)+1,1)	 
 		 mu_n = x((mt% Ntable)+2,1)
-		 p_ext = p_ext
-		 !n_b = x((mt% Ntable)+2, 1)			 
+		 !p_ext = p_ext
+		 n_b = x((mt% Ntable)+3, 1)			 
       end subroutine set_primaries
       
 
@@ -572,7 +572,8 @@
   		 !baryon and charge conservation 
          equ(mt% Ntable+1,1) = Zsum - n_e
          equ(mt% Ntable+2,1) = Asum - n_b + n_n !- log(1.0 - Y_n/(1.0-chi))     
-         equ(mt% Ntable+3,1) = electron_pressure(ke) + neutron_pressure(kn) - P_ext
+         equ(mt% Ntable+3,1) = electron_pressure(ke) + neutron_pressure(kn) &
+         	& +lattice_pressure(Zi/ni_Zsum,Ai/ni_Asum,ni_Zsum) - P_ext
 
 		write(*,*) 'n_b=', n_b
  		write(*,*) 'Y_e=', Y_e, 'mu_e=', mu_e, 'n_e=', n_e, 'ke=', ke
@@ -582,6 +583,7 @@
 	    write(*,*) 'sumA=', Asum, 'n_b=', n_b, 'n_n=', n_n,  'equN_2=', equ(mt% Ntable+2,1)
 		write(*,*) 'pressure=', electron_pressure(ke) + neutron_pressure(kn), &
 			& 'P_ext=', P_ext
+		write(*,*) 'lattice_pressure=', lattice_pressure(Zi/ni_Zsum,Ai/ni_Asum,ni_Zsum)
 !	    write(*,*) 'pressure=', electron_pressure(ke) + neutron_pressure(kn), &
 !	    	& 'P_ext=', P_ext,'equN_3=', equ(mt% Ntable+3,1)
 	    write(*,*) 'Zi=', Zi/ni_Zsum, 'Ai=', Ai/ni_Asum
@@ -878,6 +880,15 @@
 		n = k**3/threepisquare
 		P = 0.25*n*k*hbarc_n
      end function electron_pressure
+
+     function lattice_pressure(Z_average,A_average,n) result(P)
+     	use phys_constants
+     	real, intent(in) :: Z_average,A_average,n
+     	real :: P, p_f
+     	real, parameter :: C_l = 3.40665d-3
+     	p_f = (threepisquare*n)**onethird
+     	P = -(n/3.0)*C_l*(Z_average**2/A_average**(4.0/3.0))*p_f*hbarc_n
+     end function lattice_pressure 
           
      function neutron_k(x)
       real, intent(in) :: x
