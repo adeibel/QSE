@@ -207,10 +207,9 @@
 	  else 
 
 	 n_b = n_b_start
-	 p_ext = p_ext_start*hbarc_n
+	 p_ext = p_ext_start !/hbarc_n
 		
 	  !form initial guess for chemical potentials 
-	  !xold(2,1) = 1.d-4
 	  xold(2,1) = 0. 
 
 	  m_star = mn_n-mp_n-me_n
@@ -226,7 +225,7 @@
 !        & )/real(mt% Z(867))         
 	  end if
 	  
-	  xold(3,1) = p_ext
+	  xold(3,1) = n_b
       
   	  write(*,*) 'n_b =', n_b
   	  write(*,*) 'numerical jacobian? =', do_numerical_jacobian
@@ -357,8 +356,7 @@
          ierr = 0
 		 mu_e = x(1,1)		 
 		 mu_n = x(2,1)
-		 p_ext = x(3,1)
-		 !n_b = x(2,1)
+		 n_b = x(3,1)
       end subroutine set_primaries
       
 
@@ -443,6 +441,8 @@
 		 mu_set = .true. 
 		 end if
 
+		!n_b = abs(n_b)
+
          ierr = 0
 	     chi = use_default_nuclear_size
          !rho = (n_b*amu_n)*(mev_to_ergs/clight2)/(1.d-39) ! cgs
@@ -488,70 +488,70 @@
 
 !!!! pressure constraint
 
-		pres_n = p_ext - electron_pressure(ke)
+!		pres_n = p_ext - electron_pressure(ke)
 		
 !!
 
-      if (pres_n == 0.) then
-      mu_n = 0.0
-      endif
-       
-      if (pres_n < 0.) then
-      write(*,*) 'negative pressure'
-      write(*,*) 'Pext=', p_ext, 'Pe = ', electron_pressure(ke)
-      stop
-      end if
-       
-      if (pres_n > 0.) then
-      x1=0.0
-      x2=10.0
-      xacc=1.d-20
-      !need neutron pressure for this next rootfind
-      kn = root_bisection(neutron_k, x1, x2, xacc, ierr, hist) !returns in fm**-1
-       if (ierr /= 0) then
-       write(*,*) 'Error in bisection for kn wave vector'
-	   stop
-       endif
-  	  n_n=2.0*kn**3/threepisquare 
-  	  mu_n = neutron_chemical_potential(kn) !returns in MeV
-  	  y_n = n_n/n_b
-  	  end if 
+!      if (pres_n == 0.) then
+!      mu_n = 0.0
+!      endif
+!       
+!      if (pres_n < 0.) then
+!      write(*,*) 'negative pressure'
+!      write(*,*) 'Pext=', p_ext, 'Pe = ', electron_pressure(ke)
+!      stop
+!      end if
+!       
+!      if (pres_n > 0.) then
+!      x1=0.0
+!      x2=10.0
+!      xacc=1.d-20
+!      !need neutron pressure for this next rootfind
+!      kn = root_bisection(neutron_k, x1, x2, xacc, ierr, hist) !returns in fm**-1
+!       if (ierr /= 0) then
+!       write(*,*) 'Error in bisection for kn wave vector'
+!	   stop
+!       endif
+!  	  n_n=2.0*kn**3/threepisquare 
+!  	  mu_n = neutron_chemical_potential(kn) !returns in MeV
+!  	  y_n = n_n/n_b
+!  	  end if 
 
-!		if (mu_n < 0.) then
-!		mu_n = abs(mu_n)
-!        x1=0.0
-!        x2=10.
-!        xacc=1.d-15
-!        kn=root_bisection(kn_solve,x1,x2,xacc,ierr,hist) !returns in fm**-1
-!        if (io_failure(ierr,'Error in bisection for kn wave vector')) then
-!        write(*,*) 'mu_n<0', 'mu_n=', mu_n, kn
-!        kn = kn_prev
-!        mu_n = mu_n_prev
-!        end if   
-!        n_n = 2.0*kn**3/threepisquare !-2.0*kn**3/threepisquare               
-!        Y_n = n_n*(1.-chi)/n_b   
-!		mu_n = -mu_n 
-!		end if
-!		
-!		if (mu_n > 0.) then
-!        x1=0.0
-!        x2=10.
-!        xacc=1.d-15
-!        kn=root_bisection(kn_solve,x1,x2,xacc,ierr,hist) !returns in fm**-1
-!        if (io_failure(ierr,'Error in bisection for kn wave vector')) then
-!        write(*,*) 'mu_n>0', 'mu_n=', mu_n, kn
-!        kn = kn_prev
-!        mu_n = mu_n_prev
-!        end if
-!        n_n = 2.0*kn**3/threepisquare              
-!        Y_n = n_n*(1.-chi)/n_b   
-!		end if
-!
-!		if (mu_n == 0.) then
-!		kn=0.
-!		n_n = 0.
-!		Y_n = 0.
-!		end if 
+		if (mu_n < 0.) then
+		mu_n = abs(mu_n)
+        x1=0.0
+        x2=10.
+        xacc=1.d-15
+        kn=root_bisection(kn_solve,x1,x2,xacc,ierr,hist) !returns in fm**-1
+        if (io_failure(ierr,'Error in bisection for kn wave vector')) then
+        write(*,*) 'mu_n<0', 'mu_n=', mu_n, kn
+        kn = kn_prev
+        mu_n = mu_n_prev
+        end if   
+        n_n = 2.0*kn**3/threepisquare !-2.0*kn**3/threepisquare               
+        Y_n = n_n*(1.-chi)/n_b   
+		mu_n = -mu_n 
+		end if
+		
+		if (mu_n > 0.) then
+        x1=0.0
+        x2=10.
+        xacc=1.d-15
+        kn=root_bisection(kn_solve,x1,x2,xacc,ierr,hist) !returns in fm**-1
+        if (io_failure(ierr,'Error in bisection for kn wave vector')) then
+        write(*,*) 'mu_n>0', 'mu_n=', mu_n, kn
+        kn = kn_prev
+        mu_n = mu_n_prev
+        end if
+        n_n = 2.0*kn**3/threepisquare              
+        Y_n = n_n*(1.-chi)/n_b   
+		end if
+
+		if (mu_n == 0.) then
+		kn=0.
+		n_n = 0.
+		Y_n = 0.
+		end if 
 	
 		 asum = 0. ; zsum = 0. 
 		 as = 0. ; zs = 0.
@@ -578,25 +578,25 @@
 		A_average=A_ni/ni_sum
 		
 		write(*,*) Z_ni/ni_sum, A_ni/ni_sum
+		write(*,*) Z_average, A_average
 		write(*,*) 'xmass', xmass(867)
 		
   		 !baryon and charge conservation 
          equ(1,1) = zsum - y_e
-         equ(2,1) = asum - 1.0 + y_n*(1.0-chi)
-!         equ(3,1) = electron_pressure(ke)+neutron_pressure(kn) &
- !        	&	+ lattice_pressure(Z_average,A_average,n)-p_ext
+         equ(2,1) = asum - 1.0 + y_n*mn_n/amu_n + y_e*me_n/amu_n
+         equ(3,1) = electron_pressure(ke)+neutron_pressure(kn) &
+         	!& +lattice_pressure(Z_average,A_average,n_b/A_average)-p_ext
+         & +lattice_pressure(Z_average,A_average,n_b)-p_ext
          
         write(*,*) 'n_b=', n_b 
- 		write(*,*) 'mu_e=', mu_e
- 		write(*,*) 'n_e=', n_e 
-        write(*,*) 'mu_n=', mu_n
-        write(*,*) 'n_n=', n_n 
-        write(*,*) 'Y_n=', Y_n
-	    write(*,*) 'Y_e=', Y_e
+ 		write(*,*) 'mu_e=', mu_e, 'n_e=', n_e, 'Y_e=', Y_e
+        write(*,*) 'mu_n=', mu_n, 'n_n=', n_n, 'Y_n=', Y_n*mn_n/(1.0-chi)
 	    write(*,*) 'asum=', asum, 'equN_2=', equ(2,1)
 	    write(*,*) 'zsum=', zsum, 'equN_1=', equ(1,1)
 	    write(*,*) 'Pe+Pn=', electron_pressure(ke)+neutron_pressure(kn), &
-	    	& 'P_ext =', p_ext
+	    	& 'P_lattice', lattice_pressure(Z_average,A_average,n_b/A_average), &
+	    	& 'P_ext =', p_ext, 'equ(3,1)', equ(3,1)
+	    write(*,*) 	lattice_pressure(Z_average,A_average,n_b)
      	write(*,*) '------------------------------'                   
 
 		mu_e_prev = mu_e
@@ -754,7 +754,7 @@
 		 dxdn = 0. ; dxde = 0. 
 		 
 		do i = 1, mt% Ntable
-         m_star = mn_n-mp_n !-me_n
+         m_star = mn_n-mp_n-me_n
 		 mu_i(i) = real(mt% Z(i))*(mu_n-mu_e+m_star)+real(mt% N(i))*mu_n-mt% BE(i) 
 		end do
 		
@@ -798,8 +798,9 @@
  			A(1, 2) = xnsum
  			A(2, 1) = yede
  			A(2, 2) = yedn
- 			A(1, 3) = 0.
- 			A(2, 3) = 0.
+ 			
+ 			A(1, 3) = -zsum/n_b
+ 			A(2, 3) = -asum/n_b
  			A(3, 3) = 0. 
 
 			! derivatives of pressure equation wrt mu_e and mu_n
@@ -945,7 +946,7 @@
 		real :: dWdk
         real, dimension(0:3), parameter :: cw0 = [ 1.2974, 15.0298, -15.2343, 7.4663 ]			
 		!dWdk = k*(cw0(0) + k*(2.0*cw0(1) + k*(3.0*cw0(2) + k*4.0*cw0(3))))
-		dWdk = cw0(0) + k*(2.0*cw0(1) + k*(3.0*cw0(2) + 4.0*k*cw0(3)))
+		dWdk = cw0(0) + k*(2.0*cw0(1) + k*(3.0*cw0(2) + 4.0*k*cw0(3))) !MeV*fm
 		P = 2.0*onethird/threepisquare* k**4 * dWdk
      end function neutron_pressure    
 
@@ -963,7 +964,7 @@
      	real, intent(in) :: Z_average,A_average,n
      	real :: P, p_f
      	real, parameter :: C_l = 3.40665d-3
-     	p_f = (threepisquare*n)**onethird
+     	p_f = hbarc_n*(threepisquare*n)**onethird !MeV
      	P = -(n/3.0)*C_l*(Z_average**2/A_average**(4.0/3.0))*p_f
      end function lattice_pressure 
           

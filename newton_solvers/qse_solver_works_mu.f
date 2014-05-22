@@ -573,7 +573,7 @@
          equ(mt% Ntable+1,1) = Zsum - n_e
          equ(mt% Ntable+2,1) = Asum - n_b + n_n !- log(1.0 - Y_n/(1.0-chi))     
          equ(mt% Ntable+3,1) = electron_pressure(ke) + neutron_pressure(kn) &
-         	& +lattice_pressure(Zi/ni_Zsum,Ai/ni_Asum,ni_Zsum) - P_ext
+         	& +lattice_pressure(Zi/ni_Zsum,Ai/ni_Asum,n_b) - P_ext
 
 		write(*,*) 'n_b=', n_b
  		write(*,*) 'Y_e=', Y_e, 'mu_e=', mu_e, 'n_e=', n_e, 'ke=', ke
@@ -583,7 +583,7 @@
 	    write(*,*) 'sumA=', Asum, 'n_b=', n_b, 'n_n=', n_n,  'equN_2=', equ(mt% Ntable+2,1)
 		write(*,*) 'pressure=', electron_pressure(ke) + neutron_pressure(kn), &
 			& 'P_ext=', P_ext
-		write(*,*) 'lattice_pressure=', lattice_pressure(Zi/ni_Zsum,Ai/ni_Asum,ni_Zsum)
+		write(*,*) 'lattice_pressure=', lattice_pressure(Zi/ni_Zsum,Ai/ni_Asum,n_b*ni_Asum/Ai)
 !	    write(*,*) 'pressure=', electron_pressure(ke) + neutron_pressure(kn), &
 !	    	& 'P_ext=', P_ext,'equN_3=', equ(mt% Ntable+3,1)
 	    write(*,*) 'Zi=', Zi/ni_Zsum, 'Ai=', Ai/ni_Asum
