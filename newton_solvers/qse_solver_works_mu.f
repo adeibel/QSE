@@ -453,6 +453,7 @@
         ke = ke_prev
         mu_e = mu_e_prev
         end if
+        ke = ke/hbarc_n
         n_e = ke**3/threepisquare               
         Y_e = n_e/n_b   
         mu_e = -abs(mu_e)
@@ -469,6 +470,7 @@
         ke= ke_prev
         mu_e = mu_e_prev
         end if
+        ke = ke/hbarc_n
         n_e = ke**3/threepisquare               
         Y_e = n_e/n_b   
         end if
@@ -481,30 +483,6 @@
 
 		write(*,*) 'Ye from mu_e=', Y_e
 
-! pressure constraint
-!
-!		pres_n = p_ext - electron_pressure(ke)
-!		       
-!      if (pres_n <= 0.) then
-!      write(*,*) 'negative or zero pressure'
-!      stop
-!      end if
-!       
-!      if (pres_n > 0.) then
-!      x1=0.0
-!      x2=10.0
-!      xacc=1.d-20
-!      !need neutron pressure for this next rootfind
-!      kn = root_bisection(neutron_k, x1, x2, xacc, ierr, hist) !returns in fm**-1
-!       if (ierr /= 0) then
-!       write(*,*) 'Error in bisection for kn wave vector'
-!	   stop
-!       endif
-!  	  n_n=2.0*kn**3/threepisquare 
-!  	  mu_n = neutron_chemical_potential(kn) !returns in MeV
-!  	  y_n = n_n/n_b
-!  	  end if 
-!
 		if (mu_n < 0.) then
 		mu_n = abs(mu_n)
         x1=0.0
@@ -516,6 +494,7 @@
         kn = kn_prev
         mu_n = mu_n_prev
         end if   
+        kn = kn/hbarc_n
         n_n = 2.0*kn**3/threepisquare                
         Y_n = n_n*(1.-chi)/n_b   
 		mu_n = -abs(mu_n) 
@@ -531,6 +510,7 @@
         kn = kn_prev
         mu_n = mu_n_prev
         end if
+        kn = kn/hbarc_n
         n_n = 2.0*kn**3/threepisquare              
         Y_n = n_n*(1.-chi)/n_b   
 		end if
@@ -568,9 +548,9 @@
 !		  end if
 		 enddo
 		  		  
-		  n_e = 0.44*n_b	
+	!	  n_e = 0.44*n_b	
 		  n_n = 0. 
-		  y_e = n_e/n_b
+	!	  y_e = n_e/n_b
 		  y_n = n_n/n_b	  
 		  		  
 		  		  
@@ -641,6 +621,7 @@
         ke = ke_prev
         mu_e = mu_e_prev
         end if
+        ke=ke/hbarc_n
         n_e = ke**3/threepisquare               
         Y_e = n_e/n_b   
         mu_e = -abs(mu_e)
@@ -657,6 +638,7 @@
         ke= ke_prev
         mu_e = mu_e_prev
         end if
+        ke = ke/hbarc_n
         n_e = ke**3/threepisquare               
         Y_e = n_e/n_b   
         end if
@@ -678,6 +660,7 @@
         kn = kn_prev
         mu_n = mu_n_prev
         end if   
+        kn = kn/hbarc_n
         n_n = 2.0*kn**3/threepisquare !-2.0*kn**3/threepisquare               
         Y_n = n_n*(1.-chi)/n_b   
 		mu_n = -abs(mu_n) 
@@ -693,6 +676,7 @@
         kn = kn_prev
         mu_n = mu_n_prev
         end if
+        kn = kn/hbarc_n
         n_n = 2.0*kn**3/threepisquare              
         Y_n = n_n*(1.-chi)/n_b   
 		!Y_n = n_n/n_b
