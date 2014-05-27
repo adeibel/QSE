@@ -58,7 +58,6 @@
 	  ! for crust
       type(mass_table_type), pointer :: mt
       real*8 :: mu_e, mu_n, mu_i(5549)
-      real*8 :: mu_n_out
       real*8 :: mu_e_prev, Y_e_prev
       real*8 :: Y_e, Y_n 
    	  real*8 :: n_b, n_e, n_n
@@ -73,6 +72,7 @@
       real :: mu_n_prev
       real :: ke_prev, kn_prev
       real :: pres_n
+      real :: ni(5549)
 
                     
       contains
@@ -207,8 +207,7 @@
          call free_iounit(mu_table_input_id)		 
 		 else 
  
- 		 !xold(mt% Ntable+3,1) = n_b
-		 xold(mt% Ntable+3, 1) = 1.d-8
+ 		 xold(mt% Ntable+3,1) = n_b
 		 xold(mt% Ntable+2, 1) = 1.d-8	 
 		 m_star = mn_n-mp_n-me_n
 		 m_nuc = real(mt% A(867))*amu_n !-mt%BE(i)	         
@@ -299,33 +298,18 @@
          deallocate(iwork, work)
          deallocate(equ, x, xold, dx, xscale, y)
          
-!         if (nonconv) then !stop 1
-!         have_mu_table = .true.
-!         goto 55
-!         end if
-!         
+      
          write(*,*) 'finished n_b', i
+
+		do j = 1, mt% Ntable
+		write(*,*) mt% Z(j), mt% A(j), ni(j)
+		enddo
+
          stop
          
          have_mu_table = .true. 
-!         
-!         if (ye_set .eqv. .false.) then
-!         mu_e_prev = mu_e
-!         Y_e_prev = Y_e
-!         ye_set = .true.
-!         end if
-!
-! 		write(*,*) 'mu_e=', mu_e
-! 		write(*,*) 'n_e=', n_e 
-!        write(*,*) 'mu_n=', mu_n
-!        write(*,*) 'n_n=', n_n 
-!        write(*,*) 'Y_n=', Y_n
-!        write(*,*) 'Y_e=', Y_e
-!		write(*,*) mu_i(1)
-	   ! write(*,*) equ(1,1), kn, ke, n_e, n_n
-	    !write(*,*) equ(mt% Ntable+1,1), equ(mt% Ntable+2,1)
-                  
-         !stop
+
+
          
          enddo 
          
@@ -372,7 +356,8 @@
 		 enddo
 		 mu_e = x(mt% Ntable+1,1)	 
 		 mu_n = x(mt% Ntable+2,1)
-		 mu_n_out = x(mt% Ntable+3, 1) 
+		 n_b = x(mt% Ntable+3,1) 
+		 !mu_n = x(mt% Ntable+3, 1) 
 		 !p_ext = p_ext
 		 !n_b = x((mt% Ntable)+3, 1)			 
       end subroutine set_primaries
@@ -446,9 +431,10 @@
 		 real :: As(5549), Zs(5549)
 		 real :: Zi, Ai
 		 real :: pressure
-		 real :: ni(5549)
+!		 real :: ni(5549)
                 
          ierr = 0
+         
 
  		!n_b = abs(n_b)
 		 
@@ -519,8 +505,8 @@
 !  	  y_n = n_n/n_b
 !  	  end if 
 !
-		if (mu_n_out < 0.) then
-		mu_n_out = abs(mu_n_out)
+		if (mu_n < 0.) then
+		mu_n = abs(mu_n)
         x1=0.0
         x2=10.
         xacc=1.d-15
@@ -532,16 +518,16 @@
         end if   
         n_n = 2.0*kn**3/threepisquare                
         Y_n = n_n*(1.-chi)/n_b   
-		mu_n_out = -abs(mu_n_out) 
+		mu_n = -abs(mu_n) 
 		end if
 		
-		if (mu_n_out > 0.) then
+		if (mu_n > 0.) then
         x1=0.0
         x2=10.
         xacc=1.d-15
         kn=root_bisection(kn_solve,x1,x2,xacc,ierr,hist) !returns in fm**-1
         if (io_failure(ierr,'Error in bisection for kn wave vector')) then
-        write(*,*) 'mu_n>0', 'mu_n=', mu_n_out, kn
+        write(*,*) 'mu_n>0', 'mu_n=', mu_n, kn
         kn = kn_prev
         mu_n = mu_n_prev
         end if
@@ -549,7 +535,7 @@
         Y_n = n_n*(1.-chi)/n_b   
 		end if
 	
-		if (mu_n_out == 0.) then
+		if (mu_n == 0.) then
 		kn=0.
 		n_n = 0.
 		Y_n = 0.
@@ -577,23 +563,27 @@
 		  Zi = Zi + zs(i)/n_b
 		  !detailed balance
 		  equ(i,1) = real(mt% Z(i))*(mu_n-mu_e+m_star)+real(mt% N(i))*mu_n-mu_i(i)-(mt%BE(i))
+!		  if (real(mt%A(i))*ni(i)/n_b > 1.d-5) then
+!		  write(*,*) mt% Z(i), mt% A(i), ni(i)
+!		  end if
 		 enddo
 		  		  
-!		  n_e = 0.44*n_b	
-!		  n_n = 0. 
-!		  y_e = n_e/n_b
-!		  y_n = n_n/n_b	  
+		  n_e = 0.44*n_b	
+		  n_n = 0. 
+		  y_e = n_e/n_b
+		  y_n = n_n/n_b	  
+		  		  
 		  		  
   		 !baryon and charge conservation 
-!         equ(mt% Ntable+1,1) = Zsum - n_e
- !        equ(mt% Ntable+2,1) = Asum - n_b + n_n  
- 	     equ(mt% Ntable+1, 1) = ni_Zsum - y_e
- 	     equ(mt% Ntable+2, 1) = ni_Asum - 1.0 + y_n 
-         equ(mt% Ntable+3,1) = electron_pressure(ke) + neutron_pressure(kn) &
+         equ(mt% Ntable+1,1) = Zsum - n_e
+         equ(mt% Ntable+2,1) = Asum - n_b + n_n  
+! 	     equ(mt% Ntable+1, 1) = ni_Zsum - y_e
+ !	     equ(mt% Ntable+2, 1) = ni_Asum - 1.0 + y_n 
+         equ(mt% Ntable+3, 1) = electron_pressure(ke)+neutron_pressure(kn) &
          	& +lattice_pressure(Zi/ni_Zsum,Ai/ni_Asum,n_b) - P_ext
 
 		write(*,*) 'n_b=', n_b
-		write(*,*) 'mu_n_out=', mu_n_out, 'mu_n_in=', mu_n
+		write(*,*) 'mu_n=', mu_n, 'mu_n_in=', mu_n
  		write(*,*) 'Y_e=', Y_e, 'mu_e=', mu_e, 'n_e=', n_e, 'ke=', ke
         write(*,*) 'Y_n=', Y_n, 'mu_n=', mu_n, 'n_n=', n_n, 'kn=', kn
 	    write(*,*) 'mu_i', mu_i(1), mu_i(5549)
@@ -610,7 +600,7 @@
 		 mu_n_prev = mu_n
 		 ke_prev = ke
 		 kn_prev = kn 
-                          
+                        
 	
       end subroutine eval_equ
       
@@ -869,7 +859,7 @@
      function kn_solve(x)
       real, intent(in) :: x
       real :: kn_solve    
-      kn_solve = neutron_chemical_potential(x) - mu_n_out  
+      kn_solve = neutron_chemical_potential(x) - mu_n  
      end function kn_solve
 
      function ke_solve(x)
