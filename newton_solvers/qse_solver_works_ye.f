@@ -450,7 +450,9 @@
                 
          ierr = 0
 
- 		!n_b = abs(n_b)
+ 		n_b = abs(n_b)
+		 
+		!y_e = 0.4 
 		 
 	     chi = use_default_nuclear_size
          rho = (n_b*amu_n)*(mev_to_ergs/clight2)/(1.d-39) ! cgs
@@ -604,13 +606,13 @@
 !		  y_e = n_e/n_b
 !		  y_n = n_n/n_b	  
 !		  		  
-
+!
 		 equ(mt% Ntable+1, 1) = ni_Zsum - y_e
 		 equ(mt% Ntable+2, 1) = ni_Asum + y_n - 1.0
 		 equ(mt% Ntable+3, 1) = electron_pressure(ke) + neutron_pressure(kn) &
          	& +lattice_pressure(Zi/ni_Zsum,Ai/ni_Asum,n_b) - P_ext
 
-  		 !baryon and charge conservation 
+!baryon and charge conservation 
 !         equ(mt% Ntable+1,1) = Zsum - n_e
 !         equ(mt% Ntable+2,1) = Asum - n_b + n_n !*mn_n/amu_n !- log(1.0 - Y_n/(1.0-chi))     
 !         equ(mt% Ntable+3,1) = electron_pressure(ke) + neutron_pressure(kn) &

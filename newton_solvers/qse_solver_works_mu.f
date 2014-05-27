@@ -436,7 +436,7 @@
          ierr = 0
          
 
- 		!n_b = abs(n_b)
+ 		n_b = abs(n_b)
 		 
 	     chi = use_default_nuclear_size
          rho = (n_b*amu_n)*(mev_to_ergs/clight2)/(1.d-39) ! cgs
@@ -453,7 +453,6 @@
         ke = ke_prev
         mu_e = mu_e_prev
         end if
-        ke = ke/hbarc_n
         n_e = ke**3/threepisquare               
         Y_e = n_e/n_b   
         mu_e = -abs(mu_e)
@@ -470,7 +469,6 @@
         ke= ke_prev
         mu_e = mu_e_prev
         end if
-        ke = ke/hbarc_n
         n_e = ke**3/threepisquare               
         Y_e = n_e/n_b   
         end if
@@ -483,6 +481,12 @@
 
 		write(*,*) 'Ye from mu_e=', Y_e
 
+
+!		Y_e = 0.1
+!		n_e = Y_e*n_b
+!		ke = threepisquare*n_e**onethird
+!		mu_e = electron_chemical_potential(ke)
+
 		if (mu_n < 0.) then
 		mu_n = abs(mu_n)
         x1=0.0
@@ -494,7 +498,6 @@
         kn = kn_prev
         mu_n = mu_n_prev
         end if   
-        kn = kn/hbarc_n
         n_n = 2.0*kn**3/threepisquare                
         Y_n = n_n*(1.-chi)/n_b   
 		mu_n = -abs(mu_n) 
@@ -510,7 +513,6 @@
         kn = kn_prev
         mu_n = mu_n_prev
         end if
-        kn = kn/hbarc_n
         n_n = 2.0*kn**3/threepisquare              
         Y_n = n_n*(1.-chi)/n_b   
 		end if
@@ -543,15 +545,13 @@
 		  Zi = Zi + zs(i)/n_b
 		  !detailed balance
 		  equ(i,1) = real(mt% Z(i))*(mu_n-mu_e+m_star)+real(mt% N(i))*mu_n-mu_i(i)-(mt%BE(i))
-!		  if (real(mt%A(i))*ni(i)/n_b > 1.d-5) then
-!		  write(*,*) mt% Z(i), mt% A(i), ni(i)
-!		  end if
+
 		 enddo
 		  		  
-	!	  n_e = 0.44*n_b	
-		  n_n = 0. 
-	!	  y_e = n_e/n_b
-		  y_n = n_n/n_b	  
+!		  n_e = 0.4*n_b	
+!		  n_n = 0. 
+!		  y_e = n_e/n_b
+!		  y_n = n_n/n_b	  
 		  		  
 		  		  
   		 !baryon and charge conservation 
@@ -562,8 +562,9 @@
          equ(mt% Ntable+3, 1) = electron_pressure(ke)+neutron_pressure(kn) &
          	& +lattice_pressure(Zi/ni_Zsum,Ai/ni_Asum,n_b) - P_ext
 
+		write(*,*) 'mu_e check = ', electron_chemical_potential(ke)-mu_e
+		write(*,*) 'mu_n check = ', neutron_chemical_potential(kn)-mu_n
 		write(*,*) 'n_b=', n_b
-		write(*,*) 'mu_n=', mu_n, 'mu_n_in=', mu_n
  		write(*,*) 'Y_e=', Y_e, 'mu_e=', mu_e, 'n_e=', n_e, 'ke=', ke
         write(*,*) 'Y_n=', Y_n, 'mu_n=', mu_n, 'n_n=', n_n, 'kn=', kn
 	    write(*,*) 'mu_i', mu_i(1), mu_i(5549)
