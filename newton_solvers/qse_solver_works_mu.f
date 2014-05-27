@@ -57,7 +57,7 @@
 
 	  ! for crust
       type(mass_table_type), pointer :: mt
-      real*8 :: mu_e, mu_n, mu_i(5549), n_i(5549)
+      real*8 :: mu_e, mu_n, mu_i(5549)
       real*8 :: mu_e_prev, Y_e_prev
       real*8 :: Y_e, Y_n 
    	  real*8 :: n_b, n_e, n_n
@@ -209,7 +209,7 @@
  		 xold(mt% Ntable+3,1) = n_b
 		 xold(mt% Ntable+2, 1) = 0. 		 
 		 m_star = mn_n-mp_n-me_n
-		 m_nuc = real(mt% A(867))*amu_n  		         
+		 m_nuc = real(mt% A(867))*amu_n !-mt%BE(i)	         
          mterm = g*(m_nuc*kT/(twopi*hbarc_n**2))**(1.5)
          fac1 = real(mt% A(867))/n_b
          fac2 = mterm
@@ -237,11 +237,13 @@
                   
          first_step = .true.
          
-         tol_correction_norm = 1d-9 ! upper limit on magnitude of average scaled correction
+         !tol_correction_norm=1d-9
+         tol_correction_norm = 1d-14 ! upper limit on magnitude of average scaled correction
          tol_max_correction = 1d99
          tol_residual_norm = 1d99
          
-         epsder = 1d-6 ! relative variation to compute derivatives
+         !epsder = 1d-6
+         epsder = 1d-8 ! relative variation to compute derivatives
          
          doing_jacobian = .false.
          
@@ -271,18 +273,18 @@
 
  !        if (nonconv) then
  !           write(*, *) 'failed to converge'
-			mu_table_output_id = alloc_iounit(ierr)
-	  		if (io_failure(ierr, 'allocating unit for mu table file for output')) stop
-	        open(unit=mu_table_output_id, file=mu_table_name, iostat=ios, status="unknown")
-	        if (io_failure(ios,'opening mu table file for output')) stop
-	        do j = 1,mt%Ntable
-	        write(mu_table_output_id,*) mu_i(j)
-	        enddo 
-	        write(mu_table_output_id,*) Y_e
-	        write(mu_table_output_id,*) Y_n
-	        close(mu_table_output_id) 
-	        call free_iounit(mu_table_output_id) 
-	        have_mu_table = .true. 
+!			mu_table_output_id = alloc_iounit(ierr)
+!	  		if (io_failure(ierr, 'allocating unit for mu table file for output')) stop
+!	        open(unit=mu_table_output_id, file=mu_table_name, iostat=ios, status="unknown")
+!	        if (io_failure(ios,'opening mu table file for output')) stop
+!	        do j = 1,mt%Ntable
+!	        write(mu_table_output_id,*) mu_i(j)
+!	        enddo 
+!	        write(mu_table_output_id,*) Y_e
+!	        write(mu_table_output_id,*) Y_n
+!	        close(mu_table_output_id) 
+!	        call free_iounit(mu_table_output_id) 
+!	        have_mu_table = .true. 
 !	        goto 55
  !           stop 2
  !        end if
@@ -295,27 +297,29 @@
          deallocate(iwork, work)
          deallocate(equ, x, xold, dx, xscale, y)
          
-         if (nonconv) then !stop 1
-         have_mu_table = .true.
-         goto 55
-         end if
-         
+!         if (nonconv) then !stop 1
+!         have_mu_table = .true.
+!         goto 55
+!         end if
+!         
          write(*,*) 'finished n_b', i
-         have_mu_table = .true. 
+         stop
          
-         if (ye_set .eqv. .false.) then
-         mu_e_prev = mu_e
-         Y_e_prev = Y_e
-         ye_set = .true.
-         end if
-
- 		write(*,*) 'mu_e=', mu_e
- 		write(*,*) 'n_e=', n_e 
-        write(*,*) 'mu_n=', mu_n
-        write(*,*) 'n_n=', n_n 
-        write(*,*) 'Y_n=', Y_n
-        write(*,*) 'Y_e=', Y_e
-		write(*,*) mu_i(1)
+         have_mu_table = .true. 
+!         
+!         if (ye_set .eqv. .false.) then
+!         mu_e_prev = mu_e
+!         Y_e_prev = Y_e
+!         ye_set = .true.
+!         end if
+!
+! 		write(*,*) 'mu_e=', mu_e
+! 		write(*,*) 'n_e=', n_e 
+!        write(*,*) 'mu_n=', mu_n
+!        write(*,*) 'n_n=', n_n 
+!        write(*,*) 'Y_n=', Y_n
+!        write(*,*) 'Y_e=', Y_e
+!		write(*,*) mu_i(1)
 	   ! write(*,*) equ(1,1), kn, ke, n_e, n_n
 	    !write(*,*) equ(mt% Ntable+1,1), equ(mt% Ntable+2,1)
                   
@@ -434,16 +438,16 @@
 		 real :: logZ_exponent
 		 real :: logA_exponent 
 		 real :: ni_Zsum, ni_Asum
-		 real :: n_i(5549)
 		 real :: der_Zsum, der_Asum
 		 real :: Asum, Zsum
 		 real :: As(5549), Zs(5549)
 		 real :: Zi, Ai
 		 real :: pressure
+		 real :: ni(5549)
                 
          ierr = 0
 
- 		 n_b = abs(n_b)
+ 		n_b = abs(n_b)
 		 
 	     chi = use_default_nuclear_size
          rho = (n_b*amu_n)*(mev_to_ergs/clight2)/(1.d-39) ! cgs
@@ -485,6 +489,8 @@
         n_e = 0. 
         Y_e = 0.
         end if
+
+		write(*,*) 'Ye from mu_e=', Y_e
 
 ! pressure constraint
 !
@@ -553,8 +559,9 @@
 		 do i = 1, mt% Ntable
           !number density of isotopes
 		  m_star = mn_n-mp_n-me_n !does not contain m_e because mu_e has rest mass in definition 
-		  m_nuc = real(mt% Z(i))*mp_n + real(mt% N(i))*mn_n         
+		  m_nuc = real(mt%A(i))*amu_n !real(mt% Z(i))*mp_n+real(mt% N(i))*mn_n !-mt%BE(i)    
      	  m_term = g*(twopi*hbarc_n**2/(m_nuc*kT))**(-3.0/2.0)
+     	  ni(i) = m_term*exp((mu_i(i)+mt%BE(i))/kT)
 		  !for baryon conservation
 		  as(i) = real(mt% A(i))*m_term*exp((mu_i(i)+mt%BE(i))/kT)	 
 		  Asum = Asum + as(i) 
@@ -569,9 +576,14 @@
 		  equ(i,1) = real(mt% Z(i))*(mu_n-mu_e+m_star)+real(mt% N(i))*mu_n-mu_i(i)-(mt%BE(i))
 		 enddo
 		  		  
+		  n_e = 0.44*n_b	
+		  n_n = 0. 
+		  y_e = n_e/n_b
+		  y_n = n_n/n_b	  
+		  		  
   		 !baryon and charge conservation 
          equ(mt% Ntable+1,1) = Zsum - n_e
-         equ(mt% Ntable+2,1) = Asum - n_b + n_n*mn_n/amu_n !- log(1.0 - Y_n/(1.0-chi))     
+         equ(mt% Ntable+2,1) = Asum - n_b + n_n !*mn_n/amu_n !- log(1.0 - Y_n/(1.0-chi))     
          equ(mt% Ntable+3,1) = electron_pressure(ke) + neutron_pressure(kn) &
          	& +lattice_pressure(Zi/ni_Zsum,Ai/ni_Asum,n_b) - P_ext
 
@@ -582,10 +594,9 @@
 	    write(*,*) 'sumZ=', Zsum, 'n_e=', n_e, 'equN_1=', equ(mt% Ntable+1,1)
 	    write(*,*) 'sumA=', Asum, 'n_b=', n_b, 'n_n=', n_n,  'equN_2=', equ(mt% Ntable+2,1)
 		write(*,*) 'pressure=', electron_pressure(ke) + neutron_pressure(kn), &
-			& 'P_ext=', P_ext
+			& 'P_ext=', P_ext, 'equN_3=', equ(mt% Ntable+3,1)
 		write(*,*) 'lattice_pressure=', lattice_pressure(Zi/ni_Zsum,Ai/ni_Asum,n_b*ni_Asum/Ai)
-!	    write(*,*) 'pressure=', electron_pressure(ke) + neutron_pressure(kn), &
-!	    	& 'P_ext=', P_ext,'equN_3=', equ(mt% Ntable+3,1)
+		write(*,*) 'lattice_pressure(n_b)=', lattice_pressure(Zi/ni_Zsum,Ai/ni_Asum,n_b)
 	    write(*,*) 'Zi=', Zi/ni_Zsum, 'Ai=', Ai/ni_Asum
      	write(*,*) '------------------------------'                   
        

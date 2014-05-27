@@ -212,8 +212,8 @@
 	  !form initial guess for chemical potentials 
 	  xold(2,1) = 0. 
 
-	  m_star = mn_n-mp_n-me_n
-	  m_nuc = real(mt% A(867))*amu_n  		         
+	  m_star = mn_n-mp_n !-me_n
+	  m_nuc = real(mt% A(867))*amu_n-mt%BE(867)  		         
       m_term = g*(m_nuc*kT/(twopi*hbarc_n**2))**(1.5)
       fac1 = real(mt% A(867))/n_b
       fac2 = m_term
@@ -558,13 +558,13 @@
 		 Z_ni = 0. ; A_ni = 0. ; ni_sum = 0.
 
 		do i = 1, mt% Ntable
-         m_star = mn_n-mp_n-me_n
+         m_star = mn_n-mp_n !-me_n
 		 mu_i(i) = real(mt% Z(i))*(mu_n-mu_e+m_star)+real(mt% N(i))*mu_n-mt% BE(i) 
 		end do
 		
 		do i = 1,mt% Ntable	 
          !number density of isotopes
-		 m_nuc = real(mt% A(i))*amu_n       
+		 m_nuc = real(mt% A(i))*amu_n-mt%BE(i)       
      	 m_term = g*(m_nuc*kT/(twopi*hbarc_n**2))**(1.5)
 		 xmass(i) = real(mt% A(i))*m_term*exp((mu_i(i)+mt%BE(i))/kT)/n_b
 		 asum = asum + xmass(i)
@@ -583,7 +583,7 @@
 		
   		 !baryon and charge conservation 
          equ(1,1) = zsum - y_e
-         equ(2,1) = asum - 1.0 + y_n*mn_n/amu_n + y_e*me_n/amu_n
+         equ(2,1) = asum - 1.0 + y_n !*mn_n/amu_n + y_e*me_n/amu_n
          equ(3,1) = electron_pressure(ke)+neutron_pressure(kn) &
          	!& +lattice_pressure(Z_average,A_average,n_b/A_average)-p_ext
          & +lattice_pressure(Z_average,A_average,n_b)-p_ext
