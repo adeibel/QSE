@@ -207,8 +207,8 @@
          call free_iounit(mu_table_input_id)		 
 		 else 
  
- 		 xold(mt% Ntable+3,1) = n_b
-		 xold(mt% Ntable+2, 1) = 1.d-8	 
+! 		 xold(mt% Ntable+3,1) = n_b
+!		 xold(mt% Ntable+2, 1) = 1.d-8	 
 		 m_star = mn_n-mp_n-me_n
 		 m_nuc = real(mt% A(867))*amu_n !-mt%BE(i)	         
          mterm = g*(m_nuc*kT/(twopi*hbarc_n**2))**(1.5)
@@ -218,8 +218,16 @@
 !         	& + mt%BE(867)+real(mt%A(867))*xold(mt% Ntable+2,1))/real(mt% Z(867))
 !         xold(mt% Ntable+1,1) = (log(fac1*fac2)*kT+real(mt% Z(867))*m_star&
 !        	& +real(mt%A(867))*xold(mt% Ntable+3,1))/real(mt% Z(867))
-         xold(mt% Ntable+1,1) = (log(fac1*fac2)*kT+real(mt% Z(867))*m_star&
-        	& )/real(mt% Z(867))        	
+
+!         xold(mt% Ntable+1,1) = (log(fac1*fac2)*kT+real(mt% Z(867))*m_star&
+ !       	& )/real(mt% Z(867))        	
+	 
+		 xold(mt% Ntable+3,1) = n_b
+!		 xold(mt% Ntable+2, 1) = 1.d-8	 	 
+		 xold(mt% Ntable+1, 1) = 10.
+		 xold(mt% Ntable+2, 1) = (log(fac1*fac2)*kT+real(mt% Z(867))*m_star&
+         	& + mt%BE(867)-real(mt%Z(867))*xold(mt% Ntable+1,1))/real(mt% A(867))
+
 	 
 		 do j=1,mt% Ntable
 		 xold(j,1) = -mt% BE(j) !- 1.0
@@ -555,12 +563,12 @@
 		  		  
 		  		  
   		 !baryon and charge conservation 
-         equ(mt% Ntable+1,1) = Zsum - n_e
-         equ(mt% Ntable+2,1) = Asum - n_b + n_n  
-! 	     equ(mt% Ntable+1, 1) = ni_Zsum - y_e
- !	     equ(mt% Ntable+2, 1) = ni_Asum - 1.0 + y_n 
+ !        equ(mt% Ntable+1,1) = Zsum - n_e
+!         equ(mt% Ntable+2,1) = Asum - n_b + n_n  
+ 	     equ(mt% Ntable+1, 1) = ni_Zsum - y_e
+ 	     equ(mt% Ntable+2, 1) = ni_Asum - 1.0 + y_n 
          equ(mt% Ntable+3, 1) = electron_pressure(ke)+neutron_pressure(kn) &
-         	& +lattice_pressure(Zi/ni_Zsum,Ai/ni_Asum,n_b) - P_ext
+         	& - P_ext !& +lattice_pressure(Zi/ni_Zsum,Ai/ni_Asum,n_b) - P_ext
 
 		write(*,*) 'mu_e check = ', electron_chemical_potential(ke)-mu_e
 		write(*,*) 'mu_n check = ', neutron_chemical_potential(kn)-mu_n
