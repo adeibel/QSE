@@ -9,6 +9,7 @@ program follow_chain
 	use rootfind	
 	
 	character(len=*), parameter :: default_infile = 'moe_chain.inlist'
+	character(len=*), parameter :: default_dist_file = 'nuclei_distribution.data'
 	character(len=*), parameter :: default_mass_table = 'moe95_converted.data'
 	character(len=*), parameter :: default_stable_table = 'stable_nuclei_moe95.data'
 	character(len=*), parameter :: default_pressure_table = 'pressure_moe95.data'
@@ -25,6 +26,7 @@ program follow_chain
 	real :: mu_n_range
 	integer :: i, j, i_enter
 	integer :: Z, A, Zr, Ar, inlist_id
+	integer :: dist_id
 	integer :: ierr, id, ios, iter, iZ, iZb, iZe, iEq(1)
 	integer :: Z_int(1), A_int(1)
 	integer :: Z_fin(1), A_fin(1)
@@ -36,7 +38,7 @@ program follow_chain
 	real, parameter :: del_m = mn_n-mp_n-me_n
 	real, parameter :: mun_max = 6.5
 	character(len=256) :: arg, mass_table_used, pfile, mass_table_name
-	character(len=256) :: stable_table_used, pressure_table_used
+	character(len=256) :: stable_table_used, pressure_table_used, dist_file
 	character(len=6) :: rxn
 	real,dimension(:),pointer :: hist
 	type(mass_table_type), pointer :: mt
@@ -48,6 +50,7 @@ program follow_chain
 	logical, save :: mass_tables_are_loaded = .FALSE.
 	logical, save :: pressure_set = .FALSE.
 	logical, save :: pressure_table_loaded = .FALSE.
+	logical, save :: dist_file_loaded = .FALSE.
 	logical :: outer_crust
 	
 	namelist /io/ pressure_table_used
@@ -56,6 +59,7 @@ program follow_chain
 				
    ! set defaults
    pfile = default_infile
+   dist_file = default_dist_file
    mass_table_used = default_mass_table
    stable_table_used = default_stable_table
    pressure_table_used = default_pressure_table
@@ -64,15 +68,24 @@ program follow_chain
    mu_e_start = 0.0 !MeV
    mu_e_stop = 30.0 !MeV
    mu_n = 0.0 !MeV
+   
+   !read in array of initial nuclei distribution 
+   ierr = 0
+   dist_id = alloc_iounit(ierr)
+   if (io_failure(ierr,'allocating unit for distribution file')) stop
+   open(unit=dist_id, file=dist_file, iostat=ios, status="old", action="read")
+   ! loop over file 
+   read(dist_id,*) Z_int(i), A_int(i), abun(i)
+   !
+   dist_file_loaded = .TRUE.
+   close(dist_id)
+   call free_iounit(dist_id)
 	
    ! read in the inputs
-   ierr = 0
    inlist_id = alloc_iounit(ierr)
    if (io_failure(ierr,'allocating unit for namelist')) stop
-   
    open(unit=inlist_id, file=pfile, iostat=ios, status="old", action="read")
    if (io_failure(ios,'opening inlist file'//trim(pfile))) stop
-   
    read(inlist_id,nml=io,iostat=ios)
    if (io_failure(ios,'unable to read namelist "io"')) stop
    read(inlist_id,nml=range,iostat=ios)
@@ -96,18 +109,6 @@ program follow_chain
       write(error_unit,'(a,"[",2i4,"]")') 'Z must be in table range ',mt% Zmin,mt% Zmax
       stop
    end if
-   
-   ! load stable nuclei table
-!   if (stable_table_loaded .eqv. .FALSE.) then
-!   !call load_stable_table('../../../data',trim(stable_table_used),ierr)
-!   call load_stable_table('../../../data',trim(stable_table_used),ierr)
-!   stable_table_loaded = .TRUE.
-!   if (ierr /= 0) then
-!   		write (error_unit,'(a)') 'stable table loading error'
-!   		stop
-!   	end if
-!   	end if
-!   	st => winvn_stable_table
 
 	!load pressure table
 	if (pressure_table_loaded .eqv. .false.) then
@@ -130,8 +131,10 @@ program follow_chain
    !main loop over pressure (pushes nucleus to higher pressures)   
    
     ! make table of nuclei the first initial nuclei array 
-   	Z_int =  Z !mt% Z
-	A_int =  A !mt% A
+    do i = 1, size(Z_int)
+   	Z_int(i) =  Z !mt% Z
+	A_int(i) =  A !mt% A
+    end do
    
    do i = 1, pt% Ntable
 	pressure = pt% P(i)	! MeV fm**-3
