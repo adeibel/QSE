@@ -7,6 +7,8 @@ module dist_table
 		real, dimension(:), pointer :: P    ! dist coordinate
 		real, dimension(:), pointer :: mu_e ! electron chemical potential
 		real, dimension(:), pointer :: mu_n ! neutron chemical potential
+		integer, dimension(:), pointer :: Z, A
+		real, dimension(:), pointer :: abun
 		! bookmarks
 		integer :: Nelements	! = Zmax-Zmin+1
 		!index of first nuclide of a given element
@@ -14,8 +16,7 @@ module dist_table
 		!real, dimension(:), pointer :: Pstart		
 		! minimum, maximum neutron no. for each element
 		!integer, dimension(:), pointer :: mu_n_min, mu_n_max	! (Nelements)
-		real, dimension(:), pointer :: mu_n_min, mu_n_max
-		
+		real, dimension(:), pointer :: mu_n_min, mu_n_max	
 	end type dist_table_type
 	logical, save :: dist_table_is_loaded = .FALSE.
 
@@ -33,6 +34,9 @@ module dist_table
 		deallocate(dt% mu_n_max)
 		deallocate(dt% mu_e)
 		deallocate(dt% mu_n)
+		deallocate(dt% Z)
+		deallocate(dt% A)
+		deallocate(dt% abun)
 		dt% Ntable = 0
 		dt% Pmin = -1
 		dt% Pmax = -1
@@ -98,7 +102,8 @@ module dist_table
 	
 		dt% Ntable = Ntab
 		! allocate the tables
-		allocate(dt% P(Ntab), dt% mu_e(Ntab), dt% mu_n(Ntab))
+		allocate(dt% P(Ntab), dt% mu_e(Ntab), dt% mu_n(Ntab), &
+			&	 dt% Z(Nele), dt% A(Nele), dt% abun(Nele)))
 
 		! now read in the table, skipping first line
 		read(iounit,*,iostat=ierr)
