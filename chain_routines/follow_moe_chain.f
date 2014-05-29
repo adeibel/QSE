@@ -68,16 +68,17 @@ program follow_chain
    mu_n = 0.0 !MeV
    
    !read in array of initial nuclei distribution 
-   ierr = 0
-   dist_id = alloc_iounit(ierr)
-   if (io_failure(ierr,'allocating unit for distribution file')) stop
-   open(unit=dist_id, file=dist_file, iostat=ios, status="old", action="read")
-   ! loop over file 
-   read(dist_id,*) Z_int(i), A_int(i), abun_init(i)
-   !
-   dist_file_loaded = .TRUE.
-   close(dist_id)
-   call free_iounit(dist_id)
+!   ierr = 0
+!   dist_id = alloc_iounit(ierr)
+!   if (io_failure(ierr,'allocating unit for distribution file')) stop
+!   open(unit=dist_id, file=dist_file, iostat=ios, status="old", action="read")
+!   ! loop over file 
+!   do i=1,1
+!   read(dist_id,*) Z_int(i), A_int(i), abun_init(i)
+!   end do
+!   dist_file_loaded = .TRUE.
+!   close(dist_id)
+!   call free_iounit(dist_id)
 	
    ! read in the inputs
    inlist_id = alloc_iounit(ierr)
@@ -170,7 +171,7 @@ program follow_chain
       ! electron capture
       Ar = A; Zr = Z-1
       Nr = Ar-Zr
-      index=mass_table_index(Zr,Ar-Zr,ierr)
+      index= Zr - mt%Zmin + 1
       if (Nr < mt% Nmin(index) .or. Nr > mt% Nmax(index)) exit
       if (Zr < mt% Zmin .or. Zr > mt% Zmax) exit
       call get_nucleus_properties(Zr,Ar,id,Br,Snr,S2nr,Spr,S2pr, &
@@ -191,7 +192,7 @@ program follow_chain
       ! electron emission
       Ar = A; Zr = Z+1
       Nr = Ar-Zr
-      index=mass_table_index(Zr,Ar-Zr,ierr)
+      index= Zr - mt%Zmin + 1
       if (Nr < mt% Nmin(index) .or. Nr > mt% Nmax(index)) exit
       if (Zr < mt% Zmin .or. Zr > mt% Zmax) exit
       call get_nucleus_properties(Zr,Ar,id,Br,Snr,S2nr,Spr,S2pr,ecthreshr,bthreshr,VNr,ierr)
@@ -211,7 +212,7 @@ program follow_chain
       ! electron capture followed by neutron emission 
       Ar = A-1; Zr = Z-1
       Nr = Ar-Zr
-      index=mass_table_index(Zr,Ar-Zr,ierr)
+      index= Zr - mt%Zmin + 1
       if (Nr < mt% Nmin(index) .or. Nr > mt% Nmax(index)) exit
       if (Zr < mt% Zmin .or. Zr > mt% Zmax) exit      
       call get_nucleus_properties(Zr,Ar,id,Br,Snr,S2nr,Spr,S2pr,ecthreshr,bthreshr,VNr,ierr)
@@ -232,7 +233,7 @@ program follow_chain
       ! electron capture followed by dineutron emission
       Ar = A-2; Zr = Z-1
       Nr = Ar-Zr
-      index=mass_table_index(Zr,Ar-Zr,ierr)
+      index= Zr - mt%Zmin + 1
       if (Nr < mt% Nmin(index) .or. Nr > mt% Nmax(index)) exit
       if (Zr < mt% Zmin .or. Zr > mt% Zmax) exit      
       call get_nucleus_properties(Zr,Ar,id,Br,Snr,S2nr,Spr,S2pr,ecthreshr,bthreshr,VNr,ierr)
@@ -256,7 +257,7 @@ program follow_chain
       ! neutron capture
       Ar = A+1; Zr = Z
       Nr = Ar-Zr
-      index=mass_table_index(Zr,Ar-Zr,ierr)
+      index= Zr - mt%Zmin + 1
       if (Nr < mt% Nmin(index) .or. Nr > mt% Nmax(index)) exit
       if (Zr < mt% Zmin .or. Zr > mt% Zmax) exit      
       call get_nucleus_properties(Zr,Ar,id,Br,Snr,S2nr,Spr,S2pr,ecthreshr,bthreshr,VNr,ierr)
@@ -277,7 +278,7 @@ program follow_chain
       ! neutron emission
       Ar = A-1; Zr = Z
       Nr = Ar-Zr
-      index=mass_table_index(Zr,Ar-Zr,ierr)
+      index= Zr - mt%Zmin + 1
       if (Nr < mt% Nmin(index) .or. Nr > mt% Nmax(index)) exit
       if (Zr < mt% Zmin .or. Zr > mt% Zmax) exit      
       call get_nucleus_properties(Zr,Ar,id,Br,Snr,S2nr,Spr,S2pr,ecthreshr,bthreshr,VNr,ierr)
@@ -298,7 +299,7 @@ program follow_chain
       ! dineutron capture
       Ar = A+2; Zr = Z
       Nr = Ar-Zr
-      index=mass_table_index(Zr,Ar-Zr,ierr)
+      index= Zr - mt%Zmin + 1
       if (Nr < mt% Nmin(index) .or. Nr > mt% Nmax(index)) exit
       if (Zr < mt% Zmin .or. Zr > mt% Zmax) exit      
       call get_nucleus_properties(Zr,Ar,id,Br,Snr,S2nr,Spr,S2pr,ecthreshr,bthreshr,VNr,ierr)
@@ -319,7 +320,7 @@ program follow_chain
       ! dineutron emission
       Ar = A-2; Zr = Z
       Nr = Ar-Zr
-      index=mass_table_index(Zr,Ar-Zr,ierr)
+      index= Zr - mt%Zmin + 1
       if (Nr < mt% Nmin(index) .or. Nr > mt% Nmax(index)) exit
       if (Zr < mt% Zmin .or. Zr > mt% Zmax) exit      
       call get_nucleus_properties(Zr,Ar,id,Br,Snr,S2nr,Spr,S2pr,ecthreshr,bthreshr,VNr,ierr)
@@ -340,7 +341,7 @@ program follow_chain
       ! neutron capture followed by electron emission
       Ar = A+1; Zr = Z+1
       Nr = Ar-Zr
-      index=mass_table_index(Zr,Ar-Zr,ierr)
+      index= Zr - mt%Zmin + 1
       if (Nr < mt% Nmin(index) .or. Nr > mt% Nmax(index)) exit
       if (Zr < mt% Zmin .or. Zr > mt% Zmax) exit      
       call get_nucleus_properties(Zr,Ar,id,Br,Snr,S2nr,Spr,S2pr,ecthreshr,bthreshr,VNr,ierr)
@@ -361,7 +362,7 @@ program follow_chain
       !dineutron capture followed by electron emission
       Ar = A+2; Zr = Z+1
       Nr = Ar-Zr
-      index=mass_table_index(Zr,Ar-Zr,ierr)
+      index= Zr - mt%Zmin + 1
       if (Nr < mt% Nmin(index) .or. Nr > mt% Nmax(index)) exit
       if (Zr < mt% Zmin .or. Zr > mt% Zmax) exit      
       call get_nucleus_properties(Zr,Ar,id,Br,Snr,S2nr,Spr,S2pr,ecthreshr,bthreshr,Vnr,ierr)
