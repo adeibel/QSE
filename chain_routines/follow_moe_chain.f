@@ -5,6 +5,7 @@ program follow_chain
 	use mb77, only : neutron_chemical_potential, electron_pressure, neutron_pressure
 	use mass_table
 	use pressure_table
+	use dist_table
 	use alert_lib
 	use rootfind	
 	
@@ -41,6 +42,7 @@ program follow_chain
 	real,dimension(:),pointer :: hist
 	type(mass_table_type), pointer :: mt
 	type(pressure_table_type), pointer :: pt
+	type(dist_table_type), pointer :: dt
 	logical, dimension(max_iterations) :: neutron_capture, dineutron_capture
 	logical, dimension(max_iterations) :: neutron_emission, dineutron_emission
 	logical, dimension(max_iterations) :: en_rxn, enn_rxn, ne_rxn, nne_rxn

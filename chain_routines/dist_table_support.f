@@ -50,7 +50,7 @@ module dist_table
 		integer, intent(out) :: ierr
 		character(len=*), parameter :: default_dir = 'crust_eos'
 		character(len=256) :: filename
-		type(dist_table_type), pointer :: pt
+		type(dist_table_type), pointer :: dt
 		integer :: i, Ntab, Nele, iounit
 		integer :: currentP, id_el
 
@@ -98,12 +98,12 @@ module dist_table
 		end if
 		
 		ierr = 0
-		pt => winvn_dist_table
+		dt => winvn_dist_table
 	
 		dt% Ntable = Ntab
 		! allocate the tables
 		allocate(dt% P(Ntab), dt% mu_e(Ntab), dt% mu_n(Ntab), &
-			&	 dt% Z(Nele), dt% A(Nele), dt% abun(Nele)))
+			&	 dt% Z(Nele), dt% A(Nele), dt% abun(Nele))
 
 		! now read in the table, skipping first line
 		read(iounit,*,iostat=ierr)
@@ -157,9 +157,9 @@ module dist_table
 		integer, intent(out) :: ierr
 		integer :: id
 		integer :: Pindex
-		type(dist_table_type), pointer :: pt
+		type(dist_table_type), pointer :: dt
 	
-		pt => winvn_dist_table
+		dt => winvn_dist_table
 		ierr = 0
 		id = -1
 		if (P < dt% Pmin .or.  P > dt% Pmax) then
