@@ -171,6 +171,8 @@ program follow_chain
       ! check for weak reactions                 
       ! electron capture
       Ar = A; Zr = Z-1
+      if (Ar-Zr < mt% Nmin .or. Ar-Zr > mt% Nmax) exit
+      if (Zr < mt% Zmin .or. Zr > mt% Zmax) exit
       call get_nucleus_properties(Zr,Ar,id,Br,Snr,S2nr,Spr,S2pr, &
       		&	ecthreshr,bthreshr,VNr,ierr)
       if (ierr /= 0) then
@@ -188,6 +190,8 @@ program follow_chain
       
       ! electron emission
       Ar = A; Zr = Z+1
+      if (Ar-Zr < mt% Nmin .or. Ar-Zr > mt% Nmax) exit
+      if (Zr < mt% Zmin .or. Zr > mt% Zmax) exit
       call get_nucleus_properties(Zr,Ar,id,Br,Snr,S2nr,Spr,S2pr,ecthreshr,bthreshr,VNr,ierr)
       if (ierr /= 0) then
          write(error_unit,'(a)') 'unable to find nucleus'
@@ -204,6 +208,8 @@ program follow_chain
       
       ! electron capture followed by neutron emission 
       Ar = A-1; Zr = Z-1
+      if (Ar-Zr < mt% Nmin .or. Ar-Zr > mt% Nmax) exit
+      if (Zr < mt% Zmin .or. Zr > mt% Zmax) exit      
       call get_nucleus_properties(Zr,Ar,id,Br,Snr,S2nr,Spr,S2pr,ecthreshr,bthreshr,VNr,ierr)
       if (ierr /= 0) then
          write(error_unit,'(a)') 'unable to find nucleus'
@@ -221,6 +227,8 @@ program follow_chain
             
       ! electron capture followed by dineutron emission
       Ar = A-2; Zr = Z-1
+      if (Ar-Zr < mt% Nmin .or. Ar-Zr > mt% Nmax) exit
+      if (Zr < mt% Zmin .or. Zr > mt% Zmax) exit      
       call get_nucleus_properties(Zr,Ar,id,Br,Snr,S2nr,Spr,S2pr,ecthreshr,bthreshr,VNr,ierr)
       if (ierr /= 0) then
          write(error_unit,'(a)') 'unable to find nucleus'
@@ -241,6 +249,8 @@ program follow_chain
       ! check for strong reactions     
       ! neutron capture
       Ar = A+1; Zr = Z
+      if (Ar-Zr < mt% Nmin .or. Ar-Zr > mt% Nmax) exit
+      if (Zr < mt% Zmin .or. Zr > mt% Zmax) exit      
       call get_nucleus_properties(Zr,Ar,id,Br,Snr,S2nr,Spr,S2pr,ecthreshr,bthreshr,VNr,ierr)
       if (ierr /= 0) then
          write(error_unit,'(a)') 'unable to find nucleus'
@@ -258,6 +268,8 @@ program follow_chain
       
       ! neutron emission
       Ar = A-1; Zr = Z
+      if (Ar-Zr < mt% Nmin .or. Ar-Zr > mt% Nmax) exit
+      if (Zr < mt% Zmin .or. Zr > mt% Zmax) exit      
       call get_nucleus_properties(Zr,Ar,id,Br,Snr,S2nr,Spr,S2pr,ecthreshr,bthreshr,VNr,ierr)
       if (ierr /= 0) then
          write(error_unit,'(a)') 'unable to find nucleus'
@@ -275,6 +287,8 @@ program follow_chain
       
       ! dineutron capture
       Ar = A+2; Zr = Z
+      if (Ar-Zr < mt% Nmin .or. Ar-Zr > mt% Nmax) exit
+      if (Zr < mt% Zmin .or. Zr > mt% Zmax) exit      
       call get_nucleus_properties(Zr,Ar,id,Br,Snr,S2nr,Spr,S2pr,ecthreshr,bthreshr,VNr,ierr)
       if (ierr /= 0) then
          write(error_unit,'(a)') 'unable to find nucleus'
@@ -292,6 +306,8 @@ program follow_chain
       
       ! dineutron emission
       Ar = A-2; Zr = Z
+      if (Ar-Zr < mt% Nmin .or. Ar-Zr > mt% Nmax) exit
+      if (Zr < mt% Zmin .or. Zr > mt% Zmax) exit      
       call get_nucleus_properties(Zr,Ar,id,Br,Snr,S2nr,Spr,S2pr,ecthreshr,bthreshr,VNr,ierr)
       if (ierr /= 0) then
          write(error_unit,'(a)') 'unable to find nucleus'
@@ -309,6 +325,8 @@ program follow_chain
          
       ! neutron capture followed by electron emission
       Ar = A+1; Zr = Z+1
+      if (Ar-Zr < mt% Nmin .or. Ar-Zr > mt% Nmax) exit
+      if (Zr < mt% Zmin .or. Zr > mt% Zmax) exit      
       call get_nucleus_properties(Zr,Ar,id,Br,Snr,S2nr,Spr,S2pr,ecthreshr,bthreshr,VNr,ierr)
       if (ierr /= 0) then
          write(error_unit,'(a)') 'unable to find nucleus'
@@ -326,6 +344,8 @@ program follow_chain
       
       !dineutron capture followed by electron emission
       Ar = A+2; Zr = Z+1
+      if (Ar-Zr < mt% Nmin .or. Ar-Zr > mt% Nmax) exit
+      if (Zr < mt% Zmin .or. Zr > mt% Zmax) exit      
       call get_nucleus_properties(Zr,Ar,id,Br,Snr,S2nr,Spr,S2pr,ecthreshr,bthreshr,Vnr,ierr)
       if (ierr /= 0) then
       	 write(error_unit, '(a)') 'unable to find nucleus'
@@ -464,7 +484,7 @@ program follow_chain
 		character(len=*), parameter :: form = '(2(e12.5),4i4)'
 		write (fid,form) mu_n,mu_e,Z,A,Zr,Ar
 	 end subroutine print_reaction
-	
+	 	
 	 subroutine print_reaction_check()
 		character(len=*), parameter :: form = '((a6),2(i6))'
 		write(fid,form) rxn, Z, A
