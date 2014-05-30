@@ -206,11 +206,9 @@
 		 close(mu_table_input_id)
          call free_iounit(mu_table_input_id)		 
 		 else 
- 
-! 		 xold(mt% Ntable+3,1) = n_b
-!		 xold(mt% Ntable+2, 1) = 1.d-8	 
+
 		 m_star = mn_n-mp_n-me_n
-		 m_nuc = real(mt% A(867))*amu_n !-mt%BE(i)	         
+		 m_nuc = real(mt% A(867))*amu_n
          mterm = g*(m_nuc*kT/(twopi*hbarc_n**2))**(1.5)
          fac1 = real(mt% A(867))/n_b
          fac2 = mterm
@@ -219,23 +217,23 @@
 !         xold(mt% Ntable+1,1) = (log(fac1*fac2)*kT+real(mt% Z(867))*m_star&
 !        	& +real(mt%A(867))*xold(mt% Ntable+3,1))/real(mt% Z(867))
 
-!         xold(mt% Ntable+1,1) = (log(fac1*fac2)*kT+real(mt% Z(867))*m_star&
- !       	& )/real(mt% Z(867))        	
-	 
-		 xold(mt% Ntable+3,1) = n_b
-!		 xold(mt% Ntable+2, 1) = 1.d-8	 	 
-		 xold(mt% Ntable+1, 1) = 10.
-		 xold(mt% Ntable+2, 1) = (log(fac1*fac2)*kT+real(mt% Z(867))*m_star&
-         	& + mt%BE(867)-real(mt%Z(867))*xold(mt% Ntable+1,1))/real(mt% A(867))
-
-	 
+		 ! sets mass fractions to 1d-30
 		 do j=1,mt% Ntable
-		 xold(j,1) = -mt% BE(j) !- 1.0
-		 end do
-		 !xold(867,1) = -492.3833 !mu_56 at 5.E-8
-		 !xold(867,1) = -492.360361 !mu_56 at 5.E-7
-!		 xold(mt% Ntable+1, 1) = 1.
-!		 xold(mt% Ntable+2, 1) = -1.d-3
+		 xold(j,1) = log((1.d-30)/fac1/fac2)*kT-mt%BE(j)
+		 end do 
+		 
+		 ! set mass fraction to 1.0 for one nucleus
+		 xold(867,1) =  log((1.d0)/fac1/fac2)*kT-mt%BE(867)
+
+		 xold(mt% Ntable+1,1) = -(xold(867,1)+mt%BE(867))/(-26.0) + 26.0*m_star
+		 xold(mt% Ntable+2,1) = 0.
+		 xold(mt% Ntable+3,1) = n_b
+		 
+
+	 	 !try
+	 	 ! initial mass fractions of each isotope 1/5549
+	 	 ! initial abundances 1d-30 except for iron 56
+	 
 		 end if
 
          dx = 0 ! a not very good starting "guess" for the solution
@@ -364,10 +362,7 @@
 		 enddo
 		 mu_e = x(mt% Ntable+1,1)	 
 		 mu_n = x(mt% Ntable+2,1)
-		 n_b = x(mt% Ntable+3,1) 
-		 !mu_n = x(mt% Ntable+3, 1) 
-		 !p_ext = p_ext
-		 !n_b = x((mt% Ntable)+3, 1)			 
+		 n_b = x(mt% Ntable+3,1) 			 
       end subroutine set_primaries
       
 
@@ -444,7 +439,7 @@
          ierr = 0
          
 
- 		n_b = abs(n_b)
+ 		!n_b = abs(n_b)
 		 
 	     chi = use_default_nuclear_size
          rho = (n_b*amu_n)*(mev_to_ergs/clight2)/(1.d-39) ! cgs
@@ -553,7 +548,6 @@
 		  Zi = Zi + zs(i)/n_b
 		  !detailed balance
 		  equ(i,1) = real(mt% Z(i))*(mu_n-mu_e+m_star)+real(mt% N(i))*mu_n-mu_i(i)-(mt%BE(i))
-
 		 enddo
 		  		  
 !		  n_e = 0.4*n_b	
@@ -563,12 +557,12 @@
 		  		  
 		  		  
   		 !baryon and charge conservation 
- !        equ(mt% Ntable+1,1) = Zsum - n_e
+!         equ(mt% Ntable+1,1) = Zsum - n_e
 !         equ(mt% Ntable+2,1) = Asum - n_b + n_n  
  	     equ(mt% Ntable+1, 1) = ni_Zsum - y_e
  	     equ(mt% Ntable+2, 1) = ni_Asum - 1.0 + y_n 
          equ(mt% Ntable+3, 1) = electron_pressure(ke)+neutron_pressure(kn) &
-         	& - P_ext !& +lattice_pressure(Zi/ni_Zsum,Ai/ni_Asum,n_b) - P_ext
+         	& +lattice_pressure(Zi/ni_Zsum,Ai/ni_Asum,n_b) - P_ext
 
 		write(*,*) 'mu_e check = ', electron_chemical_potential(ke)-mu_e
 		write(*,*) 'mu_n check = ', neutron_chemical_potential(kn)-mu_n
