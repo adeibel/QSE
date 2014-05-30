@@ -15,7 +15,7 @@
 
       ! dimensions
       integer, parameter :: nz = 1 ! number of zones
-      integer, parameter :: nvar = 5549+3 !5284+2  ! number of variables per zone
+      integer, parameter :: nvar = 16+2 !5284+2  ! number of variables per zone
       integer, parameter :: neq = nz*nvar
 
       ! information about the bandwidth of the jacobian matrix
@@ -57,7 +57,7 @@
 
 	  ! for crust
       type(mass_table_type), pointer :: mt
-      real*8 :: mu_e, mu_n, mu_i(5549)
+      real*8 :: mu_e, mu_n, mu_i(16)
       real*8 :: mu_e_prev, Y_e_prev
       real*8 :: Y_e, Y_n 
    	  real*8 :: n_b, n_e, n_n
@@ -72,7 +72,7 @@
       real :: mu_n_prev
       real :: ke_prev, kn_prev
       real :: pres_n
-      real :: ni(5549)
+      real :: ni(16)
 
                     
       contains
@@ -96,7 +96,8 @@
       integer :: which_decsol_in, decsol    
  
  	  ! for crust
- 	  character(len=*), parameter :: mass_table_name = 'nucchem.data'   
+ 	  character(len=*), parameter :: mass_table_name = 'nucchem_andrew.data'
+! 	  character(len=*), parameter :: mass_table_name = 'nucchem.data'   
 !	  character(len=*), parameter :: mass_table_name = 'nucchem_trunc.data'
       character(len=*), parameter :: output_file = 'qse_output.data'
    	  character(len=*), parameter :: abundance_file = 'qse_abun.data'
@@ -208,9 +209,9 @@
 		 else 
 
 		 m_star = mn_n-mp_n-me_n
-		 m_nuc = real(mt% A(867))*amu_n
+		 m_nuc = real(mt% A(8))*amu_n
          mterm = g*(m_nuc*kT/(twopi*hbarc_n**2))**(1.5)
-         fac1 = real(mt% A(867))/n_b
+         fac1 = real(mt% A(8))/n_b
          fac2 = mterm
 !         xold(mt% Ntable+1,1) = (log(fac1*fac2)*kT+real(mt% Z(867))*m_star&
 !         	& + mt%BE(867)+real(mt%A(867))*xold(mt% Ntable+2,1))/real(mt% Z(867))
@@ -219,24 +220,26 @@
 
 		 ! sets mass fractions to 1d-30
 		 do j=1,mt% Ntable
-		 xold(j,1) = log((1.d-30)/fac1/fac2)*kT-mt%BE(j)
+		 xold(j,1) = log((1.d-20)/fac1/fac2)*kT-mt%BE(j)
 		 end do 
 		 
 		 ! set mass fraction to 1.0 for one nucleus
-		 xold(867,1) =  log((1.d0)/fac1/fac2)*kT-mt%BE(867)
+		 xold(8,1) =  log((1.d0)/fac1/fac2)*kT-mt%BE(8)
 
-		 xold(mt% Ntable+1,1) = -(xold(867,1)+mt%BE(867))/(-26.0) + 26.0*m_star
-		 xold(mt% Ntable+2,1) = 0.
-		 xold(mt% Ntable+3,1) = n_b
+		 xold(mt% Ntable+1,1) = -(xold(8,1)+mt%BE(8))/(-26.0) + 26.0*m_star
+		 !xold(mt% Ntable+2,1) = 0.
+		 !xold(mt% Ntable+3,1) = n_b
 		 
+		 xold(mt% Ntable+2,1) = n_b
 
 	 	 !try
-	 	 ! initial mass fractions of each isotope 1/5549
+	 	 ! initial mass fractions of each isotope 1/16
 	 	 ! initial abundances 1d-30 except for iron 56
 	 
 		 end if
 
          dx = 0 ! a not very good starting "guess" for the solution
+         !dx = x/1.d-3
          x = xold
          
          lid = max_lid
@@ -245,12 +248,14 @@
          first_step = .true.
          
          !tol_correction_norm=1d-9
-         tol_correction_norm = 1d-14 ! upper limit on magnitude of average scaled correction
+         tol_correction_norm=1d-9
+         !tol_correction_norm = 1d-14 ! upper limit on magnitude of average scaled correction
          tol_max_correction = 1d99
          tol_residual_norm = 1d99
          
-         !epsder = 1d-6
-         epsder = 1d-8 ! relative variation to compute derivatives
+         epsder = 1d-6
+         !epsder = 1d-8 ! relative variation to compute derivatives
+         !epsder = p_ext
          
          doing_jacobian = .false.
          
@@ -265,6 +270,7 @@
          work = 0
          iwork = 0
          
+         iwork(r_tol_residual_norm) = 1
          iwork(i_try_really_hard) = 1 ! try really hard for first model
          iwork(i_model_number) = 1
              
@@ -337,7 +343,7 @@
                tol_correction_norm, &
                set_primaries, set_secondaries, default_set_xscale, &
                default_Bdomain, default_xdomain, eval_equations, &
-               default_size_equ, default_sizeB, default_inspectB, &
+               size_equ, default_sizeB, default_inspectB, &
                enter_setmatrix, exit_setmatrix, failed_in_setmatrix, default_force_another_iter, &
                xscale, equ, ldy, nsec, y, work, lwork, iwork, liwork, AF, &
                lrpar, rpar, lipar, ipar, &
@@ -361,8 +367,9 @@
 		 mu_i(i) = x(i,1)
 		 enddo
 		 mu_e = x(mt% Ntable+1,1)	 
-		 mu_n = x(mt% Ntable+2,1)
-		 n_b = x(mt% Ntable+3,1) 			 
+		 n_b = x(mt% Ntable+2,1)
+		 !mu_n = x(mt% Ntable+2,1)
+		 !n_b = x(mt% Ntable+3,1) 			 
       end subroutine set_primaries
       
 
@@ -423,7 +430,7 @@
 		 real :: m_nuc, m_nuc1
 		 real :: m_term, m_term1		 
 		 !for equations in log space
-		 real :: sum_lnZ(5549), sum_lnA(5549) 
+		 real :: sum_lnZ(16), sum_lnA(16) 
 		 real :: sum_lnZ_total, sum_lnZ_final 
 		 real :: sum_lnA_total, sum_lnA_final
 		 real :: logZ_exponent
@@ -431,15 +438,15 @@
 		 real :: ni_Zsum, ni_Asum
 		 real :: der_Zsum, der_Asum
 		 real :: Asum, Zsum
-		 real :: As(5549), Zs(5549)
+		 real :: As(16), Zs(16)
 		 real :: Zi, Ai
 		 real :: pressure
-!		 real :: ni(5549)
+		 real :: Zbar, Abar
+!		 real :: ni(16)
                 
          ierr = 0
-         
-
- 		!n_b = abs(n_b)
+         n_b = abs(n_b)
+		 mu_n = 0. 
 		 
 	     chi = use_default_nuclear_size
          rho = (n_b*amu_n)*(mev_to_ergs/clight2)/(1.d-39) ! cgs
@@ -548,32 +555,44 @@
 		  Zi = Zi + zs(i)/n_b
 		  !detailed balance
 		  equ(i,1) = real(mt% Z(i))*(mu_n-mu_e+m_star)+real(mt% N(i))*mu_n-mu_i(i)-(mt%BE(i))
+		  write(*,*) equ(i,1)
 		 enddo
-		  		  
-!		  n_e = 0.4*n_b	
-!		  n_n = 0. 
-!		  y_e = n_e/n_b
-!		  y_n = n_n/n_b	  
-		  		  
-		  		  
-  		 !baryon and charge conservation 
-!         equ(mt% Ntable+1,1) = Zsum - n_e
-!         equ(mt% Ntable+2,1) = Asum - n_b + n_n  
- 	     equ(mt% Ntable+1, 1) = ni_Zsum - y_e
- 	     equ(mt% Ntable+2, 1) = ni_Asum - 1.0 + y_n 
-         equ(mt% Ntable+3, 1) = electron_pressure(ke)+neutron_pressure(kn) &
-         	& +lattice_pressure(Zi/ni_Zsum,Ai/ni_Asum,n_b) - P_ext
+		 
+		 Zbar = Zi/ni_Zsum
+		 Abar = Ai/ni_Asum
 
-		write(*,*) 'mu_e check = ', electron_chemical_potential(ke)-mu_e
-		write(*,*) 'mu_n check = ', neutron_chemical_potential(kn)-mu_n
+		  if (Zbar > 1. .and. Zbar < 200.) then		  		  	  
+		  Zbar = Zi/ni_Zsum
+		  else
+		  Zbar=26.
+		  end if
+		  if (Abar > 1. .and. Abar < 200.) then
+		  Abar = Ai/ni_Asum
+		  else
+		  Abar=56.
+		  end if
+		  
+  		 !baryon and charge conservation 
+         equ(mt% Ntable+1,1) = Zsum - n_e
+!         equ(mt% Ntable+2,1) = Asum - n_b + n_n  
+! 	     equ(mt% Ntable+1, 1) = Zi - y_e
+! 	     equ(mt% Ntable+2, 1) = ni_Asum - 1.0 + y_n 
+         equ(mt% Ntable+2, 1) = electron_pressure(ke)+neutron_pressure(kn) &
+            ! & +lattice_pressure(26.0,56.0,n_b) - P_ext
+			& + lattice_pressure(Zbar,Abar,n_b) - P_ext
+			!- P_ext
+
+		!write(*,*) 'mu_e check = ', electron_chemical_potential(ke)-mu_e
+		!write(*,*) 'mu_n check = ', neutron_chemical_potential(kn)-mu_n
+		write(*,*) 'Abar=', Abar, 'Zbar=', Zbar
 		write(*,*) 'n_b=', n_b
  		write(*,*) 'Y_e=', Y_e, 'mu_e=', mu_e, 'n_e=', n_e, 'ke=', ke
         write(*,*) 'Y_n=', Y_n, 'mu_n=', mu_n, 'n_n=', n_n, 'kn=', kn
-	    write(*,*) 'mu_i', mu_i(1), mu_i(5549)
+	    write(*,*) 'mu_i', mu_i(1), mu_i(16), equ(1,1), equ(16,1)
 	    write(*,*) 'sumZ=', Zsum, 'n_e=', n_e, 'equN_1=', equ(mt% Ntable+1,1)
 	    write(*,*) 'sumA=', Asum, 'n_b=', n_b, 'n_n=', n_n,  'equN_2=', equ(mt% Ntable+2,1)
 		write(*,*) 'pressure=', electron_pressure(ke) + neutron_pressure(kn), &
-			& 'P_ext=', P_ext, 'equN_3=', equ(mt% Ntable+3,1)
+			& 'P_ext=', P_ext, 'equN_3=', equ(mt% Ntable+2,1)
 		write(*,*) 'lattice_pressure=', lattice_pressure(Zi/ni_Zsum,Ai/ni_Asum,n_b*ni_Asum/Ai)
 		write(*,*) 'lattice_pressure(n_b)=', lattice_pressure(Zi/ni_Zsum,Ai/ni_Asum,n_b)
 	    write(*,*) 'Zi=', Zi/ni_Zsum, 'Ai=', Ai/ni_Asum
@@ -889,5 +908,18 @@
       real :: neutron_k      
       neutron_k = neutron_pressure(x) - pres_n     
      end function neutron_k          
+     
+     subroutine size_equ(iter, nvar, nz, equ, residual_norm, residual_max, lrpar, rpar, lipar, ipar, ierr)
+     	integer, intent(in) :: iter, nvar, nz
+     	double precision, pointer :: equ(:,:) 
+     	double precision, intent(out) :: residual_norm, residual_max
+     	integer, intent(in) :: lrpar, lipar
+     	double precision, intent(inout) :: rpar(lrpar)
+     	integer, intent(inout) :: ipar(lipar)
+     	integer, intent(out) :: ierr
+     	ierr = 0
+     	residual_norm = 1.d-30
+     	residual_max = 1.d-15
+    end subroutine size_equ 	     
           
     end module qse_solver
