@@ -320,9 +320,7 @@
          stop
          
          have_mu_table = .true. 
-
-
-         
+  
          enddo 
          
          contains         
@@ -342,7 +340,7 @@
                lrd, rpar_decsol, lid, ipar_decsol, which_decsol, &
                tol_correction_norm, &
                set_primaries, set_secondaries, default_set_xscale, &
-               default_Bdomain, default_xdomain, eval_equations, &
+               default_Bdomain, xdomain, eval_equations, &
                size_equ, default_sizeB, default_inspectB, &
                enter_setmatrix, exit_setmatrix, failed_in_setmatrix, default_force_another_iter, &
                xscale, equ, ldy, nsec, y, work, lwork, iwork, liwork, AF, &
@@ -921,5 +919,29 @@
      	residual_norm = 1.d-30
      	residual_max = 1.d-15
     end subroutine size_equ 	     
+       
+      subroutine xdomain(iter, nvar, nz, x, dx, xold, lrpar, rpar, lipar, ipar, ierr)
+         integer, intent(in) :: iter, nvar, nz
+         double precision, pointer, dimension(:,:) :: x, dx, xold ! (nvar, nz)
+         integer, intent(in) :: lrpar, lipar
+         double precision, intent(inout) :: rpar(lrpar)
+         integer, intent(inout) :: ipar(lipar)
+         integer, intent(out) :: ierr
+         ierr = 0
+         ! if the variables must be non-negative, you can do the following:
+         !x = max(0d0, x)
+         !dx = x-xold
+         !x = xold+dx
+ 		 ! set mu_e, mu_n, and n_B >0
+ 		 x(mt% Ntable+1,1) = max(0d0,x)
+ 		 x(mt% Ntable+2,1) = max(0d0,x)
+ 		 x(mt% Ntable+3,1) = max(0d0,x)
+ 		 dx(mt% Ntable+1,1) = x(mt% Ntable+1,1)-xold(mt% Ntable+1,1)     
+ 		 dx(mt% Ntable+2,1) = x(mt% Ntable+2,1)-xold(mt% Ntable+2,1)     
+ 		 dx(mt% Ntable+3,1) = x(mt% Ntable+3,1)-xold(mt% Ntable+3,1)
+ 		 x(mt% Ntable+1,1) = xold(mt%Ntable+1,1)+dx(mt%Ntable+1,1)     
+ 		 x(mt% Ntable+2,1) = xold(mt%Ntable+2,1)+dx(mt%Ntable+2,1)     
+ 		 x(mt% Ntable+3,1) = xold(mt%Ntable+3,1)+dx(mt%Ntable+3,1)     
+      end subroutine xdomain          
           
     end module qse_solver
