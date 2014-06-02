@@ -15,7 +15,7 @@
 
       ! dimensions
       integer, parameter :: nz = 1 ! number of zones
-      integer, parameter :: nvar = 16+2 !5284+2  ! number of variables per zone
+      integer, parameter :: nvar = 16+3 !5284+2  ! number of variables per zone
       integer, parameter :: neq = nz*nvar
 
       ! information about the bandwidth of the jacobian matrix
@@ -230,7 +230,8 @@
 		 !xold(mt% Ntable+2,1) = 0.
 		 !xold(mt% Ntable+3,1) = n_b
 		 
-		 xold(mt% Ntable+2,1) = n_b
+		 xold(mt% Ntable+2,1) = 0.0
+		 xold(mt% Ntable+3,1) = n_b
 
 	 	 !try
 	 	 ! initial mass fractions of each isotope 1/16
@@ -365,9 +366,8 @@
 		 mu_i(i) = x(i,1)
 		 enddo
 		 mu_e = x(mt% Ntable+1,1)	 
-		 n_b = x(mt% Ntable+2,1)
-		 !mu_n = x(mt% Ntable+2,1)
-		 !n_b = x(mt% Ntable+3,1) 			 
+		 mu_n = x(mt% Ntable+2,1)
+		 n_b = x(mt% Ntable+3,1)			 
       end subroutine set_primaries
       
 
@@ -572,10 +572,10 @@
 		  
   		 !baryon and charge conservation 
          equ(mt% Ntable+1,1) = Zsum - n_e
-!         equ(mt% Ntable+2,1) = Asum - n_b + n_n  
+         equ(mt% Ntable+2,1) = Asum - n_b + n_n  
 ! 	     equ(mt% Ntable+1, 1) = Zi - y_e
 ! 	     equ(mt% Ntable+2, 1) = ni_Asum - 1.0 + y_n 
-         equ(mt% Ntable+2, 1) = electron_pressure(ke)+neutron_pressure(kn) &
+         equ(mt% Ntable+3, 1) = electron_pressure(ke)+neutron_pressure(kn) &
             ! & +lattice_pressure(26.0,56.0,n_b) - P_ext
 			& + lattice_pressure(Zbar,Abar,n_b) - P_ext
 			!- P_ext
