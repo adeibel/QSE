@@ -245,8 +245,8 @@
                   
          first_step = .true.
          
-         !tol_correction_norm=1d-9
-         tol_correction_norm=1d-6
+         tol_correction_norm=1d-9
+         !tol_correction_norm=1d-6
          !tol_correction_norm = 1d-14 ! upper limit on magnitude of average scaled correction
          tol_max_correction = 1d99
          tol_residual_norm = 1d99
@@ -460,7 +460,7 @@
         xacc=1.d-15
         kn=root_bisection(kn_solve,x1,x2,xacc,ierr,hist) !returns in fm**-1
         if (io_failure(ierr,'Error in bisection for kn wave vector')) stop
-        n_n = 2.0*kn**3/threepisquare              
+        n_n = kn**3/threepisquare !2.0*kn**3/threepisquare              
         Y_n = n_n*(1.-chi)/n_b   
 
 		 Asum = 0. ; Zsum = 0. 
