@@ -220,11 +220,11 @@
 
 		 ! sets mass fractions to 1d-30
 		 do j=1,mt% Ntable
-		 xold(j,1) = log((1.d-10)/fac1/fac2)*kT-mt%BE(j)
+		 xold(j,1) = log((1./16.)/fac1/fac2)*kT-mt%BE(j)
 		 end do 
 		 
 		 ! set mass fraction to 1.0 for one nucleus
-		 xold(8,1) =  log((1.d0)/fac1/fac2)*kT-mt%BE(8)
+		 !xold(8,1) =  log((1.d0)/fac1/fac2)*kT-mt%BE(8)
 
 		 xold(mt% Ntable+1,1) = -(xold(8,1)+mt%BE(8))/(-26.0) + 26.0*m_star
 		 xold(mt% Ntable+2,1) = 1.d-15
@@ -504,7 +504,7 @@
 		  
   		 !baryon and charge conservation 
          equ(mt% Ntable+1,1) = Zsum - n_e
-         equ(mt% Ntable+2,1) = Asum - n_b + n_n  
+         equ(mt% Ntable+2,1) = Asum - n_b  !+ n_n  
 ! 	     equ(mt% Ntable+1, 1) = Zi - y_e
 ! 	     equ(mt% Ntable+2, 1) = ni_Asum - 1.0 + y_n 
          equ(mt% Ntable+3, 1) = electron_pressure(ke)+neutron_pressure(kn) &
