@@ -443,8 +443,6 @@
 !		 real :: ni(16)
                 
          ierr = 0
-         n_b = abs(n_b)
-		 mu_n = 0. 
 		 
 	     chi = use_default_nuclear_size
          rho = (n_b*amu_n)*(mev_to_ergs/clight2)/(1.d-39) ! cgs
@@ -559,16 +557,16 @@
 		 Zbar = Zi/ni_Zsum
 		 Abar = Ai/ni_Asum
 
-		  if (Zbar > 1. .and. Zbar < 200.) then		  		  	  
-		  Zbar = Zi/ni_Zsum
-		  else
-		  Zbar=26.
-		  end if
-		  if (Abar > 1. .and. Abar < 200.) then
-		  Abar = Ai/ni_Asum
-		  else
-		  Abar=56.
-		  end if
+!		  if (Zbar > 1. .and. Zbar < 200.) then		  		  	  
+!		  Zbar = Zi/ni_Zsum
+!		  else
+!		  Zbar=26.
+!		  end if
+!		  if (Abar > 1. .and. Abar < 200.) then
+!		  Abar = Ai/ni_Asum
+!		  else
+!		  Abar=56.
+!		  end if
 		  
   		 !baryon and charge conservation 
          equ(mt% Ntable+1,1) = Zsum - n_e
@@ -917,7 +915,7 @@
      	integer, intent(out) :: ierr
      	ierr = 0
      	residual_norm = 1.d-30
-     	residual_max = 1.d-15
+     	residual_max = 1.d-20
     end subroutine size_equ 	     
        
       subroutine xdomain(iter, nvar, nz, x, dx, xold, lrpar, rpar, lipar, ipar, ierr)
@@ -932,10 +930,10 @@
          !x = max(0d0, x)
          !dx = x-xold
          !x = xold+dx
- 		 ! set mu_e, mu_n, and n_B >0
- 		 x(mt% Ntable+1,1) = max(0d0,x)
- 		 x(mt% Ntable+2,1) = max(0d0,x)
- 		 x(mt% Ntable+3,1) = max(0d0,x)
+ 		 ! set mu_e, mu_n, and n_b >0
+ 		 x(mt% Ntable+1,1) = abs(x(mt% Ntable+1,1))
+ 		 x(mt% Ntable+2,1) = abs(x(mt% Ntable+2,1))
+ 		 x(mt% Ntable+3,1) = abs(x(mt% Ntable+3,1))
  		 dx(mt% Ntable+1,1) = x(mt% Ntable+1,1)-xold(mt% Ntable+1,1)     
  		 dx(mt% Ntable+2,1) = x(mt% Ntable+2,1)-xold(mt% Ntable+2,1)     
  		 dx(mt% Ntable+3,1) = x(mt% Ntable+3,1)-xold(mt% Ntable+3,1)
