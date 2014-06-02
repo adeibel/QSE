@@ -220,17 +220,14 @@
 
 		 ! sets mass fractions to 1d-30
 		 do j=1,mt% Ntable
-		 xold(j,1) = log((1.d-20)/fac1/fac2)*kT-mt%BE(j)
+		 xold(j,1) = log((1.d-10)/fac1/fac2)*kT-mt%BE(j)
 		 end do 
 		 
 		 ! set mass fraction to 1.0 for one nucleus
 		 xold(8,1) =  log((1.d0)/fac1/fac2)*kT-mt%BE(8)
 
 		 xold(mt% Ntable+1,1) = -(xold(8,1)+mt%BE(8))/(-26.0) + 26.0*m_star
-		 !xold(mt% Ntable+2,1) = 0.
-		 !xold(mt% Ntable+3,1) = n_b
-		 
-		 xold(mt% Ntable+2,1) = 0.0
+		 xold(mt% Ntable+2,1) = 1.d-15
 		 xold(mt% Ntable+3,1) = n_b
 
 	 	 !try
@@ -249,12 +246,12 @@
          first_step = .true.
          
          !tol_correction_norm=1d-9
-         tol_correction_norm=1d-9
+         tol_correction_norm=1d-6
          !tol_correction_norm = 1d-14 ! upper limit on magnitude of average scaled correction
          tol_max_correction = 1d99
          tol_residual_norm = 1d99
          
-         epsder = 1d-6
+         epsder = 1d-8
          !epsder = 1d-8 ! relative variation to compute derivatives
          !epsder = p_ext
          
@@ -447,87 +444,24 @@
 	     chi = use_default_nuclear_size
          rho = (n_b*amu_n)*(mev_to_ergs/clight2)/(1.d-39) ! cgs
                         
-		if (mu_e < 0. ) then
-		mu_e = abs(mu_e)
+
 		! electron wave vector fm^-1
         x1=0.0
         x2=10.
         xacc=1.d-15
         ke=root_bisection(ke_solve,x1,x2,xacc,ierr,hist) !returns in fm**-1
-        if (io_failure(ierr,'Error in bisection for ke wave vector')) then
-        write(*,*) 'mu_e < 0', mu_e
-        ke = ke_prev
-        mu_e = mu_e_prev
-        end if
+        if (io_failure(ierr,'Error in bisection for ke wave vector')) stop
         n_e = ke**3/threepisquare               
         Y_e = n_e/n_b   
-        mu_e = -abs(mu_e)
-		end if
-		
-		if (mu_e > 0.) then                
-        ! electron wave vector fm^-1
-        x1=0.0
-        x2=10.
-        xacc=1.d-15
-        ke=root_bisection(ke_solve,x1,x2,xacc,ierr,hist) !returns in fm**-1
-        if (io_failure(ierr,'Error in bisection for ke wave vector')) then
-        write(*,*) 'mu_e > 0', mu_e, ke
-        ke= ke_prev
-        mu_e = mu_e_prev
-        end if
-        n_e = ke**3/threepisquare               
-        Y_e = n_e/n_b   
-        end if
-        
-        if (mu_e == 0.) then
-        ke = 0. 
-        n_e = 0. 
-        Y_e = 0.
-        end if
 
-		write(*,*) 'Ye from mu_e=', Y_e
-
-
-!		Y_e = 0.1
-!		n_e = Y_e*n_b
-!		ke = threepisquare*n_e**onethird
-!		mu_e = electron_chemical_potential(ke)
-
-		if (mu_n < 0.) then
-		mu_n = abs(mu_n)
+		! neutron wave vector fm^-1
         x1=0.0
         x2=10.
         xacc=1.d-15
         kn=root_bisection(kn_solve,x1,x2,xacc,ierr,hist) !returns in fm**-1
-        if (io_failure(ierr,'Error in bisection for kn wave vector')) then
-        write(*,*) 'mu_n<0', 'mu_n=', mu_n, kn
-        kn = kn_prev
-        mu_n = mu_n_prev
-        end if   
-        n_n = 2.0*kn**3/threepisquare                
-        Y_n = n_n*(1.-chi)/n_b   
-		mu_n = -abs(mu_n) 
-		end if
-		
-		if (mu_n > 0.) then
-        x1=0.0
-        x2=10.
-        xacc=1.d-15
-        kn=root_bisection(kn_solve,x1,x2,xacc,ierr,hist) !returns in fm**-1
-        if (io_failure(ierr,'Error in bisection for kn wave vector')) then
-        write(*,*) 'mu_n>0', 'mu_n=', mu_n, kn
-        kn = kn_prev
-        mu_n = mu_n_prev
-        end if
+        if (io_failure(ierr,'Error in bisection for kn wave vector')) stop
         n_n = 2.0*kn**3/threepisquare              
         Y_n = n_n*(1.-chi)/n_b   
-		end if
-	
-		if (mu_n == 0.) then
-		kn=0.
-		n_n = 0.
-		Y_n = 0.
-		end if 
 
 		 Asum = 0. ; Zsum = 0. 
 		 Ai = 0. ; Zi = 0.
@@ -587,7 +521,8 @@
 	    write(*,*) 'mu_i', mu_i(1), mu_i(16), equ(1,1), equ(16,1)
 	    write(*,*) 'sumZ=', Zsum, 'n_e=', n_e, 'equN_1=', equ(mt% Ntable+1,1)
 	    write(*,*) 'sumA=', Asum, 'n_b=', n_b, 'n_n=', n_n,  'equN_2=', equ(mt% Ntable+2,1)
-		write(*,*) 'pressure=', electron_pressure(ke) + neutron_pressure(kn), &
+		write(*,*) 'pressure=', electron_pressure(ke) + neutron_pressure(kn) &
+		& +lattice_pressure(Zbar,Abar,n_b), &
 			& 'P_ext=', P_ext, 'equN_3=', equ(mt% Ntable+2,1)
 		write(*,*) 'lattice_pressure=', lattice_pressure(Zi/ni_Zsum,Ai/ni_Asum,n_b*ni_Asum/Ai)
 		write(*,*) 'lattice_pressure(n_b)=', lattice_pressure(Zi/ni_Zsum,Ai/ni_Asum,n_b)
@@ -914,7 +849,7 @@
      	integer, intent(inout) :: ipar(lipar)
      	integer, intent(out) :: ierr
      	ierr = 0
-     	residual_norm = 1.d-30
+     	residual_norm = 1.d-25
      	residual_max = 1.d-20
     end subroutine size_equ 	     
        
