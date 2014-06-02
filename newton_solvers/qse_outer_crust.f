@@ -15,7 +15,7 @@
 
       ! dimensions
       integer, parameter :: nz = 1 ! number of zones
-      integer, parameter :: nvar = 16+3 !5284+2  ! number of variables per zone
+      integer, parameter :: nvar = 16+2 !5284+2  ! number of variables per zone
       integer, parameter :: neq = nz*nvar
 
       ! information about the bandwidth of the jacobian matrix
@@ -228,7 +228,7 @@
 
 		 xold(mt% Ntable+1,1) = -(xold(8,1)+mt%BE(8))/(-26.0) + 26.0*m_star
 		 xold(mt% Ntable+2,1) = 1.d-15
-		 xold(mt% Ntable+3,1) = n_b
+		 !xold(mt% Ntable+2,1) = n_b
 
 	 	 !try
 	 	 ! initial mass fractions of each isotope 1/16
@@ -364,7 +364,7 @@
 		 enddo
 		 mu_e = x(mt% Ntable+1,1)	 
 		 mu_n = x(mt% Ntable+2,1)
-		 n_b = x(mt% Ntable+3,1)			 
+		 !n_b = x(mt% Ntable+2,1)			 
       end subroutine set_primaries
       
 
@@ -457,10 +457,14 @@
         x1=0.0
         x2=10.
         xacc=1.d-15
+ !			kn=0.
         kn=root_bisection(kn_solve,x1,x2,xacc,ierr,hist) !returns in fm**-1
         if (io_failure(ierr,'Error in bisection for kn wave vector')) stop
         n_n = 2.0*kn**3/threepisquare              
-        Y_n = n_n*(1.0-chi)/n_b   
+        Y_n = n_n*(1.0-chi)/n_b  
+        
+  !      mu_n = 0.
+   !     n_n = 0.  
 
 		 Asum = 0. ; Zsum = 0. 
 		 Ai = 0. ; Zi = 0.
@@ -491,14 +495,14 @@
 		 Abar = Ai/ni_Asum
 		  
   		 !baryon and charge conservation 
-         equ(mt% Ntable+1,1) = Zsum - n_e
-         equ(mt% Ntable+2,1) = Asum - n_b !+ n_n*(1.0-chi)  
-! 	     equ(mt% Ntable+1, 1) = Zi - y_e
- !	     equ(mt% Ntable+2, 1) = ni_Asum - 1.0 + y_n 
-         equ(mt% Ntable+3, 1) = electron_pressure(ke)+neutron_pressure(kn) &
+!         equ(mt% Ntable+1,1) = Zsum - n_e
+!         equ(mt% Ntable+2,1) = Asum - n_b !+ n_n*(1.0-chi)  
+ 	     equ(mt% Ntable+1, 1) = Zi - y_e
+!	     equ(mt% Ntable+2, 1) = ni_Asum - 1.0 + y_n 
+         equ(mt% Ntable+2, 1) = electron_pressure(ke)+neutron_pressure(kn) &
             ! & +lattice_pressure(26.0,56.0,n_b) - P_ext
-			!& + lattice_pressure(Zbar,Abar,n_b) - P_ext
-			- P_ext
+			& + lattice_pressure(Zbar,Abar,n_b) - P_ext
+			!- P_ext
 
 		!write(*,*) 'mu_e check = ', electron_chemical_potential(ke)-mu_e
 		!write(*,*) 'mu_n check = ', neutron_chemical_potential(kn)-mu_n
@@ -831,8 +835,8 @@
      	integer, intent(inout) :: ipar(lipar)
      	integer, intent(out) :: ierr
      	ierr = 0
-     	residual_norm = 1.d-25
-     	residual_max = 1.d-20
+     	residual_norm = 1.d-20
+     	residual_max = 1.d-15
     end subroutine size_equ 	     
        
       subroutine xdomain(iter, nvar, nz, x, dx, xold, lrpar, rpar, lipar, ipar, ierr)
@@ -850,13 +854,13 @@
  		 ! set mu_e, mu_n, and n_b >0
  		 x(mt% Ntable+1,1) = abs(x(mt% Ntable+1,1))
  		 x(mt% Ntable+2,1) = abs(x(mt% Ntable+2,1))
- 		 x(mt% Ntable+3,1) = abs(x(mt% Ntable+3,1))
+ 		 !x(mt% Ntable+3,1) = abs(x(mt% Ntable+3,1))
  		 dx(mt% Ntable+1,1) = x(mt% Ntable+1,1)-xold(mt% Ntable+1,1)     
  		 dx(mt% Ntable+2,1) = x(mt% Ntable+2,1)-xold(mt% Ntable+2,1)     
- 		 dx(mt% Ntable+3,1) = x(mt% Ntable+3,1)-xold(mt% Ntable+3,1)
+ 		! dx(mt% Ntable+3,1) = x(mt% Ntable+3,1)-xold(mt% Ntable+3,1)
  		 x(mt% Ntable+1,1) = xold(mt%Ntable+1,1)+dx(mt%Ntable+1,1)     
  		 x(mt% Ntable+2,1) = xold(mt%Ntable+2,1)+dx(mt%Ntable+2,1)     
- 		 x(mt% Ntable+3,1) = xold(mt%Ntable+3,1)+dx(mt%Ntable+3,1)     
+ 		 !x(mt% Ntable+3,1) = xold(mt%Ntable+3,1)+dx(mt%Ntable+3,1)     
       end subroutine xdomain          
           
     end module qse_solver
