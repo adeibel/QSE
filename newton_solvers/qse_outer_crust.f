@@ -226,9 +226,10 @@
 		 ! set mass fraction to 1.0 for one nucleus
 		 !xold(8,1) =  log((1.d0)/fac1/fac2)*kT-mt%BE(8)
 
-		 xold(mt% Ntable+1,1) = -(xold(8,1)+mt%BE(8))/(-26.0) + 26.0*m_star
-		 xold(mt% Ntable+2,1) = 1.d-15
-		 !xold(mt% Ntable+2,1) = n_b
+		 !xold(mt% Ntable+1,1) = -(xold(8,1)+mt%BE(8))/(-26.0) + 26.0*m_star
+		 xold(mt% Ntable+1,1) = -(xold(8,1))/(-26.0) + 26.0*m_star
+		 !xold(mt% Ntable+2,1) = 1.d-15
+		 xold(mt% Ntable+2,1) = n_b
 
 	 	 !try
 	 	 ! initial mass fractions of each isotope 1/16
@@ -457,14 +458,11 @@
         x1=0.0
         x2=10.
         xacc=1.d-15
- !			kn=0.
+ 	!		kn=0.
         kn=root_bisection(kn_solve,x1,x2,xacc,ierr,hist) !returns in fm**-1
         if (io_failure(ierr,'Error in bisection for kn wave vector')) stop
         n_n = 2.0*kn**3/threepisquare              
         Y_n = n_n*(1.0-chi)/n_b  
-        
-  !      mu_n = 0.
-   !     n_n = 0.  
 
 		 Asum = 0. ; Zsum = 0. 
 		 Ai = 0. ; Zi = 0.
@@ -495,9 +493,9 @@
 		 Abar = Ai/ni_Asum
 		  
   		 !baryon and charge conservation 
-!         equ(mt% Ntable+1,1) = Zsum - n_e
+         equ(mt% Ntable+1,1) = Zsum - n_e
 !         equ(mt% Ntable+2,1) = Asum - n_b !+ n_n*(1.0-chi)  
- 	     equ(mt% Ntable+1, 1) = Zi - y_e
+! 	     equ(mt% Ntable+1, 1) = Zi - y_e
 !	     equ(mt% Ntable+2, 1) = ni_Asum - 1.0 + y_n 
          equ(mt% Ntable+2, 1) = electron_pressure(ke)+neutron_pressure(kn) &
             ! & +lattice_pressure(26.0,56.0,n_b) - P_ext

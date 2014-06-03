@@ -15,7 +15,7 @@
 
       ! dimensions
       integer, parameter :: nz = 1 ! number of zones
-      integer, parameter :: nvar = 16+1 !3 !5284+2  ! number of variables per zone
+      integer, parameter :: nvar = 2 !5284+2  ! number of variables per zone
       integer, parameter :: neq = nz*nvar
 
       ! information about the bandwidth of the jacobian matrix
@@ -208,34 +208,15 @@
          call free_iounit(mu_table_input_id)		 
 		 else 
 
-		 m_star = mn_n-mp_n-me_n
-		 m_nuc = real(mt% A(8))*amu_n
-         mterm = g*(m_nuc*kT/(twopi*hbarc_n**2))**(1.5)
-         fac1 = real(mt% A(8))/n_b
-         fac2 = mterm
+
 !         xold(mt% Ntable+1,1) = (log(fac1*fac2)*kT+real(mt% Z(867))*m_star&
 !         	& + mt%BE(867)+real(mt%A(867))*xold(mt% Ntable+2,1))/real(mt% Z(867))
 !         xold(mt% Ntable+1,1) = (log(fac1*fac2)*kT+real(mt% Z(867))*m_star&
 !        	& +real(mt%A(867))*xold(mt% Ntable+3,1))/real(mt% Z(867))
 
-		 ! sets mass fractions to 1d-30
-		 do j=1,mt% Ntable
-		 !xold(j,1) = log((1./16.)/fac1/fac2)*kT-mt%BE(j)
-		 xold(j,1) = log((1.d-20)/fac1/fac2)*kT-mt%BE(j)
-		 end do 
-		 
-		 ! set mass fraction to 1.0 for one nucleus
-		 xold(8,1) =  log((1.d0)/fac1/fac2)*kT-mt%BE(8)
-
-		 xold(mt% Ntable+1,1) = -(xold(8,1)+mt%BE(8))/(26.0) + m_star
-		 !xold(mt% Ntable+1, 1) = -(xold(8,1))/26 + m_star
-		 !xold(mt% Ntable+1,1) = -(xold(8,1))/(-26.0) + 26.0*m_star
-		 !xold(mt% Ntable+2,1) = 1.d-15
-		 !xold(mt% Ntable+3,1) = n_b
-			
-		 !write(*,*) xold(mt% Ntable+1, 1) 
-		 !stop	
-			
+		xold(1,1) = 0.5 !-mt%BE(8)/(mt%Z(8)) + (mn_n - mp_n - me_n)
+		!xold(2,1) = n_b
+	 	 xold(2,1) = 1.d-6
 	 	 !try
 	 	 ! initial mass fractions of each isotope 1/16
 	 	 ! initial abundances 1d-30 except for iron 56
@@ -252,7 +233,7 @@
          first_step = .true.
          
          !tol_correction_norm=1d-9
-         tol_correction_norm = 1d-12
+         tol_correction_norm=1d-12
          !tol_correction_norm = 1d-14 ! upper limit on magnitude of average scaled correction
          tol_max_correction = 1d99
          tol_residual_norm = 1d99
@@ -365,12 +346,12 @@
          integer, intent(inout) :: ipar(lipar)
          integer, intent(out) :: ierr
          ierr = 0
-		 do i = 1, mt% Ntable
-		 mu_i(i) = x(i,1)
-		 enddo
-		 mu_e = x(mt% Ntable+1,1)	 
-		 !mu_n = x(mt% Ntable+2,1)
-		 !n_b = x(mt% Ntable+3,1)			 
+		 !do i = 1, mt% Ntable
+		 !mu_i(i) = x(i,1)
+		 !enddo
+		 mu_e = x(1,1)	 
+		 mu_n = x(2,1)
+		 !n_b = x(2,1)			 
       end subroutine set_primaries
       
 
@@ -463,11 +444,11 @@
         x1=0.0
         x2=10.
         xacc=1.d-15
-        !kn=root_bisection(kn_solve,x1,x2,xacc,ierr,hist) !returns in fm**-1
-        kn=0.
+! 			kn=0.
+        kn=root_bisection(kn_solve,x1,x2,xacc,ierr,hist) !returns in fm**-1
         if (io_failure(ierr,'Error in bisection for kn wave vector')) stop
         n_n = 2.0*kn**3/threepisquare              
-        Y_n = n_n*(1.0-chi)/n_b   
+        Y_n = n_n*(1.0-chi)/n_b  
 
 		 Asum = 0. ; Zsum = 0. 
 		 Ai = 0. ; Zi = 0.
@@ -478,6 +459,7 @@
 		  m_star = mn_n-mp_n-me_n !does not contain m_e because mu_e has rest mass in definition 
 		  m_nuc = real(mt%A(i))*amu_n !real(mt% Z(i))*mp_n+real(mt% N(i))*mn_n !-mt%BE(i)    
      	  m_term = g*(twopi*hbarc_n**2/(m_nuc*kT))**(-3.0/2.0)
+     	  mu_i(i) = real(mt% Z(i))*(mu_n-mu_e+m_star)+real(mt% N(i))*mu_n-mt%be(i)
      	  ni(i) = m_term*exp((mu_i(i)+mt%BE(i))/kT)
 		  !for baryon conservation
 		  as(i) = real(mt% A(i))*m_term*exp((mu_i(i)+mt%BE(i))/kT)	 
@@ -490,23 +472,20 @@
 		  ni_Zsum = ni_Zsum + m_term*exp((mu_i(i)+mt%BE(i))/kT)/n_b	
 		  Zi = Zi + zs(i)/n_b
 		  !detailed balance
-		  equ(i,1) = real(mt% Z(i))*(mu_n-mu_e+m_star)+real(mt% N(i))*mu_n-mu_i(i) !-(mt%BE(i))
-		  write(*,*) equ(i,1)
+		  !equ(i,1) = real(mt% Z(i))*(mu_n-mu_e+m_star)+real(mt% N(i))*mu_n-mu_i(i)-(mt%BE(i))
+		  !write(*,*) equ(i,1)
 		 enddo
 		 
 		 Zbar = Zi/ni_Zsum
 		 Abar = Ai/ni_Asum
 		  
-		  n_b = Asum + n_n
-		  
   		 !baryon and charge conservation 
- !        equ(mt% Ntable+1,1) = Zsum - n_e
-
-!         equ(mt% Ntable+2,1) = Asum - n_b + n_n*(1.0-chi)  
-! 	     equ(mt% Ntable+1, 1) = Zsum/n_b - y_e
- !	     equ(mt% Ntable+2, 1) = ni_Asum - 1.0 + y_n 
-         equ(mt% Ntable+1, 1) = electron_pressure(ke)+neutron_pressure(kn) &
-            !& - P_ext
+ !        equ(1,1) = Zsum - n_e
+!         equ(3,1) = Asum - n_b + n_n*(1.0-chi)  
+	     equ(1, 1) = Zi - y_e
+	!	equ(3,1) = Ai + y_n -1.0
+!	     equ(mt% Ntable+2, 1) = ni_Asum - 1.0 + y_n 
+         equ(2, 1) = electron_pressure(ke)+neutron_pressure(kn) &
             ! & +lattice_pressure(26.0,56.0,n_b) - P_ext
 			& + lattice_pressure(Zbar,Abar,n_b) - P_ext
 			!- P_ext
@@ -517,12 +496,12 @@
 		write(*,*) 'n_b=', n_b
  		write(*,*) 'Y_e=', Y_e, 'mu_e=', mu_e, 'n_e=', n_e, 'ke=', ke
         write(*,*) 'Y_n=', Y_n, 'mu_n=', mu_n, 'n_n=', n_n, 'kn=', kn
-	    write(*,*) 'mu_i', mu_i(1), mu_i(16), equ(1,1), equ(16,1)
-	    write(*,*) 'sumZ=', Zsum, 'n_e=', n_e, 'equN_1=', equ(mt% Ntable+1,1)
-!	    write(*,*) 'sumA=', Asum, 'n_b=', n_b, 'n_n=', n_n,  'equN_2=', equ(mt% Ntable+2,1)
-!		write(*,*) 'pressure=', electron_pressure(ke) + neutron_pressure(kn) &
-!		& +lattice_pressure(Zbar,Abar,n_b), &
-!			& 'P_ext=', P_ext, 'equN_3=', equ(mt% Ntable+2,1)
+	    write(*,*) 'mu_i', mu_i(1), mu_i(16)
+	    write(*,*) 'sumZ=', Zsum, 'n_e=', n_e, 'equN_1=', equ(1,1)
+	    write(*,*) 'sumA=', Asum, 'n_b=', n_b, 'n_n=', n_n,  'equN_2=', equ(2,1)
+		write(*,*) 'pressure=', electron_pressure(ke) + neutron_pressure(kn) &
+		& +lattice_pressure(Zbar,Abar,n_b), &
+			& 'P_ext=', P_ext, 'equN_3=', equ(2,1)
 		write(*,*) 'lattice_pressure=', lattice_pressure(Zi/ni_Zsum,Ai/ni_Asum,n_b*ni_Asum/Ai)
 		write(*,*) 'lattice_pressure(n_b)=', lattice_pressure(Zi/ni_Zsum,Ai/ni_Asum,n_b)
 	    write(*,*) 'Zi=', Zi/ni_Zsum, 'Ai=', Ai/ni_Asum
@@ -842,8 +821,8 @@
      	integer, intent(inout) :: ipar(lipar)
      	integer, intent(out) :: ierr
      	ierr = 0
-     	residual_norm = 1.d-25
-     	residual_max = 1.d-20
+     	residual_norm = 1.d-20
+     	residual_max = 1.d-15
     end subroutine size_equ 	     
        
       subroutine xdomain(iter, nvar, nz, x, dx, xold, lrpar, rpar, lipar, ipar, ierr)
@@ -859,14 +838,14 @@
          !dx = x-xold
          !x = xold+dx
  		 ! set mu_e, mu_n, and n_b >0
- 		 x(mt% Ntable+1,1) = abs(x(mt% Ntable+1,1))
- 		 !x(mt% Ntable+2,1) = abs(x(mt% Ntable+2,1))
+ 		 x(1,1) = abs(x(1,1))
+ 		 x(2,1) = abs(x(2,1))
  		 !x(mt% Ntable+3,1) = abs(x(mt% Ntable+3,1))
- 		 dx(mt% Ntable+1,1) = x(mt% Ntable+1,1)-xold(mt% Ntable+1,1)     
- 		 !dx(mt% Ntable+2,1) = x(mt% Ntable+2,1)-xold(mt% Ntable+2,1)     
- 		 !dx(mt% Ntable+3,1) = x(mt% Ntable+3,1)-xold(mt% Ntable+3,1)
- 		 x(mt% Ntable+1,1) = xold(mt%Ntable+1,1)+dx(mt%Ntable+1,1)     
- 		 !x(mt% Ntable+2,1) = xold(mt%Ntable+2,1)+dx(mt%Ntable+2,1)     
+ 		 dx(1,1) = x(1,1)-xold(1,1)     
+ 		 dx(2,1) = x(2,1)-xold(2,1)     
+ 		! dx(mt% Ntable+3,1) = x(mt% Ntable+3,1)-xold(mt% Ntable+3,1)
+ 		 x(1,1) = xold(1,1)+dx(1,1)     
+ 		 x(2,1) = xold(2,1)+dx(2,1)     
  		 !x(mt% Ntable+3,1) = xold(mt%Ntable+3,1)+dx(mt%Ntable+3,1)     
       end subroutine xdomain          
           
