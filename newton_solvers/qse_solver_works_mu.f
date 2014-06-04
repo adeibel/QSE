@@ -15,7 +15,7 @@
 
       ! dimensions
       integer, parameter :: nz = 1 ! number of zones
-      integer, parameter :: nvar = 16+1 !3 !5284+2  ! number of variables per zone
+      integer, parameter :: nvar = 16+2 !3 !5284+2  ! number of variables per zone
       integer, parameter :: neq = nz*nvar
 
       ! information about the bandwidth of the jacobian matrix
@@ -369,7 +369,7 @@
 		 mu_i(i) = x(i,1)
 		 enddo
 		 mu_e = x(mt% Ntable+1,1)	 
-		 !mu_n = x(mt% Ntable+2,1)
+		 mu_n = x(mt% Ntable+2,1)
 		 !n_b = x(mt% Ntable+3,1)			 
       end subroutine set_primaries
       
@@ -500,7 +500,7 @@
 		  n_b = Asum + n_n
 		  
   		 !baryon and charge conservation 
- !        equ(mt% Ntable+1,1) = Zsum - n_e
+         equ(mt% Ntable+2,1) = Zsum - n_e
 
 !         equ(mt% Ntable+2,1) = Asum - n_b + n_n*(1.0-chi)  
 ! 	     equ(mt% Ntable+1, 1) = Zsum/n_b - y_e
