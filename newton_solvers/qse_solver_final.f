@@ -73,7 +73,6 @@
       real :: ke_prev, kn_prev
       real :: pres_n
       real :: ni(16)
-      real :: mu_e_fix, mu_n_fix
 
                     
       contains
@@ -172,9 +171,9 @@
 	  write(abundance_id,'(A13)') 'n_i [fm^-3]'
 
   	  ! solve for qse distribution at each n_b  	  
-  	  do i=1,2
+  	  do i=1,1
   	     n_b = n_b_start*real(i)  
-  	     p_ext = p_ext_start*hbarc_n*real(i)
+  	     p_ext = p_ext_start*hbarc_n
 
 		 write(*,*) 'P_ext=', P_ext
   	     write(*,*) 'n_b =', n_b
@@ -195,9 +194,6 @@
          allocate(equ(nvar,nz), x(nvar,nz), xold(nvar,nz), dx(nvar,nz), xscale(nvar,nz), y(ldy, nsec), stat=ierr)
          if (ierr /= 0) stop 1
 
-		mu_e_fix = 0.
-		mu_n_fix = -10.
-
 55 continue 
 
          numerical_jacobian = do_numerical_jacobian
@@ -205,14 +201,11 @@
 		 mu_table_input_id = alloc_iounit(ierr)
 		 if (io_failure(ierr, 'allocating unit for mu table read')) stop		 
 		 open(mu_table_input_id,file=mu_table_name, iostat=ios, status='unknown')
-		 do j = 1, mt% Ntable 
+		 do j = 1, mt% Ntable + 2
 		 read(mu_table_input_id,*) xold(j,1)
 		 enddo		 
-		 read(mu_table_input_id,*) mu_e_fix
-		 read(mu_table_input_id,*) mu_n_fix
 		 close(mu_table_input_id)
          call free_iounit(mu_table_input_id)		 
-		 
 		 else 
 
 		 m_star = mn_n-mp_n-me_n
@@ -239,7 +232,6 @@
 		 !xold(mt% Ntable+1,1) = -(xold(8,1))/(-26.0) + 26.0*m_star
 		 !xold(mt% Ntable+2,1) = 1.d-15
 		 !xold(mt% Ntable+3,1) = n_b
-		 xold(mt% Ntable+2, 1) = 0.	
 			
 		 !write(*,*) xold(mt% Ntable+1, 1) 
 		 !stop	
@@ -249,9 +241,6 @@
 	 	 ! initial abundances 1d-30 except for iron 56
 	 
 		 end if
-
-
-
 
          dx = 0 ! a not very good starting "guess" for the solution
          !dx = x/1.d-3
@@ -299,23 +288,23 @@
             call do_newt(null_decsol, null_decsolblk, mkl_pardiso_decsols)
          end if
 
-       ! if (nonconv) then
-        !   write(*, *) 'failed to converge'
-			mu_table_output_id = alloc_iounit(ierr)
-	  		if (io_failure(ierr, 'allocating unit for mu table file for output')) stop
-	        open(unit=mu_table_output_id, file=mu_table_name, iostat=ios, status="unknown")
-	        if (io_failure(ios,'opening mu table file for output')) stop
-	        do j = 1,mt%Ntable
-	        write(mu_table_output_id,*) mu_i(j)
-	        enddo 
-	        write(mu_table_output_id,*) mu_e
-	        write(mu_table_output_id,*) mu_n
-	        close(mu_table_output_id) 
-	        call free_iounit(mu_table_output_id) 
-	        have_mu_table = .true. 
-	        goto 55
-        !   stop 2
-        !end if
+ !        if (nonconv) then
+ !           write(*, *) 'failed to converge'
+!			mu_table_output_id = alloc_iounit(ierr)
+!	  		if (io_failure(ierr, 'allocating unit for mu table file for output')) stop
+!	        open(unit=mu_table_output_id, file=mu_table_name, iostat=ios, status="unknown")
+!	        if (io_failure(ios,'opening mu table file for output')) stop
+!	        do j = 1,mt%Ntable
+!	        write(mu_table_output_id,*) mu_i(j)
+!	        enddo 
+!	        write(mu_table_output_id,*) Y_e
+!	        write(mu_table_output_id,*) Y_n
+!	        close(mu_table_output_id) 
+!	        call free_iounit(mu_table_output_id) 
+!	        have_mu_table = .true. 
+!	        goto 55
+ !           stop 2
+ !        end if
 
          if (iwork(i_debug) /= 0) then
             write(*, *) 'num_jacobians', iwork(i_num_jacobians)
@@ -332,11 +321,9 @@
 		write(*,*) mt% Z(j), mt% A(j), ni(j)
 		enddo
 
-         
+         stop
          
          have_mu_table = .true. 
-  
-  		stop
   
          enddo 
          
@@ -459,8 +446,6 @@
 !		 real :: ni(16)
                 
          ierr = 0
-
-		 
 		 
 	     chi = use_default_nuclear_size
          rho = (n_b*amu_n)*(mev_to_ergs/clight2)/(1.d-39) ! cgs                      
@@ -483,15 +468,6 @@
         if (io_failure(ierr,'Error in bisection for kn wave vector')) stop
         n_n = 2.0*kn**3/threepisquare              
         Y_n = n_n*(1.0-chi)/n_b   
-
-		 
-		 if(mu_e < mu_e_fix) then
-		 !mu_e = mu_e_fix
-		 n_e = 0.
-		 end if
-		 if(mu_n < mu_n_fix) then
-		 n_n = 0. !mu_n = mu_n_fix
-		 end if
 
 		 Asum = 0. ; Zsum = 0. 
 		 Ai = 0. ; Zi = 0.
@@ -537,7 +513,6 @@
 
 		!write(*,*) 'mu_e check = ', electron_chemical_potential(ke)-mu_e
 		!write(*,*) 'mu_n check = ', neutron_chemical_potential(kn)-mu_n
-		write(*,*) 'mu_e_fix =', mu_e_fix, 'mu_n_fix=', mu_n_fix
 		write(*,*) 'Abar=', Abar, 'Zbar=', Zbar
 		write(*,*) 'n_b=', n_b
  		write(*,*) 'Y_e=', Y_e, 'mu_e=', mu_e, 'n_e=', n_e, 'ke=', ke
