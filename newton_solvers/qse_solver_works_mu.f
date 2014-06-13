@@ -15,7 +15,7 @@
 
       ! dimensions
       integer, parameter :: nz = 1 ! number of zones
-      integer, parameter :: nvar = 16+2 !3 !5284+2  ! number of variables per zone
+      integer, parameter :: nvar = 16+3 !5284+2  ! number of variables per zone
       integer, parameter :: neq = nz*nvar
 
       ! information about the bandwidth of the jacobian matrix
@@ -174,7 +174,7 @@
   	  ! solve for qse distribution at each n_b  	  
   	  do i=1,2
   	     n_b = n_b_start*real(i)  
-  	     p_ext = p_ext_start*hbarc_n*real(i)
+  	     p_ext = p_ext_start !*hbarc_n*real(i)
 
 		 write(*,*) 'P_ext=', P_ext
   	     write(*,*) 'n_b =', n_b
@@ -195,25 +195,25 @@
          allocate(equ(nvar,nz), x(nvar,nz), xold(nvar,nz), dx(nvar,nz), xscale(nvar,nz), y(ldy, nsec), stat=ierr)
          if (ierr /= 0) stop 1
 
-		mu_e_fix = 0.
-		mu_n_fix = -10.
-
-55 continue 
-
-         numerical_jacobian = do_numerical_jacobian
-         if (have_mu_table .eqv. .true.) then
-		 mu_table_input_id = alloc_iounit(ierr)
-		 if (io_failure(ierr, 'allocating unit for mu table read')) stop		 
-		 open(mu_table_input_id,file=mu_table_name, iostat=ios, status='unknown')
-		 do j = 1, mt% Ntable 
-		 read(mu_table_input_id,*) xold(j,1)
-		 enddo		 
-		 read(mu_table_input_id,*) mu_e_fix
-		 read(mu_table_input_id,*) mu_n_fix
-		 close(mu_table_input_id)
-         call free_iounit(mu_table_input_id)		 
-		 
-		 else 
+!		mu_e_fix = 0.
+!		mu_n_fix = -10.
+!
+!55 continue 
+!
+!         numerical_jacobian = do_numerical_jacobian
+!         if (have_mu_table .eqv. .true.) then
+!		 mu_table_input_id = alloc_iounit(ierr)
+!		 if (io_failure(ierr, 'allocating unit for mu table read')) stop		 
+!		 open(mu_table_input_id,file=mu_table_name, iostat=ios, status='unknown')
+!		 do j = 1, mt% Ntable 
+!		 read(mu_table_input_id,*) xold(j,1)
+!		 enddo		 
+!		 read(mu_table_input_id,*) mu_e_fix
+!		 read(mu_table_input_id,*) mu_n_fix
+!		 close(mu_table_input_id)
+!         call free_iounit(mu_table_input_id)		 
+!		 
+!		 else 
 
 		 m_star = mn_n-mp_n-me_n
 		 m_nuc = real(mt% A(8))*amu_n
@@ -232,14 +232,14 @@
 		 end do 
 		 
 		 ! set mass fraction to 1.0 for one nucleus
-		 xold(8,1) =  log((1.d0)/fac1/fac2)*kT-mt%BE(8)
+	   xold(8,1) =  log((1.d0)/fac1/fac2)*kT-mt%BE(8)
 
 		 xold(mt% Ntable+1,1) = -(xold(8,1)+mt%BE(8))/(26.0) + m_star
 		 !xold(mt% Ntable+1, 1) = -(xold(8,1))/26 + m_star
 		 !xold(mt% Ntable+1,1) = -(xold(8,1))/(-26.0) + 26.0*m_star
 		 !xold(mt% Ntable+2,1) = 1.d-15
-		 !xold(mt% Ntable+3,1) = n_b
-		 xold(mt% Ntable+2, 1) = 0.	
+		 xold(mt% Ntable+3,1) = n_b
+		 xold(mt% Ntable+2, 1) = 1.d-2
 			
 		 !write(*,*) xold(mt% Ntable+1, 1) 
 		 !stop	
@@ -248,10 +248,7 @@
 	 	 ! initial mass fractions of each isotope 1/16
 	 	 ! initial abundances 1d-30 except for iron 56
 	 
-		 end if
-
-
-
+!		 end if
 
          dx = 0 ! a not very good starting "guess" for the solution
          !dx = x/1.d-3
@@ -298,22 +295,22 @@
          else if (which_decsol == mkl_pardiso) then
             call do_newt(null_decsol, null_decsolblk, mkl_pardiso_decsols)
          end if
-
+  
        ! if (nonconv) then
         !   write(*, *) 'failed to converge'
-			mu_table_output_id = alloc_iounit(ierr)
-	  		if (io_failure(ierr, 'allocating unit for mu table file for output')) stop
-	        open(unit=mu_table_output_id, file=mu_table_name, iostat=ios, status="unknown")
-	        if (io_failure(ios,'opening mu table file for output')) stop
-	        do j = 1,mt%Ntable
-	        write(mu_table_output_id,*) mu_i(j)
-	        enddo 
-	        write(mu_table_output_id,*) mu_e
-	        write(mu_table_output_id,*) mu_n
-	        close(mu_table_output_id) 
-	        call free_iounit(mu_table_output_id) 
-	        have_mu_table = .true. 
-	        goto 55
+!			mu_table_output_id = alloc_iounit(ierr)
+!	  		if (io_failure(ierr, 'allocating unit for mu table file for output')) stop
+!	        open(unit=mu_table_output_id, file=mu_table_name, iostat=ios, status="unknown")
+!	        if (io_failure(ios,'opening mu table file for output')) stop
+!	        do j = 1,mt%Ntable
+!	        write(mu_table_output_id,*) mu_i(j)
+!	        enddo 
+!	        write(mu_table_output_id,*) mu_e
+!	        write(mu_table_output_id,*) mu_n
+!	        close(mu_table_output_id) 
+!	        call free_iounit(mu_table_output_id) 
+!	        have_mu_table = .true. 
+!	        goto 55
         !   stop 2
         !end if
 
@@ -383,7 +380,7 @@
 		 enddo
 		 mu_e = x(mt% Ntable+1,1)	 
 		 mu_n = x(mt% Ntable+2,1)
-		 !n_b = x(mt% Ntable+3,1)			 
+		 n_b = x(mt% Ntable+3,1)			 
       end subroutine set_primaries
       
 
@@ -459,12 +456,21 @@
 !		 real :: ni(16)
                 
          ierr = 0
-
-		 
-		 
+	 
 	     chi = use_default_nuclear_size
          rho = (n_b*amu_n)*(mev_to_ergs/clight2)/(1.d-39) ! cgs                      
 
+!		if (mu_e < 0.) then
+!		mu_e = abs(mu_e)
+!        x1=0.0
+!        x2=10.
+!        xacc=1.d-15
+!        ke=root_bisection(ke_solve,x1,x2,xacc,ierr,hist) !returns in fm**-1
+!        if (io_failure(ierr,'Error in bisection for kn wave vector')) stop
+!        n_e = 2.0*ke**3/threepisquare !-2.0*kn**3/threepisquare               
+!        Y_e = n_e/n_b
+!        mu_e = -abs(mu_e)
+!		else 
 		! electron wave vector fm^-1
         x1=0.0
         x2=10.
@@ -473,25 +479,38 @@
         if (io_failure(ierr,'Error in bisection for ke wave vector')) stop
         n_e = ke**3/threepisquare               
         Y_e = n_e/n_b   
+!		end if
 
+!		if (mu_n < 0.) then
+!		mu_n = abs(mu_n)
+!        x1=0.0
+!        x2=10.
+!        xacc=1.d-15
+!        kn=root_bisection(kn_solve,x1,x2,xacc,ierr,hist) !returns in fm**-1
+!        if (io_failure(ierr,'Error in bisection for kn wave vector')) stop
+!        n_n = 2.0*kn**3/threepisquare !-2.0*kn**3/threepisquare               
+!        Y_n = n_n*(1.-chi)/n_b   
+!		mu_n = -abs(mu_n) 
+!		else 
 		! neutron wave vector fm^-1
         x1=0.0
         x2=10.
         xacc=1.d-15
-        !kn=root_bisection(kn_solve,x1,x2,xacc,ierr,hist) !returns in fm**-1
-        kn=0.
+        kn=root_bisection(kn_solve,x1,x2,xacc,ierr,hist) !returns in fm**-1
         if (io_failure(ierr,'Error in bisection for kn wave vector')) stop
         n_n = 2.0*kn**3/threepisquare              
         Y_n = n_n*(1.0-chi)/n_b   
-
+!		end if
 		 
-		 if(mu_e < mu_e_fix) then
-		 !mu_e = mu_e_fix
-		 n_e = 0.
-		 end if
-		 if(mu_n < mu_n_fix) then
-		 n_n = 0. !mu_n = mu_n_fix
-		 end if
+!		 if(mu_e < mu_e_fix) then
+!		 !mu_e = mu_e_fix
+!		 n_e = 0.
+!		 mu_e = mu_e_fix
+!		 end if
+!		 if(mu_n < mu_n_fix) then
+!		 n_n = 0.
+!		 mu_n = mu_n_fix !mu_n = mu_n_fix
+!		 end if
 
 		 Asum = 0. ; Zsum = 0. 
 		 Ai = 0. ; Zi = 0.
@@ -514,29 +533,24 @@
 		  ni_Zsum = ni_Zsum + m_term*exp((mu_i(i)+mt%BE(i))/kT)/n_b	
 		  Zi = Zi + zs(i)/n_b
 		  !detailed balance
-		  equ(i,1) = real(mt% Z(i))*(mu_n-mu_e+m_star)+real(mt% N(i))*mu_n-mu_i(i) !-(mt%BE(i))
+		  equ(i,1) = real(mt% Z(i))*(mu_n-mu_e+m_star)+real(mt% N(i))*mu_n-mu_i(i)-(mt%BE(i))
 		  write(*,*) equ(i,1)
 		 enddo
 		 
 		 Zbar = Zi/ni_Zsum
 		 Abar = Ai/ni_Asum
 		  
-		  n_b = Asum + n_n
+		 ! n_b = Asum + n_n
 		  
   		 !baryon and charge conservation 
-         equ(mt% Ntable+2,1) = Zsum - n_e
-
-!         equ(mt% Ntable+2,1) = Asum - n_b + n_n*(1.0-chi)  
-! 	     equ(mt% Ntable+1, 1) = Zsum/n_b - y_e
- !	     equ(mt% Ntable+2, 1) = ni_Asum - 1.0 + y_n 
-         equ(mt% Ntable+1, 1) = electron_pressure(ke)+neutron_pressure(kn) &
-            !& - P_ext
-            ! & +lattice_pressure(26.0,56.0,n_b) - P_ext
+         equ(mt% Ntable+1,1) = Zsum - n_e
+         equ(mt% Ntable+2,1) = Asum - n_b + n_n*(1.0-chi)  
+ !	     equ(mt% Ntable+1, 1) = Zsum/n_b - y_e
+ 	     !equ(mt% Ntable+2, 1) = Asum/n_b - 1.0 + y_n 
+         equ(mt% Ntable+3,1) = electron_pressure(ke)+neutron_pressure(kn) &
 			& + lattice_pressure(Zbar,Abar,n_b) - P_ext
 			!- P_ext
 
-		!write(*,*) 'mu_e check = ', electron_chemical_potential(ke)-mu_e
-		!write(*,*) 'mu_n check = ', neutron_chemical_potential(kn)-mu_n
 		write(*,*) 'mu_e_fix =', mu_e_fix, 'mu_n_fix=', mu_n_fix
 		write(*,*) 'Abar=', Abar, 'Zbar=', Zbar
 		write(*,*) 'n_b=', n_b
@@ -544,10 +558,10 @@
         write(*,*) 'Y_n=', Y_n, 'mu_n=', mu_n, 'n_n=', n_n, 'kn=', kn
 	    write(*,*) 'mu_i', mu_i(1), mu_i(16), equ(1,1), equ(16,1)
 	    write(*,*) 'sumZ=', Zsum, 'n_e=', n_e, 'equN_1=', equ(mt% Ntable+1,1)
-!	    write(*,*) 'sumA=', Asum, 'n_b=', n_b, 'n_n=', n_n,  'equN_2=', equ(mt% Ntable+2,1)
-!		write(*,*) 'pressure=', electron_pressure(ke) + neutron_pressure(kn) &
-!		& +lattice_pressure(Zbar,Abar,n_b), &
-!			& 'P_ext=', P_ext, 'equN_3=', equ(mt% Ntable+2,1)
+	    write(*,*) 'sumA=', Asum, 'n_b=', n_b, 'n_n=', n_n,  'equN_2=', equ(mt% Ntable+2,1)
+		write(*,*) 'pressure=', electron_pressure(ke) + neutron_pressure(kn), &
+ 		& +lattice_pressure(Zbar,Abar,n_b), &
+			& 'P_ext=', P_ext, 'equN_3=', equ(mt% Ntable+3,1)
 		write(*,*) 'lattice_pressure=', lattice_pressure(Zi/ni_Zsum,Ai/ni_Asum,n_b*ni_Asum/Ai)
 		write(*,*) 'lattice_pressure(n_b)=', lattice_pressure(Zi/ni_Zsum,Ai/ni_Asum,n_b)
 	    write(*,*) 'Zi=', Zi/ni_Zsum, 'Ai=', Ai/ni_Asum
@@ -698,14 +712,14 @@
 			A(mt% Ntable+2, mt% Ntable+2) = asum2 
 			A(mt% Ntable+2, mt% Ntable+1) = -sume
 			
-			A(:, mt% Ntable+3) = 0. 
+			A(:, nvar) = 0. 
 
 !			A(mt% Ntable+1, mt% Ntable+1) = 0.		
 !			A(mt% Ntable+1, mt% Ntable+2) = 0.
 !			A(mt% Ntable+2, mt% Ntable+2) = 0. 
 !			A(mt% Ntable+2, mt% Ntable+1) = 0.
 			
-		do i = 1, mt% Ntable+3
+		do i = 1, nvar
 		A(:, i) = A(:, i)*xscale(i,1)
 		end do	
 			
@@ -885,14 +899,14 @@
          !x = xold+dx
  		 ! set mu_e, mu_n, and n_b >0
  		 x(mt% Ntable+1,1) = abs(x(mt% Ntable+1,1))
- 		 !x(mt% Ntable+2,1) = abs(x(mt% Ntable+2,1))
- 		 !x(mt% Ntable+3,1) = abs(x(mt% Ntable+3,1))
+	x(mt% Ntable+2,1) = abs(x(mt% Ntable+2,1))
+	x(mt% Ntable+3,1) = abs(x(mt% Ntable+3,1))
  		 dx(mt% Ntable+1,1) = x(mt% Ntable+1,1)-xold(mt% Ntable+1,1)     
- 		 !dx(mt% Ntable+2,1) = x(mt% Ntable+2,1)-xold(mt% Ntable+2,1)     
- 		 !dx(mt% Ntable+3,1) = x(mt% Ntable+3,1)-xold(mt% Ntable+3,1)
+	dx(mt% Ntable+2,1) = x(mt% Ntable+2,1)-xold(mt% Ntable+2,1)     
+	dx(mt% Ntable+3,1) = x(mt% Ntable+3,1)-xold(mt% Ntable+3,1)
  		 x(mt% Ntable+1,1) = xold(mt%Ntable+1,1)+dx(mt%Ntable+1,1)     
- 		 !x(mt% Ntable+2,1) = xold(mt%Ntable+2,1)+dx(mt%Ntable+2,1)     
- 		 !x(mt% Ntable+3,1) = xold(mt%Ntable+3,1)+dx(mt%Ntable+3,1)     
+	x(mt% Ntable+2,1) = xold(mt%Ntable+2,1)+dx(mt%Ntable+2,1)     
+	x(mt% Ntable+3,1) = xold(mt%Ntable+3,1)+dx(mt%Ntable+3,1)     
       end subroutine xdomain          
           
     end module qse_solver
