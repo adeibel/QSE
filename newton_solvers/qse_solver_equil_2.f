@@ -223,8 +223,8 @@
          mterm = g*(m_nuc*kT/(twopi*hbarc_n**2))**(1.5)
          fac1(j) = real(mt% A(j))/n_b
          fac2(j) = mterm		 
-		 xold(j,1) = log((1./16.)/fac1(j)/fac2(j))*kT-mt%BE(j)
-		 !xold(j,1) = log((1.d-20)/fac1(j)/fac2(j))*kT-mt%BE(j)
+		 !xold(j,1) = log((1./16.)/fac1(j)/fac2(j))*kT-mt%BE(j)
+		 xold(j,1) = log((1.d-20)/fac1(j)/fac2(j))*kT-mt%BE(j)
 		 end do 
 		 
 		 ! set mass fraction to 1.0 for one nucleus
@@ -240,6 +240,10 @@
 		 !xold(mt% Ntable+1,1) = -(xold(8,1))/(-26.0) + 26.0*m_star
 		 !xold(mt% Ntable+2,1) = 1.d-15
 		 xold(mt% Ntable+1,1) = n_b
+			
+		 write(*,*) mu_e, mu_n, n_b
+		 
+		 stop	
 			
 		 !write(*,*) xold(mt% Ntable+1, 1) 
 		 !stop	
@@ -511,7 +515,9 @@
 		 Zbar = Zi/ni_Zsum
 		 Abar = Ai/ni_Asum
 
-		 chi = use_default_nuclear_size
+		 !chi = use_default_nuclear_size
+	     !chi = 3.d-3
+		 chi = phi_sum 
 
 	!	 if (Zsum > 0.) then
 		 n_e = Zsum
@@ -535,7 +541,7 @@
 		n_n = 2.0*kn**3/threepisquare
 		else
 		mu_n = 0.
-		n_n = 1.
+		n_n = 0.
 		end if
 
 
@@ -545,7 +551,8 @@
 !		 mu_n = neutron_chemical_potential(kn)
 		 !end if
 
-		  equ(mt% Ntable+1, 1) = chi*Asum - n_b + n_n*(1.0-chi)
+		  !equ(mt% Ntable+1, 1) = chi*Asum - n_b + n_n*(1.0-chi)
+		  equ(mt% Ntable+1, 1) = Asum - n_b + n_n*(1.0-chi)
 		  
   		 !baryon and charge conservation 
 !         equ(mt% Ntable+1,1) = Zsum - n_e
