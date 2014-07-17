@@ -513,26 +513,24 @@
 		 mu_e = electron_chemical_potential(ke)
 	!	 end if
 
-		 !Pn = P_ext - electron_pressure(ke) - lattice_pressure(Zbar,Abar,n_b,n_e)
-		 n_n = (n_b-Asum) !/(1.-chi)
-		 kn = (threepisquare*n_n/2.0)**onethird
-		 mu_n = neutron_chemical_potential(kn)
+		 Pn = P_ext - electron_pressure(ke) - lattice_pressure(Zbar,Abar,n_b,n_e)
 
-!		if (pn > 0.) then
-!        x1=0.0
-!        x2=10.
-!        xacc=1.d-15
-!        kn=root_bisection(kn_solve_pressure,x1,x2,xacc,ierr,hist) !returns in fm**-1
-!        if (io_failure(ierr,'Error in bisection for kn wave vector')) then
-!        write(*,*) 'Pn=', Pn
-!        end if
-!
-!		mu_n = neutron_chemical_potential(kn)
-!		n_n = 2.0*kn**3/threepisquare
-!		else
-!		mu_n = 0.
-!		n_n = 0.
-!		end if
+
+		if (pn > 0.) then
+        x1=0.0
+        x2=10.
+        xacc=1.d-15
+        kn=root_bisection(kn_solve_pressure,x1,x2,xacc,ierr,hist) !returns in fm**-1
+        if (io_failure(ierr,'Error in bisection for kn wave vector')) then
+        write(*,*) 'Pn=', Pn
+        end if
+
+		mu_n = neutron_chemical_potential(kn)
+		n_n = 2.0*kn**3/threepisquare
+		else
+		mu_n = 0.
+		n_n = 0.
+		end if
 
 
 		 !if (Asum < n_b) then		 
@@ -542,10 +540,7 @@
 		 !end if
 
 		  !equ(mt% Ntable+1, 1) = chi*Asum - n_b + n_n*(1.0-chi)
-		!  equ(mt% Ntable+1, 1) = Asum - n_b + n_n !*(1.0-chi)
-		 equ(mt% Ntable+1,1) = neutron_pressure(kn)+electron_pressure(ke) &
-		 	& +lattice_pressure(Zbar,Abar,n_b,n_e) - P_ext
-		 
+		  equ(mt% Ntable+1, 1) = Asum - n_b + n_n !*(1.0-chi)
 		  
   		 !baryon and charge conservation 
 !         equ(mt% Ntable+1,1) = Zsum - n_e
@@ -882,8 +877,8 @@
      	real, parameter :: C_l = 3.40665d-3
      	p_f = (threepisquare*n)**onethird
      	aion = (Z_average/ne/pi*0.75)**onethird
-       !P = -(n/3.0)*C_l*(Z_average**2/A_average**(4.0/3.0))*p_f*hbarc_n
-     	P = -(9.0/10.0)*Z_average**2.0/aion*electroncharge**2.0 *hbarc_n*n
+       P = -(n/3.0)*C_l*(Z_average**2/A_average**(4.0/3.0))*p_f*hbarc_n
+     	!P = -(9.0/10.0)*Z_average**2.0/aion*electroncharge**2.0 *hbarc_n*n
      end function lattice_pressure 
      
           
