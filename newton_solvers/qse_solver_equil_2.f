@@ -333,8 +333,10 @@
 !		write(*,*) mt% Z(j), mt% A(j), ni(j)
 !		enddo
 
+		if (nonconv .eqv. .FALSE.) then
         write(y_output_id,'(6(es12.5,2x))') p_ext, n_b, y_e, y_n, Z_bar, A_bar
-
+		end if
+	
  !        stop
          
        !  have_mu_table = .true. 
