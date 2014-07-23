@@ -6,6 +6,7 @@
       use utils_lib
       use phys_constants
       use mass_table 
+      use eos_table
       use rootfind      
       use crust_eos_lib      
 
@@ -57,6 +58,7 @@
 
 	  ! for crust
       type(mass_table_type), pointer :: mt
+      type(eos_table_type), pointer :: et
       real*8 :: mu_e, mu_n, mu_i(17)
       real*8 :: mu_e_prev, Y_e_prev
       real*8 :: Y_e, Y_n 
@@ -100,6 +102,7 @@
  
  	  ! for crust
  	  character(len=*), parameter :: mass_table_name = 'nucchem_andrew.data'
+ 	  character(len=*), parameter :: eos_table_name = 'ashes_acc.txt'
 ! 	  character(len=*), parameter :: mass_table_name = 'nucchem.data'   
 !	  character(len=*), parameter :: mass_table_name = 'nucchem_trunc.data'
 	  character(len=*), parameter :: y_output_file = 'y_output.data'
@@ -115,6 +118,7 @@
       integer :: mu_table_input_id, mu_table_output_id
       integer :: y_output_id
       logical, save :: mass_table_is_loaded = .FALSE.
+      logical, save :: eos_table_is_loaded = .FALSE.
       logical, save :: ye_set = .FALSE.
       real :: mterm, fac1(17), fac2(17), m_nuc, m_star
       real, parameter :: g = 1.d0
@@ -161,6 +165,18 @@
       end if
       mt => winvn_mass_table    
  	  write(*,*) 'Loaded mass table'
+ 	  
+ 	  ! load eos table
+ 	  if (eos_table_is_loaded .eqv. .FALSE) then
+ 	  call load_eos_table('../../../data',trim(eos_table_name), ierr)
+ 	  eos_table_is_loaded = .TRUE.
+ 	  if (ierr /= 0) then
+ 	  write(error_unit, '(a)') trim(alert_message)
+ 	  stop
+ 	  end if
+ 	  end if
+ 	  et => winvn_eos_table
+ 	  write(*,*) 'EOS table loaded'
    
  	  output_id = alloc_iounit(ierr)
   	  if (io_failure(ierr,'allocating unit for output nuclei file')) stop
@@ -182,7 +198,7 @@
 
   	  ! solve for qse distribution at each n_b  	  
   	  do i=1,10000
-  	     n_b = n_b_start/1000.
+  	     n_b = n_b_start !/1000.
   	     p_ext = p_ext_start*hbarc_n*real(i)  
 
 !		 write(*,*) 'P_ext=', P_ext
@@ -538,7 +554,7 @@
 		  R_n = (real(mt% N(i))/n_nin/pi*0.75)**onethird 
 		  R_ws = (real(mt% Z(i))/n_e/pi*0.75)**onethird		 
           !number density of isotopes
-		  m_star = mn_n-mp_n !-me_n !does not contain m_e because mu_e has rest mass in definition 
+		  m_star = mn_n-mp_n-me_n !does not contain m_e because mu_e has rest mass in definition 
 		  m_nuc = real(mt%A(i))*amu_n !real(mt% Z(i))*mp_n+real(mt% N(i))*mn_n !-mt%BE(i)    
      	  m_term = g*(twopi*hbarc_n**2/(m_nuc*kT))**(-3.0/2.0)
      	  ni(i) = m_term*exp((mu_i(i)+mt%BE(i))/kT)
@@ -989,14 +1005,14 @@
          !x = xold+dx
  		 ! set mu_e, mu_n, and n_b >0
  		 x(mt% Ntable+1,1) = abs(x(mt% Ntable+1,1))
- !		 x(mt% Ntable+2,1) = abs(x(mt% Ntable+2,1))
-     !	 x(mt% Ntable+3,1) = abs(x(mt% Ntable+3,1))
+ 		 x(mt% Ntable+2,1) = abs(x(mt% Ntable+2,1))
+     	 x(mt% Ntable+3,1) = abs(x(mt% Ntable+3,1))
  		 dx(mt% Ntable+1,1) = x(mt% Ntable+1,1)-xold(mt% Ntable+1,1)     
-!		 dx(mt% Ntable+2,1) = x(mt% Ntable+2,1)-xold(mt% Ntable+2,1)     
- 	!	 dx(mt% Ntable+3,1) = x(mt% Ntable+3,1)-xold(mt% Ntable+3,1)
+		 dx(mt% Ntable+2,1) = x(mt% Ntable+2,1)-xold(mt% Ntable+2,1)     
+ 		 dx(mt% Ntable+3,1) = x(mt% Ntable+3,1)-xold(mt% Ntable+3,1)
  		 x(mt% Ntable+1,1) = xold(mt%Ntable+1,1)+dx(mt%Ntable+1,1)     
-!		 x(mt% Ntable+2,1) = xold(mt%Ntable+2,1)+dx(mt%Ntable+2,1)     
-	!	 x(mt% Ntable+3,1) = xold(mt%Ntable+3,1)+dx(mt%Ntable+3,1)     
+		 x(mt% Ntable+2,1) = xold(mt%Ntable+2,1)+dx(mt%Ntable+2,1)     
+		 x(mt% Ntable+3,1) = xold(mt%Ntable+3,1)+dx(mt%Ntable+3,1)     
  		 
  		 ! set mu_n<0 in the outer crust
  !		 x(mt% Ntable+2,1) = -abs(x(mt%Ntable+2,1))
