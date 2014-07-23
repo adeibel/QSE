@@ -176,12 +176,13 @@
 	  write(abundance_id,'(A13)') 'n_i [fm^-3]'
 
 	  y_output_id = alloc_iounit(ierr)
+	  if (io_failure(ierr, 'allocating unit for y fractions file')) stop
 	  open(unit=y_output_id, file = y_output_file, iostat=ios, status="unknown")
-	  write(y_output_id,'(6(A12),2x)') 'Pressure', 'n_b', 'Ye', 'Yn', 'Zbar', 'Abar'
+	  write(y_output_id,'(8(A12),2x)') 'Pressure', 'n_b', 'Ye', 'Yn', 'Zbar', 'Abar', 'mu_e', 'mu_n'
 
   	  ! solve for qse distribution at each n_b  	  
   	  do i=1,10000
-  	     n_b = n_b_start
+  	     n_b = n_b_start/1000.
   	     p_ext = p_ext_start*hbarc_n*real(i)  
 
 !		 write(*,*) 'P_ext=', P_ext
@@ -242,12 +243,12 @@
 		 !mu_e = -(xold(8,1))/26 + m_star		 
 		 mu_e = -(xold(17,1))/46. + m_star
 		 !xold(mt% Ntable+2,1) = n_b
-		 mu_n = mu_e/100.
+		 mu_n = mu_e/1000.
 
 		! initial values of additional variables 
 		 xold(mt% Ntable+1,1) = n_b
 		 xold(mt% Ntable+2,1) = mu_n 
-		xold(mt% Ntable+3,1) = mu_e
+		 xold(mt% Ntable+3,1) = mu_e
 			
 !		 write(*,*) mu_e, mu_n, n_b
 		 
@@ -334,7 +335,7 @@
 !		enddo
 
 		if (nonconv .eqv. .FALSE.) then
-        write(y_output_id,'(6(es12.5,2x))') p_ext, n_b, y_e, y_n, Z_bar, A_bar
+        write(y_output_id,'(8(es12.5,2x))') p_ext, n_b, y_e, y_n, Z_bar, A_bar, mu_e, mu_n
 		end if
 	
  !        stop
