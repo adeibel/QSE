@@ -16,7 +16,7 @@
 
       ! dimensions
       integer, parameter :: nz = 1 ! number of zones
-      integer, parameter :: nvar =  5284+2 !17+2 !5284+2  ! number of variables per zone
+      integer, parameter :: nvar = 17+2 !5284+2  ! number of variables per zone
       integer, parameter :: neq = nz*nvar
 
       ! information about the bandwidth of the jacobian matrix
@@ -59,7 +59,7 @@
 	  ! for crust
       type(mass_table_type), pointer :: mt
       type(eos_table_type), pointer :: et
-      real*8 :: mu_e, mu_n, mu_i(5284)
+      real*8 :: mu_e, mu_n, mu_i(17)
       real*8 :: mu_e_prev, Y_e_prev
       real*8 :: Y_e, Y_n 
    	  real*8 :: n_b, n_e, n_n
@@ -74,8 +74,11 @@
       real :: kT
       real :: mu_n_prev
       real :: ke_prev, kn_prev
-      real :: pres_n, Pn
-      real :: ni(5284)
+      real :: pres_n
+      real :: ni(17)
+            real :: Pn
+   
+
                     
       contains
       
@@ -98,10 +101,10 @@
       integer :: which_decsol_in, decsol    
  
  	  ! for crust
-! 	  character(len=*), parameter :: mass_table_name = 'nucchem_andrew.data'
+ 	  character(len=*), parameter :: mass_table_name = 'nucchem_andrew.data'
  	  character(len=*), parameter :: eos_table_name = 'ashes_acc.txt'
 ! 	  character(len=*), parameter :: mass_table_name = 'nucchem.data'   
-	  character(len=*), parameter :: mass_table_name = 'nucchem_trunc.data'
+!	  character(len=*), parameter :: mass_table_name = 'nucchem_trunc.data'
 	  character(len=*), parameter :: y_output_file = 'y_output.data'
       character(len=*), parameter :: output_file = 'qse_output.data'
    	  character(len=*), parameter :: abundance_file = 'qse_abun.data'
@@ -117,7 +120,7 @@
       logical, save :: mass_table_is_loaded = .FALSE.
       logical, save :: eos_table_is_loaded = .FALSE.
       logical, save :: ye_set = .FALSE.
-      real :: mterm, fac1(5284), fac2(5284), m_nuc, m_star
+      real :: mterm, fac1(17), fac2(17), m_nuc, m_star
       real, parameter :: g = 1.d0
 
       namelist /range/ P_ext_start, n_b_start, kT, have_mu_table, &
@@ -205,8 +208,6 @@
   	     n_b = et% nb(i) !n_b_start !/1000.
   	     p_ext = (et% pr(i))*hbarc_n !p_ext_start*hbarc_n*real(i)  
 		! mu_e = (et% mue(i))*hbarc_n
-		
-		if (et% pr(i)*hbarc_n < 1.d-5) cycle  
 
 !		 write(*,*) 'P_ext=', P_ext
 !  	     write(*,*) 'n_b =', n_b
@@ -486,7 +487,7 @@
 		 real :: ni_Zsum, ni_Asum
 		 real :: der_Zsum, der_Asum
 		 real :: Asum, Zsum
-		 real :: As(5284), Zs(5284)
+		 real :: As(17), Zs(17)
 		 real :: Zi, Ai
 		 real :: pressure
 		 real :: Zbar, Abar
