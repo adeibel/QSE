@@ -110,7 +110,7 @@
    	  character(len=*), parameter :: abundance_file = 'qse_abun.data'
    	  character(len=*), parameter :: default_infile = 'qse.inlist'
    	  character(len=64), parameter :: data_dir = '../../../data/crust_eos'
-	  character(len=64), parameter :: eos_table_name = 'helm_table.dat'
+!	  character(len=64), parameter :: eos_table_name = 'helm_table.dat'
 	  character(len=64), parameter :: mu_table_name = 'mu_table_old.data'
       character(len=80) :: infile	
       integer :: i, j, ios
@@ -167,7 +167,7 @@
  	  write(*,*) 'Loaded mass table'
  	  
  	  ! load eos table
- 	  if (eos_table_is_loaded .eqv. .FALSE) then
+ 	  if (eos_table_is_loaded .eqv. .FALSE.) then
  	  call load_eos_table('../../../data',trim(eos_table_name), ierr)
  	  eos_table_is_loaded = .TRUE.
  	  if (ierr /= 0) then
@@ -177,6 +177,13 @@
  	  end if
  	  et => winvn_eos_table
  	  write(*,*) 'EOS table loaded'
+ 	  
+ 	  write(*,*) et% nb(1), et% rho(1), et% Ye(1), et% Yn(1), et% fr(1), et% Z_bar(1), &
+ 	  		& et% A_bar(1), et% Q(1), et% fr_x(1), et% a_ionic(1), et% heat(1), &
+ 	  		& et% heat_full(1), et% nn(1), et% pr(1), et% gb(1), et% ne(1), &
+ 	  		& et% mun(1), et% mue(1)
+ 	  
+ 	  stop
    
  	  output_id = alloc_iounit(ierr)
   	  if (io_failure(ierr,'allocating unit for output nuclei file')) stop
