@@ -16,7 +16,7 @@
 
       ! dimensions
       integer, parameter :: nz = 1 ! number of zones
-      integer, parameter :: nvar = 17+3 !5284+2  ! number of variables per zone
+      integer, parameter :: nvar = 17+2 !5284+2  ! number of variables per zone
       integer, parameter :: neq = nz*nvar
 
       ! information about the bandwidth of the jacobian matrix
@@ -178,12 +178,12 @@
  	  et => winvn_eos_table
  	  write(*,*) 'EOS table loaded'
  	  
- 	  write(*,*) et% nb(1), et% rho(1), et% Ye(1), et% Yn(1), et% fr(1), et% Z_bar(1), &
- 	  		& et% A_bar(1), et% Q(1), et% fr_x(1), et% a_ionic(1), et% heat(1), &
- 	  		& et% heat_full(1), et% nn(1), et% pr(1), et% gb(1), et% ne(1), &
- 	  		& et% mun(1), et% mue(1)
- 	  
- 	  stop
+ !	  write(*,*) et% nb(1), et% rho(1), et% Ye(1), et% Yn(1), et% fr(1), et% Z_bar(1), &
+! 	  		& et% A_bar(1), et% Q(1), et% fr_x(1), et% a_ionic(1), et% heat(1), &
+! 	  		& et% heat_full(1), et% nn(1), et% pr(1), et% gb(1), et% ne(1), &
+! 	  		& et% mun(1), et% mue(1)
+! 	  
+! 	  stop
    
  	  output_id = alloc_iounit(ierr)
   	  if (io_failure(ierr,'allocating unit for output nuclei file')) stop
@@ -204,9 +204,10 @@
 	  write(y_output_id,'(8(A12),2x)') 'Pressure', 'n_b', 'Ye', 'Yn', 'Zbar', 'Abar', 'mu_e', 'mu_n'
 
   	  ! solve for qse distribution at each n_b  	  
-  	  do i=1,10000
-  	     n_b = n_b_start !/1000.
-  	     p_ext = p_ext_start*hbarc_n*real(i)  
+  	  do i=1, et% Ntable
+  	     n_b = et% nb(i) !n_b_start !/1000.
+  	     p_ext = (et% pr(i))*hbarc_n !p_ext_start*hbarc_n*real(i)  
+		! mu_e = (et% mue(i))*hbarc_n
 
 !		 write(*,*) 'P_ext=', P_ext
 !  	     write(*,*) 'n_b =', n_b
@@ -265,13 +266,14 @@
 		 
 		 !mu_e = -(xold(8,1))/26 + m_star		 
 		 mu_e = -(xold(17,1))/46. + m_star
+		 !mu_e = (et% mue(i))*hbarc_n
 		 !xold(mt% Ntable+2,1) = n_b
 		 mu_n = mu_e/1000.
 
 		! initial values of additional variables 
-		 xold(mt% Ntable+1,1) = n_b
+		! xold(mt% Ntable+1,1) = n_b
 		 xold(mt% Ntable+2,1) = mu_n 
-		 xold(mt% Ntable+3,1) = mu_e
+		 xold(mt% Ntable+1,1) = mu_e
 			
 !		 write(*,*) mu_e, mu_n, n_b
 		 
@@ -325,6 +327,8 @@
 
          if (nonconv) then
             write(*, *) 'failed to converge'
+        write(*,*) p_ext, n_b, y_e, y_n, Z_bar, A_bar, mu_e, mu_n
+            
 	     endif
 !			mu_table_output_id = alloc_iounit(ierr)
 !	  		if (io_failure(ierr, 'allocating unit for mu table file for output')) stop
@@ -411,9 +415,9 @@
 		 do i = 1, mt% Ntable
 		 mu_i(i) = x(i,1)
 		 enddo
-		 mu_e = x(mt% Ntable+3,1)	 
+		 mu_e = x(mt% Ntable+1,1)	 
 		 mu_n = x(mt% Ntable+2,1)
-		 n_b = x(mt% Ntable+1,1)			 
+		 !n_b = x(mt% Ntable+1,1)			 
       	 ! p_ext = x(mt% Ntable+3,1)
       end subroutine set_primaries
       
@@ -632,15 +636,15 @@
 
 		  !equ(mt% Ntable+1, 1) = chi*Asum - n_b + n_n*(1.0-chi)
 		!  equ(mt% Ntable+1, 1) = Asum - n_b + n_n !*(1.0-chi)
-		 equ(mt% Ntable+1,1) = neutron_pressure(kn)+electron_pressure(ke) &
+!		 equ(mt% Ntable+1,1) = neutron_pressure(kn)+electron_pressure(ke) &
 		 	!& - P_ext
-		 	& +lattice_pressure(Zbar,Abar,n_b,n_e) - P_ext
+!		 	& +lattice_pressure(Zbar,Abar,n_b,n_e) - P_ext
 		 
 	!	 y_e = n_e/n_b
 
 		  
   		 !baryon and charge conservation 
-        equ(mt% Ntable+3,1) = Zsum - n_e
+        equ(mt% Ntable+1,1) = Zsum - n_e
 
          equ(mt% Ntable+2,1) = Asum - n_b + n_n !*(1.0-chi)  
  !	     equ(mt% Ntable+1, 1) = Zsum/n_b - n_e/n_b
@@ -1013,13 +1017,13 @@
  		 ! set mu_e, mu_n, and n_b >0
  		 x(mt% Ntable+1,1) = abs(x(mt% Ntable+1,1))
  		 x(mt% Ntable+2,1) = abs(x(mt% Ntable+2,1))
-     	 x(mt% Ntable+3,1) = abs(x(mt% Ntable+3,1))
+  !   	 x(mt% Ntable+3,1) = abs(x(mt% Ntable+3,1))
  		 dx(mt% Ntable+1,1) = x(mt% Ntable+1,1)-xold(mt% Ntable+1,1)     
 		 dx(mt% Ntable+2,1) = x(mt% Ntable+2,1)-xold(mt% Ntable+2,1)     
- 		 dx(mt% Ntable+3,1) = x(mt% Ntable+3,1)-xold(mt% Ntable+3,1)
+ !		 dx(mt% Ntable+3,1) = x(mt% Ntable+3,1)-xold(mt% Ntable+3,1)
  		 x(mt% Ntable+1,1) = xold(mt%Ntable+1,1)+dx(mt%Ntable+1,1)     
 		 x(mt% Ntable+2,1) = xold(mt%Ntable+2,1)+dx(mt%Ntable+2,1)     
-		 x(mt% Ntable+3,1) = xold(mt%Ntable+3,1)+dx(mt%Ntable+3,1)     
+!		 x(mt% Ntable+3,1) = xold(mt%Ntable+3,1)+dx(mt%Ntable+3,1)     
  		 
  		 ! set mu_n<0 in the outer crust
  !		 x(mt% Ntable+2,1) = -abs(x(mt%Ntable+2,1))
