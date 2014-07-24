@@ -114,6 +114,7 @@ contains
 		! read through the file to get number of entries
 		Ntab = 0
 		read(iounit,*,iostat=ierr)
+		read(iounit,*,iostat=ierr)
 		if (ierr /= 0) then
 			call alert(ierr,'eos_table_support: load_eos_table:: unable to read any lines')
 			return
@@ -146,7 +147,8 @@ contains
 			& et% heat(Ntab), et% heat_full(Ntab), et% nn(Ntab), et% pr(Ntab), et% gb(Ntab), &
 			& et% ne(Ntab), et% mun(Ntab), et% mue(Ntab))
 		
-		! now read in the table, skipping first line
+		! now read in the table, skipping first two lines
+		read(iounit,*,iostat=ierr)
 		read(iounit,*,iostat=ierr)
 		if (ierr /= 0) then
 			call alert(ierr,'eos_table_support: load_eos_table:: unable to read any lines')
