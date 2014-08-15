@@ -16,7 +16,7 @@
 
       ! dimensions
       integer, parameter :: nz = 1 ! number of zones
-      integer, parameter :: nvar =  28+2 !17+2 !28+2  ! number of variables per zone
+      integer, parameter :: nvar = 17+2 !5284+2  ! number of variables per zone
       integer, parameter :: neq = nz*nvar
 
       ! information about the bandwidth of the jacobian matrix
@@ -59,7 +59,7 @@
 	  ! for crust
       type(mass_table_type), pointer :: mt
       type(eos_table_type), pointer :: et
-      real*8 :: mu_e, mu_n, mu_i(28)
+      real*8 :: mu_e, mu_n, mu_i(17)
       real*8 :: mu_e_prev, Y_e_prev
       real*8 :: Y_e, Y_n 
    	  real*8 :: n_b, n_e, n_n
@@ -74,8 +74,11 @@
       real :: kT
       real :: mu_n_prev
       real :: ke_prev, kn_prev
-      real :: pres_n, Pn
-      real :: ni(28)
+      real :: pres_n
+      real :: ni(17)
+            real :: Pn
+   
+
                     
       contains
       
@@ -98,8 +101,7 @@
       integer :: which_decsol_in, decsol    
  
  	  ! for crust
-! 	  character(len=*), parameter :: mass_table_name = 'nucchem_andrew.data'
-      character(len=*), parameter :: mass_table_name = 'nucchem_andrew2.data'
+ 	  character(len=*), parameter :: mass_table_name = 'nucchem_andrew.data'
  	  character(len=*), parameter :: eos_table_name = 'ashes_acc.txt'
 ! 	  character(len=*), parameter :: mass_table_name = 'nucchem.data'   
 !	  character(len=*), parameter :: mass_table_name = 'nucchem_trunc.data'
@@ -118,7 +120,7 @@
       logical, save :: mass_table_is_loaded = .FALSE.
       logical, save :: eos_table_is_loaded = .FALSE.
       logical, save :: ye_set = .FALSE.
-      real :: mterm, fac1(28), fac2(28), m_nuc, m_star
+      real :: mterm, fac1(17), fac2(17), m_nuc, m_star
       real, parameter :: g = 1.d0
 
       namelist /range/ P_ext_start, n_b_start, kT, have_mu_table, &
@@ -206,13 +208,6 @@
   	     n_b = et% nb(i) !n_b_start !/1000.
   	     p_ext = (et% pr(i))*hbarc_n !p_ext_start*hbarc_n*real(i)  
 		! mu_e = (et% mue(i))*hbarc_n
-		
-	!	if (et% pr(i)*hbarc_n < 5.d-4) cycle  
-
-
-		write(*,*) i
-
-	!    write(*,*) mt% Ntable
 
 !		 write(*,*) 'P_ext=', P_ext
 !  	     write(*,*) 'n_b =', n_b
@@ -260,21 +255,17 @@
          mterm = g*(m_nuc*kT/(twopi*hbarc_n**2))**(1.5)
          fac1(j) = real(mt% A(j))/n_b
          fac2(j) = mterm		 
-		! xold(j,1) = log((1./16.)/fac1(j)/fac2(j))*kT-mt%BE(j)
-		 xold(j,1) = log((1.d-10)/fac1(j)/fac2(j))*kT-mt%BE(j)
+		 !xold(j,1) = log((1./16.)/fac1(j)/fac2(j))*kT-mt%BE(j)
+		 xold(j,1) = log((1.d-20)/fac1(j)/fac2(j))*kT-mt%BE(j)
 		 end do 
 		 
 		 ! set mass fraction to 1.0 for one nucleus
-		! xold(11,1) = log((0.33)/fac1(11)/fac2(11))*kT-mt%BE(11)
-		! xold(10,1) = log((0.33)/fac1(11)/fac2(11))*kT-mt%BE(11)
-		 xold(11,1) = log((1.0)/fac1(11)/fac2(11))*kT-mt%BE(11)
-		 
-		 !xold(17,1) = log((1.d0)/fac1(17)/fac2(17))*kT-mt%BE(17)
+		 xold(17,1) = log((1.d0)/fac1(17)/fac2(17))*kT-mt%BE(17)
 		 !xold(8,1) =  log((1.d0)/fac1(8)/fac2(8))*kT-mt%BE(8)
 	!	 xold(mt% Ntable+1,1) = -(xold(8,1))/(26.0) + m_star
 		 
-		 mu_e = -(xold(11,1))/26. + m_star		 
-		! mu_e = -(xold(1354,1))/36. + m_star
+		 !mu_e = -(xold(8,1))/26 + m_star		 
+		 mu_e = -(xold(17,1))/46. + m_star
 		 !mu_e = (et% mue(i))*hbarc_n
 		 !xold(mt% Ntable+2,1) = n_b
 		 mu_n = mu_e/1000.
@@ -488,7 +479,7 @@
 		 real :: m_nuc, m_nuc1
 		 real :: m_term, m_term1		 
 		 !for equations in log space
-		 real :: sum_lnZ(28), sum_lnA(28) 
+		 real :: sum_lnZ(16), sum_lnA(16) 
 		 real :: sum_lnZ_total, sum_lnZ_final 
 		 real :: sum_lnA_total, sum_lnA_final
 		 real :: logZ_exponent
@@ -496,11 +487,11 @@
 		 real :: ni_Zsum, ni_Asum
 		 real :: der_Zsum, der_Asum
 		 real :: Asum, Zsum
-		 real :: As(28), Zs(28)
+		 real :: As(17), Zs(17)
 		 real :: Zi, Ai
 		 real :: pressure
 		 real :: Zbar, Abar
-		 real :: ni(28)
+!		 real :: ni(16)
 		 ! for chi
 		 real :: n_nin
 		 real, parameter :: n_0 = 1.740151d-1

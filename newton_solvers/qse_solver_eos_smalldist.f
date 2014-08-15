@@ -16,7 +16,7 @@
 
       ! dimensions
       integer, parameter :: nz = 1 ! number of zones
-      integer, parameter :: nvar = 17+2 !5284+2  ! number of variables per zone
+      integer, parameter :: nvar = 28+2 !5284+2  ! number of variables per zone
       integer, parameter :: neq = nz*nvar
 
       ! information about the bandwidth of the jacobian matrix
@@ -59,7 +59,7 @@
 	  ! for crust
       type(mass_table_type), pointer :: mt
       type(eos_table_type), pointer :: et
-      real*8 :: mu_e, mu_n, mu_i(17)
+      real*8 :: mu_e, mu_n, mu_i(28)
       real*8 :: mu_e_prev, Y_e_prev
       real*8 :: Y_e, Y_n 
    	  real*8 :: n_b, n_e, n_n
@@ -75,7 +75,7 @@
       real :: mu_n_prev
       real :: ke_prev, kn_prev
       real :: pres_n
-      real :: ni(17)
+      real :: ni(28)
             real :: Pn
    
 
@@ -101,7 +101,7 @@
       integer :: which_decsol_in, decsol    
  
  	  ! for crust
- 	  character(len=*), parameter :: mass_table_name = 'nucchem_andrew.data'
+ 	  character(len=*), parameter :: mass_table_name = 'nucchem_andrew2.data'
  	  character(len=*), parameter :: eos_table_name = 'ashes_acc.txt'
 ! 	  character(len=*), parameter :: mass_table_name = 'nucchem.data'   
 !	  character(len=*), parameter :: mass_table_name = 'nucchem_trunc.data'
@@ -120,7 +120,7 @@
       logical, save :: mass_table_is_loaded = .FALSE.
       logical, save :: eos_table_is_loaded = .FALSE.
       logical, save :: ye_set = .FALSE.
-      real :: mterm, fac1(17), fac2(17), m_nuc, m_star
+      real :: mterm, fac1(28), fac2(28), m_nuc, m_star
       real, parameter :: g = 1.d0
 
       namelist /range/ P_ext_start, n_b_start, kT, have_mu_table, &
@@ -260,12 +260,12 @@
 		 end do 
 		 
 		 ! set mass fraction to 1.0 for one nucleus
-		 xold(17,1) = log((1.d0)/fac1(17)/fac2(17))*kT-mt%BE(17)
+		 xold(14,1) = log((1.d0)/fac1(14)/fac2(14))*kT-mt%BE(14)
 		 !xold(8,1) =  log((1.d0)/fac1(8)/fac2(8))*kT-mt%BE(8)
 	!	 xold(mt% Ntable+1,1) = -(xold(8,1))/(26.0) + m_star
 		 
 		 !mu_e = -(xold(8,1))/26 + m_star		 
-		 mu_e = -(xold(17,1))/46. + m_star
+		 mu_e = -(xold(14,1))/28. + m_star
 		 !mu_e = (et% mue(i))*hbarc_n
 		 !xold(mt% Ntable+2,1) = n_b
 		 mu_n = mu_e/1000.
@@ -487,7 +487,7 @@
 		 real :: ni_Zsum, ni_Asum
 		 real :: der_Zsum, der_Asum
 		 real :: Asum, Zsum
-		 real :: As(17), Zs(17)
+		 real :: As(28), Zs(28)
 		 real :: Zi, Ai
 		 real :: pressure
 		 real :: Zbar, Abar
