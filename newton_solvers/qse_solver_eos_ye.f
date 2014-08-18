@@ -179,13 +179,7 @@
  	  et => winvn_eos_table
  	  write(*,*) 'EOS table loaded'
  	  
- !	  write(*,*) et% nb(1), et% rho(1), et% Ye(1), et% Yn(1), et% fr(1), et% Z_bar(1), &
-! 	  		& et% A_bar(1), et% Q(1), et% fr_x(1), et% a_ionic(1), et% heat(1), &
-! 	  		& et% heat_full(1), et% nn(1), et% pr(1), et% gb(1), et% ne(1), &
-! 	  		& et% mun(1), et% mue(1)
-! 	  
-! 	  stop
-   
+ 	  ! allocate units and open output files   
  	  output_id = alloc_iounit(ierr)
   	  if (io_failure(ierr,'allocating unit for output nuclei file')) stop
   	  open(unit=output_id, file=output_file, iostat=ios, status="unknown")
@@ -204,24 +198,16 @@
 	  open(unit=y_output_id, file = y_output_file, iostat=ios, status="unknown")
 	  write(y_output_id,'(8(A12),2x)') 'Pressure', 'n_b', 'Ye', 'Yn', 'Zbar', 'Abar', 'mu_e', 'mu_n'
 
-  	  ! solve for qse distribution at each n_b  	  
+  	  ! solve for qse distribution at each pressure	  
   	  do i=1, et% Ntable
   	     !n_b = et% nb(i) !n_b_start !/1000.
   	     mu_e = (et% mue(i))*hbarc_n
   	     p_ext = (et% pr(i))*hbarc_n !p_ext_start*hbarc_n*real(i)  
 		! mu_e = (et% mue(i))*hbarc_n
-
-!		 write(*,*) 'P_ext=', P_ext
-!  	     write(*,*) 'n_b =', n_b
-!  	     write(*,*) 'numerical jacobian? =', do_numerical_jacobian
-!  	     write(*,*) 'have mu table? =', have_mu_table
-!         write(*,*) 'decsol option', decsol     
-              
+                
          which_decsol = which_decsol_in
          call decsol_option_str(which_decsol, decsol_option_name, ierr)
-  !       write(*,*) which_decsol, trim(decsol_option_name), ierr
          if (ierr /= 0) return
-!         write(*,*) 'use ' // trim(decsol_option_name)
 
          if (which_decsol == mkl_pardiso) then
             if (.not. okay_to_use_mkl_pardiso()) which_decsol = lapack
@@ -244,13 +230,7 @@
          call free_iounit(mu_table_input_id)		 
 		 else 
 
-
-!         xold(mt% Ntable+1,1) = (log(fac1*fac2)*kT+real(mt% Z(867))*m_star&
-!         	& + mt%BE(867)+real(mt%A(867))*xold(mt% Ntable+2,1))/real(mt% Z(867))
-!         xold(mt% Ntable+1,1) = (log(fac1*fac2)*kT+real(mt% Z(867))*m_star&
-!        	& +real(mt%A(867))*xold(mt% Ntable+3,1))/real(mt% Z(867))
-
-		 ! sets mass fractions to 1d-30
+		 ! sets mass fractions to 1d-20 for unpopulated nuclei
 		 do j=1,mt% Ntable
 		 m_star = mn_n-mp_n-me_n
 		 m_nuc = real(mt% A(j))*amu_n
@@ -261,7 +241,7 @@
 		 xold(j,1) = log((1.d-20)/fac1(j)/fac2(j))*kT-mt%BE(j)
 		 end do 
 		 
-		 ! set mass fraction to 1.0 for one nucleus
+		 ! set mass fraction to 1.0 for most abundant nucleus
 		 xold(22,1) = log((1.d0)/fac1(22)/fac2(22))*kT-mt%BE(22)
 		 !xold(8,1) =  log((1.d0)/fac1(8)/fac2(8))*kT-mt%BE(8)
 	!	 xold(mt% Ntable+1,1) = -(xold(8,1))/(26.0) + m_star
@@ -287,7 +267,7 @@
         mu_e = -mu_e
         end if		 
 		 
-		 n_b = n_e/(et% Ye(i))
+		n_b = n_e/(et% Ye(i))
 		 
 		 !mu_e = -(xold(8,1))/26 + m_star		 
 		 !mu_e = -(xold(22,1))/28. + m_star
@@ -300,12 +280,9 @@
 		 xold(mt% Ntable+2,1) = mu_n 
 		 xold(mt% Ntable+1,1) = n_b !mu_e
 			
-!		 write(*,*) mu_e, mu_n, n_b
-		 
 		 end if
 
          dx = 0 ! a not very good starting "guess" for the solution
-         !dx = x/1.d-3
          x = xold
          
          lid = max_lid
@@ -379,20 +356,11 @@
          deallocate(iwork, work)
          deallocate(equ, x, xold, dx, xscale, y)
          
-      
-!         write(*,*) 'finished n_b', i
-
-!		do j = 1, mt% Ntable
-!		write(*,*) mt% Z(j), mt% A(j), ni(j)
-!		enddo
-
+    
 		if (nonconv .eqv. .FALSE.) then
         write(y_output_id,'(8(es12.5,2x))') p_ext, n_b, y_e, y_n, Z_bar, A_bar, mu_e, mu_n
 		end if
 	
- !        stop
-         
-       !  have_mu_table = .true. 
   		 have_mu_table = .false.
   
          enddo 
