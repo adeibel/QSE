@@ -206,7 +206,8 @@
 
   	  ! solve for qse distribution at each n_b  	  
   	  do i=1, et% Ntable
-  	     n_b = et% nb(i) !n_b_start !/1000.
+  	     !n_b = et% nb(i) !n_b_start !/1000.
+  	     mu_e = (et% mue(i))*hbarc_n
   	     p_ext = (et% pr(i))*hbarc_n !p_ext_start*hbarc_n*real(i)  
 		! mu_e = (et% mue(i))*hbarc_n
 
@@ -265,8 +266,31 @@
 		 !xold(8,1) =  log((1.d0)/fac1(8)/fac2(8))*kT-mt%BE(8)
 	!	 xold(mt% Ntable+1,1) = -(xold(8,1))/(26.0) + m_star
 		 
+		! electron wave vector fm^-1
+		if (mu_e > 0.) then
+        x1=0.0
+        x2=10.
+        xacc=1.d-15
+        ke=root_bisection(ke_solve,x1,x2,xacc,ierr,hist) !returns in fm**-1
+        if (io_failure(ierr,'Error in bisection for ke wave vector')) stop
+        n_e = ke**3/threepisquare               
+        Y_e = n_e/n_b   
+        else
+        mu_e = abs(mu_e)
+        x1=0.0
+        x2=10.
+        xacc=1.d-15
+        ke=root_bisection(ke_solve,x1,x2,xacc,ierr,hist) !returns in fm**-1
+        if (io_failure(ierr,'Error in bisection for ke wave vector')) stop
+        n_e = ke**3/threepisquare               
+        Y_e = n_e/n_b   
+        mu_e = -mu_e
+        end if		 
+		 
+		 n_b = n_e/(et% Ye(i))
+		 
 		 !mu_e = -(xold(8,1))/26 + m_star		 
-		 mu_e = -(xold(22,1))/28. + m_star
+		 !mu_e = -(xold(22,1))/28. + m_star
 		 !mu_e = (et% mue(i))*hbarc_n
 		 !xold(mt% Ntable+2,1) = n_b
 		 mu_n = mu_e/1000.
@@ -274,7 +298,7 @@
 		! initial values of additional variables 
 		! xold(mt% Ntable+1,1) = n_b
 		 xold(mt% Ntable+2,1) = mu_n 
-		 xold(mt% Ntable+1,1) = mu_e
+		 xold(mt% Ntable+1,1) = n_b !mu_e
 			
 !		 write(*,*) mu_e, mu_n, n_b
 		 
@@ -416,9 +440,9 @@
 		 do i = 1, mt% Ntable
 		 mu_i(i) = x(i,1)
 		 enddo
-		 mu_e = x(mt% Ntable+1,1)	 
+		 !mu_e = x(mt% Ntable+1,1)	 
 		 mu_n = x(mt% Ntable+2,1)
-		 !n_b = x(mt% Ntable+1,1)			 
+		 n_b = x(mt% Ntable+1,1)			 
       	 ! p_ext = x(mt% Ntable+3,1)
       end subroutine set_primaries
       
