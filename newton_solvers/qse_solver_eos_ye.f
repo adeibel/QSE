@@ -76,10 +76,8 @@
       real :: ke_prev, kn_prev
       real :: pres_n
       real :: ni(39)
-            real :: Pn
-   
-
-                    
+      real :: Pn
+             
       contains
       
       subroutine do_test_newton
@@ -101,17 +99,13 @@
       integer :: which_decsol_in, decsol    
  
  	  ! for crust
-! 	  character(len=*), parameter :: mass_table_name = 'nucchem_andrew2.data'
   	  character(len=*), parameter :: mass_table_name = 'nucchem_moe2.data'
  	  character(len=*), parameter :: eos_table_name = 'ashes_acc.txt'
-! 	  character(len=*), parameter :: mass_table_name = 'nucchem.data'   
-!	  character(len=*), parameter :: mass_table_name = 'nucchem_trunc.data'
 	  character(len=*), parameter :: y_output_file = 'y_output.data'
       character(len=*), parameter :: output_file = 'qse_output.data'
    	  character(len=*), parameter :: abundance_file = 'qse_abun.data'
    	  character(len=*), parameter :: default_infile = 'qse.inlist'
    	  character(len=64), parameter :: data_dir = '../../../data/crust_eos'
-!	  character(len=64), parameter :: eos_table_name = 'helm_table.dat'
 	  character(len=64), parameter :: mu_table_name = 'mu_table_old.data'
       character(len=80) :: infile	
       integer :: i, j, ios
@@ -592,80 +586,11 @@
 	     !chi = 3.d-3
 		 chi = phi_sum 
 		 ! chi = use_default_nuclear_size
-
-	!	 if (Zsum > 0.) then
-!		 n_e = Zsum
-!		 ke = (n_e*threepisquare)**onethird
-!		 mu_e = electron_chemical_potential(ke)
-	!	 end if
-
-		 !Pn = P_ext - electron_pressure(ke) - lattice_pressure(Zbar,Abar,n_b,n_e)
-!		 n_n = (n_b-Asum)/(1.-chi)
-!		 kn = (threepisquare*n_n/2.0)**onethird
-!		 mu_n = neutron_chemical_potential(kn)
-
-!		if (pn > 0.) then
-!        x1=0.0
-!        x2=10.
-!        xacc=1.d-15
-!        kn=root_bisection(kn_solve_pressure,x1,x2,xacc,ierr,hist) !returns in fm**-1
-!        if (io_failure(ierr,'Error in bisection for kn wave vector')) then
-!        write(*,*) 'Pn=', Pn
-!        end if
-!
-!		mu_n = neutron_chemical_potential(kn)
-!		n_n = 2.0*kn**3/threepisquare
-!		else
-!		mu_n = 0.
-!		n_n = 0.
-!		end if
-
-
-		 !if (Asum < n_b) then		 
-!		 n_n = (n_b - Asum)/(1.0-chi)
-!		 kn = (n_n*threepisquare/2.0)**onethird
-!		 mu_n = neutron_chemical_potential(kn)
-		 !end if
-
-		  !equ(mt% Ntable+1, 1) = chi*Asum - n_b + n_n*(1.0-chi)
-		!  equ(mt% Ntable+1, 1) = Asum - n_b + n_n !*(1.0-chi)
-!		 equ(mt% Ntable+1,1) = neutron_pressure(kn)+electron_pressure(ke) &
-		 	!& - P_ext
-!		 	& +lattice_pressure(Zbar,Abar,n_b,n_e) - P_ext
-		 
-	!	 y_e = n_e/n_b
-
-		  
+	  
   		 !baryon and charge conservation 
-        equ(mt% Ntable+1,1) = Zsum - n_e
-
+         equ(mt% Ntable+1,1) = Zsum - n_e
          equ(mt% Ntable+2,1) = Asum - n_b + n_n*(1.0-chi)  
- !	     equ(mt% Ntable+1, 1) = Zsum/n_b - n_e/n_b
- 	    ! equ(mt% Ntable+3, 1) = chi*ni_Asum - 1.0 + y_n 
-!        equ(mt% Ntable+3, 1) = Ai - 1.0 + y_n
- !        equ(mt% Ntable+1, 1) = electron_pressure(ke)+neutron_pressure(kn) &
-            !& - P_ext
-!	 		& + lattice_pressure(Zbar,Abar,n_b,n_e) - P_ext
-
-!		write(*,*) 'mu_e =', mu_e, 'mu_n=', mu_n
-!		write(*,*) 'Asum=', Asum, 'n_b =', n_b, 'n_n*(1-chi)=', n_n*(1.0-chi)
-!		write(*,*) 'chi=', chi
-!		write(*,*) 'Zsum =', Zsum
-!		write(*,*) 'Zsum-ne = ' , Zsum - n_e
-!		write(*,*) 'Abar=', Abar, 'Zbar=', Zbar
-!		write(*,*) 'n_b=', n_b
-! 		write(*,*) 'Y_e=', Y_e, 'mu_e=', mu_e, 'n_e=', n_e, 'ke=', ke
-!        write(*,*) 'Y_n=', Y_n, 'mu_n=', mu_n, 'n_n=', n_n, 'kn=', kn
-!	    write(*,*) 'mu_i', mu_i(1), mu_i(16), equ(1,1), equ(16,1)
-!!	    write(*,*) 'sumZ=', Zsum, 'n_e=', n_e, 'equN_1=', equ(mt% Ntable+1,1)
-!!	    write(*,*) 'sumA=', Asum, 'n_b=', n_b, 'n_n=', n_n,  'equN_2=', equ(mt% Ntable+3,1)
-!		write(*,*) 'pressure=', electron_pressure(ke) + neutron_pressure(kn), &
-!			& 'P_ext=', P_ext, 'equN_3=', equ(mt% Ntable+1,1)
-!		write(*,*) 'Pressure [fm-4] = ', p_ext/hbarc_n
-!		write(*,*) 'lattice_pressure=', lattice_pressure(Zi/ni_Zsum,Ai/ni_Asum,n_b*ni_Asum/Ai,n_e)
-!		write(*,*) 'lattice_pressure(n_b)=', lattice_pressure(Zi/ni_Zsum,Ai/ni_Asum,n_b,n_e)
-!	    write(*,*) 'Zi=', Zi/ni_Zsum, 'Ai=', Ai/ni_Asum
-!     	write(*,*) '------------------------------'                   
+    
  	
       end subroutine eval_equ
       
