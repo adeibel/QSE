@@ -671,7 +671,7 @@
   		 !baryon and charge conservation 
         equ(mt% Ntable+1,1) = Zsum - n_e
 
-         equ(mt% Ntable+2,1) = Asum - n_b + n_n !*(1.0-chi)  
+         equ(mt% Ntable+2,1) = Asum - n_b + n_n*(1.0-chi)  
  !	     equ(mt% Ntable+1, 1) = Zsum/n_b - n_e/n_b
  	    ! equ(mt% Ntable+3, 1) = chi*ni_Asum - 1.0 + y_n 
 !        equ(mt% Ntable+3, 1) = Ai - 1.0 + y_n
