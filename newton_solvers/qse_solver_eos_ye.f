@@ -16,7 +16,7 @@
 
       ! dimensions
       integer, parameter :: nz = 1 ! number of zones
-      integer, parameter :: nvar = 39+2 !5284+2  ! number of variables per zone
+      integer, parameter :: nvar = 9179+2 !9179+2 !5284+2  ! number of variables per zone
       integer, parameter :: neq = nz*nvar
 
       ! information about the bandwidth of the jacobian matrix
@@ -59,7 +59,7 @@
 	  ! for crust
       type(mass_table_type), pointer :: mt
       type(eos_table_type), pointer :: et
-      real*8 :: mu_e, mu_n, mu_i(39)
+      real*8 :: mu_e, mu_n, mu_i(9179)
       real*8 :: mu_e_prev, Y_e_prev
       real*8 :: Y_e, Y_n 
    	  real*8 :: n_b, n_e, n_n
@@ -75,7 +75,7 @@
       real :: mu_n_prev
       real :: ke_prev, kn_prev
       real :: pres_n
-      real :: ni(39)
+      real :: ni(9179)
       real :: Pn
              
       contains
@@ -99,7 +99,8 @@
       integer :: which_decsol_in, decsol    
  
  	  ! for crust
-  	  character(len=*), parameter :: mass_table_name = 'nucchem_moe2.data'
+ ! 	  character(len=*), parameter :: mass_table_name = 'nucchem_moe2.data'
+	  character(len=*), parameter :: mass_table_name = 'moe95_converted.data'
  	  character(len=*), parameter :: eos_table_name = 'ashes_acc.txt'
 	  character(len=*), parameter :: y_output_file = 'y_output.data'
       character(len=*), parameter :: output_file = 'qse_output.data'
@@ -115,7 +116,7 @@
       logical, save :: mass_table_is_loaded = .FALSE.
       logical, save :: eos_table_is_loaded = .FALSE.
       logical, save :: ye_set = .FALSE.
-      real :: mterm, fac1(39), fac2(39), m_nuc, m_star
+      real :: mterm, fac1(9179), fac2(9179), m_nuc, m_star
       real, parameter :: g = 1.d0
 
       namelist /range/ P_ext_start, n_b_start, kT, have_mu_table, &
@@ -198,7 +199,7 @@
   	     mu_e = (et% mue(i))*hbarc_n
   	     p_ext = (et% pr(i))*hbarc_n !p_ext_start*hbarc_n*real(i)  
 		! mu_e = (et% mue(i))*hbarc_n
-                
+		        
          which_decsol = which_decsol_in
          call decsol_option_str(which_decsol, decsol_option_name, ierr)
          if (ierr /= 0) return
@@ -262,6 +263,10 @@
         end if		 
 		 
 		n_b = n_e/(et% Ye(i))
+		 
+		 write(*,*) i
+		 if (n_b < 5.57d-4) cycle
+		 write(*,*) 'checking'
 		 
 		 !mu_e = -(xold(8,1))/26 + m_star		 
 		 !mu_e = -(xold(22,1))/28. + m_star
@@ -466,7 +471,7 @@
 		 real :: m_nuc, m_nuc1
 		 real :: m_term, m_term1		 
 		 !for equations in log space
-		 real :: sum_lnZ(39), sum_lnA(39) 
+		 real :: sum_lnZ(9179), sum_lnA(9179) 
 		 real :: sum_lnZ_total, sum_lnZ_final 
 		 real :: sum_lnA_total, sum_lnA_final
 		 real :: logZ_exponent
@@ -474,7 +479,7 @@
 		 real :: ni_Zsum, ni_Asum
 		 real :: der_Zsum, der_Asum
 		 real :: Asum, Zsum
-		 real :: As(39), Zs(39)
+		 real :: As(9179), Zs(9179)
 		 real :: Zi, Ai
 		 real :: pressure
 		 real :: Zbar, Abar
@@ -617,7 +622,7 @@
          ierr = 0        
 
 	     chi = use_default_nuclear_size
-         !rho = (n_b*amu_n)*(mev_to_ergs/clight2)/(1.d-39) ! cgs
+         !rho = (n_b*amu_n)*(mev_to_ergs/clight2)/(1.d-9179) ! cgs
             
 		if (mu_e < 0. ) then
 		mu_e = abs(mu_e)
