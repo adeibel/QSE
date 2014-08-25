@@ -378,10 +378,8 @@
 		 do i = 1, mt% Ntable
 		 mu_i(i) = x(i,1)
 		 enddo
-		 !mu_e = x(mt% Ntable+1,1)	 
-		 mu_n = x(mt% Ntable+2,1)
 		 n_b = x(mt% Ntable+1,1)			 
-      	 ! p_ext = x(mt% Ntable+3,1)
+		 mu_n = x(mt% Ntable+2,1)
       end subroutine set_primaries
       
 
@@ -494,8 +492,7 @@
         kn=root_bisection(kn_solve,x1,x2,xacc,ierr,hist) !returns in fm**-1
         if (io_failure(ierr,'Error in bisection for kn wave vector')) stop
         n_n = 2.0*kn**3/threepisquare              
-        !Y_n = n_n*(1.-chi)/n_b   
-		Y_n = n_n/n_b
+        Y_n = n_n*(1.-chi)/n_b   
 		else
 		mu_n = abs(mu_n)
         x1=0.0
@@ -504,18 +501,13 @@
         kn=root_bisection(kn_solve,x1,x2,xacc,ierr,hist) !returns in fm**-1
         if (io_failure(ierr,'Error in bisection for kn wave vector')) stop
         n_n = 2.0*kn**3/threepisquare              
-        
-        !Y_n = n_n*(1.-chi)/n_b   
-		Y_n = n_n/n_b
+        Y_n = n_n*(1.-chi)/n_b   
 		mu_n = -mu_n
 		end if		
 
-	     !chi = use_default_nuclear_size
-	     !chi = 0.95
          rho = (n_b*amu_n)*(mev_to_ergs/clight2)/(1.d-39) ! cgs                      
 
 		! enter with mu_n and mu_e from initial conditions
-		
 		 Asum = 0. ; Zsum = 0. 
 		 Ai = 0. ; Zi = 0.
 		 ni_Asum = 0. ; ni_Zsum = 0.
