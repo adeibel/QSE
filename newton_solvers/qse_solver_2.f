@@ -212,19 +212,7 @@
          allocate(equ(nvar,nz), x(nvar,nz), xold(nvar,nz), dx(nvar,nz), xscale(nvar,nz), y(ldy, nsec), stat=ierr)
          if (ierr /= 0) stop 1
 
-55 continue 
-
          numerical_jacobian = do_numerical_jacobian
-         if (have_mu_table .eqv. .true.) then
-		 mu_table_input_id = alloc_iounit(ierr)
-		 if (io_failure(ierr, 'allocating unit for mu table read')) stop		 
-		 open(mu_table_input_id,file=mu_table_name, iostat=ios, status='unknown')
-		 do j = 1, mt% Ntable + 2
-		 read(mu_table_input_id,*) xold(j,1)
-		 enddo		 
-		 close(mu_table_input_id)
-         call free_iounit(mu_table_input_id)		 
-		 else 
 
 		 ! sets mass fractions to 1d-20 for unpopulated nuclei
 		 do j=1,mt% Ntable
@@ -281,8 +269,6 @@
 		 xold(mt% Ntable+2,1) = mu_n 
 		 xold(mt% Ntable+1,1) = n_b !mu_e
 			
-		 end if
-
          dx = 0 ! a not very good starting "guess" for the solution
          x = xold
          
@@ -335,21 +321,6 @@
 	     else
 	     n_b_prev = 0.
 	     end if
-!			mu_table_output_id = alloc_iounit(ierr)
-!	  		if (io_failure(ierr, 'allocating unit for mu table file for output')) stop
-!	        open(unit=mu_table_output_id, file=mu_table_name, iostat=ios, status="unknown")
-!	        if (io_failure(ios,'opening mu table file for output')) stop
-!	        do j = 1,mt%Ntable
-!	        write(mu_table_output_id,*) mu_i(j)
-!	        enddo 
-!	        write(mu_table_output_id,*) Y_e
-!	        write(mu_table_output_id,*) Y_n
-!	        close(mu_table_output_id) 
-!	        call free_iounit(mu_table_output_id) 
-!	        have_mu_table = .true. 
-!	        goto 55
- !           stop 2
- !        end if
 
          if (iwork(i_debug) /= 0) then
             write(*, *) 'num_jacobians', iwork(i_num_jacobians)
