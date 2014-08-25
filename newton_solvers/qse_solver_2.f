@@ -912,6 +912,12 @@
 		 x(mt% Ntable+2,1) = xold(mt%Ntable+2,1)+dx(mt%Ntable+2,1)     
 !		 x(mt% Ntable+3,1) = xold(mt%Ntable+3,1)+dx(mt%Ntable+3,1)     
  		 
+ 		 if (x(mt% Ntable+1,1) < n_b_prev) then
+ 		 x(mt% Ntable+1,1) = n_b_prev
+ 		 dx(mt% Ntable+1,1) = x(mt% Ntable+1,1)-xold(mt% Ntable+1,1) 
+ 		 x(mt% Ntable+1,1) = xold(mt%Ntable+1,1)+dx(mt%Ntable+1,1) 
+ 		 end if
+ 		 
  		 ! set mu_n<0 in the outer crust
  !		 x(mt% Ntable+2,1) = -abs(x(mt%Ntable+2,1))
  !		 dx(mt% Ntable+2,1) = x(mt% Ntable+2,1)-xold(mt% Ntable+2,1) 
