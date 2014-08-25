@@ -492,7 +492,6 @@
         kn=root_bisection(kn_solve,x1,x2,xacc,ierr,hist) !returns in fm**-1
         if (io_failure(ierr,'Error in bisection for kn wave vector')) stop
         n_n = 2.0*kn**3/threepisquare              
-        Y_n = n_n*(1.-chi)/n_b   
 		else
 		mu_n = abs(mu_n)
         x1=0.0
@@ -501,7 +500,6 @@
         kn=root_bisection(kn_solve,x1,x2,xacc,ierr,hist) !returns in fm**-1
         if (io_failure(ierr,'Error in bisection for kn wave vector')) stop
         n_n = 2.0*kn**3/threepisquare              
-        Y_n = n_n*(1.-chi)/n_b   
 		mu_n = -mu_n
 		end if		
 
@@ -554,6 +552,9 @@
 	     !chi = 3.d-3
 		 chi = phi_sum 
 		 ! chi = use_default_nuclear_size
+	  
+	    Y_n = n_n*(1.-chi)/n_b   
+
 	  
   		 !baryon and charge conservation 
          equ(mt% Ntable+1,1) = Zsum - n_e
