@@ -199,7 +199,6 @@
   	     !n_b = et% nb(i) !n_b_start !/1000.
   	     mu_e = (et% mue(i))*hbarc_n
   	     p_ext = (et% pr(i))*hbarc_n !p_ext_start*hbarc_n*real(i)  
-		! mu_e = (et% mue(i))*hbarc_n
 		        
          which_decsol = which_decsol_in
          call decsol_option_str(which_decsol, decsol_option_name, ierr)
@@ -228,7 +227,6 @@
 		 ! set mass fraction to 1.0 for most abundant nucleus
 		 xold(22,1) = log((1.d0)/fac1(22)/fac2(22))*kT-mt%BE(22)
 		 !xold(8,1) =  log((1.d0)/fac1(8)/fac2(8))*kT-mt%BE(8)
-	!	 xold(mt% Ntable+1,1) = -(xold(8,1))/(26.0) + m_star
 		 
 		! electron wave vector fm^-1
 		if (mu_e > 0.) then
@@ -261,13 +259,11 @@
 		 !mu_e = -(xold(8,1))/26 + m_star		 
 		 !mu_e = -(xold(22,1))/28. + m_star
 		 !mu_e = (et% mue(i))*hbarc_n
-		 !xold(mt% Ntable+2,1) = n_b
 		 mu_n = mu_e/1000.
 
 		! initial values of additional variables 
-		! xold(mt% Ntable+1,1) = n_b
+		 xold(mt% Ntable+1,1) = n_b
 		 xold(mt% Ntable+2,1) = mu_n 
-		 xold(mt% Ntable+1,1) = n_b !mu_e
 			
          dx = 0 ! a not very good starting "guess" for the solution
          x = xold
@@ -285,7 +281,6 @@
          
          !epsder = 1d-8
          epsder = 1d-6 ! relative variation to compute derivatives
-         !epsder = p_ext
          
          doing_jacobian = .false.
          
