@@ -322,7 +322,6 @@
 		n_b_prev = n_b
 		end if
 	
-
          enddo 
          
         close(y_output_id)  
@@ -509,12 +508,10 @@
 		  R_ws = (real(mt% Z(i))/n_e/pi*0.75)**onethird		 
           !number density of isotopes
 		  m_star = mn_n-mp_n-me_n !does not contain m_e because mu_e has rest mass in definition 
-		  m_nuc = real(mt%A(i))*amu_n !real(mt% Z(i))*mp_n+real(mt% N(i))*mn_n !-mt%BE(i)    
+		  m_nuc = real(mt%A(i))*amu_n !real(mt% Z(i))*mp_n+real(mt% N(i))*mn_n    
      	  m_term = g*(twopi*hbarc_n**2/(m_nuc*kT))**(-3.0/2.0)
      	  ni(i) = m_term*exp((mu_i(i)+mt%BE(i))/kT)
      	  phi = 1.25*pi*R_n**3*ni(i)
-     	  !phi = (R_n/R_ws)**3
-!     	  write(*,*) 'phi=', phi
      	  phi_sum = phi+phi_sum
 		  !for baryon conservation
 		  as(i) = real(mt% A(i))*m_term*exp((mu_i(i)+mt%BE(i))/kT)	 
@@ -527,8 +524,7 @@
 		  ni_Zsum = ni_Zsum + m_term*exp((mu_i(i)+mt%BE(i))/kT)/n_b	
 		  Zi = Zi + zs(i)/n_b
 		  !detailed balance
-		  equ(i,1) = real(mt% Z(i))*(mu_n-mu_e+m_star)+real(mt% N(i))*mu_n-mu_i(i) !+mt%BE(i)
-!		  write(*,*) equ(i,1)
+		  equ(i,1) = real(mt% Z(i))*(mu_n-mu_e+m_star)+real(mt% N(i))*mu_n-mu_i(i) 
 		 enddo
 		 
 		! chi = phi_sum
@@ -539,9 +535,7 @@
 		 A_bar = Abar
 
 		 !chi = use_default_nuclear_size
-	     !chi = 3.d-3
 		 chi = phi_sum 
-		 ! chi = use_default_nuclear_size
 	  
 	    Y_n = n_n*(1.-chi)/n_b   
 
@@ -887,12 +881,7 @@
          integer, intent(inout) :: ipar(lipar)
          integer, intent(out) :: ierr
          ierr = 0
-         ! if the variables must be non-negative, you can do the following:
-         !x = max(0d0, x)
-         !dx = x-xold
-         !x = xold+dx
- 		 ! set mu_e, mu_n, and n_b >0
- !		 x(mt% Ntable+1,1) = abs(x(mt% Ntable+1,1))
+		 ! set bounds of variables
  		 x(mt% Ntable+1, 1) = max(n_b_prev, x(mt% Ntable+1,1))
  		 x(mt% Ntable+2,1) = abs(x(mt% Ntable+2,1))
   !   	 x(mt% Ntable+3,1) = abs(x(mt% Ntable+3,1))
@@ -908,16 +897,7 @@
  		 dx(mt% Ntable+1,1) = x(mt% Ntable+1,1)-xold(mt% Ntable+1,1) 
  		 x(mt% Ntable+1,1) = xold(mt%Ntable+1,1)+dx(mt%Ntable+1,1) 
  		 end if
- 		 
- 		 ! set mu_n<0 in the outer crust
- !		 x(mt% Ntable+2,1) = -abs(x(mt%Ntable+2,1))
- !		 dx(mt% Ntable+2,1) = x(mt% Ntable+2,1)-xold(mt% Ntable+2,1) 
- !		 x(mt% Ntable+2,1) = xold(mt%Ntable+2,1)+dx(mt%Ntable+2,1)  
- 		 
- 		 ! set mu_e > 20.
-! 		 x(mt% Ntable+1, 1) = max(20.,x(mt% Ntable+1,1)) 
-! 		 dx(mt% Ntable+1, 1) =  x(mt% Ntable+1,1)-xold(mt% Ntable+1,1) 
-! 		 x(mt% Ntable+1,1) = xold(mt%Ntable+1,1)+dx(mt%Ntable+1,1)  
+
       end subroutine xdomain          
           
     end module qse_solver
