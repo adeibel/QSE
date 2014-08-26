@@ -220,13 +220,11 @@
          mterm = g*(m_nuc*kT/(twopi*hbarc_n**2))**(1.5)
          fac1(j) = real(mt% A(j))/n_b
          fac2(j) = mterm		 
-		 !xold(j,1) = log((1./16.)/fac1(j)/fac2(j))*kT-mt%BE(j)
 		 xold(j,1) = log((1.d-20)/fac1(j)/fac2(j))*kT-mt%BE(j)
 		 end do 
 		 
 		 ! set mass fraction to 1.0 for most abundant nucleus
 		 xold(22,1) = log((1.d0)/fac1(22)/fac2(22))*kT-mt%BE(22)
-		 !xold(8,1) =  log((1.d0)/fac1(8)/fac2(8))*kT-mt%BE(8)
 		 
 		! electron wave vector fm^-1
 		if (mu_e > 0.) then
@@ -256,9 +254,6 @@
 		 if (p_ext < 4.26d-3) cycle
                  write(*,*) 'checking'
 		 
-		 !mu_e = -(xold(8,1))/26 + m_star		 
-		 !mu_e = -(xold(22,1))/28. + m_star
-		 !mu_e = (et% mue(i))*hbarc_n
 		 mu_n = mu_e/1000.
 
 		! initial values of additional variables 
@@ -273,13 +268,10 @@
                   
          first_step = .true.
          
-         tol_correction_norm=1d-9
-         !tol_correction_norm = 1d-12
-         !tol_correction_norm = 1d-14 ! upper limit on magnitude of average scaled correction
+         tol_correction_norm=1d-9 ! upper limit on magnitude of average scaled correction
          tol_max_correction = 1d99
          tol_residual_norm = 1d99
          
-         !epsder = 1d-8
          epsder = 1d-6 ! relative variation to compute derivatives
          
          doing_jacobian = .false.
@@ -310,11 +302,9 @@
          end if
 
          if (nonconv) then
-            write(*, *) 'failed to converge'
-        write(*,*) p_ext, n_b, y_e, y_n, Z_bar, A_bar, mu_e, mu_n
-        n_b_prev = n_b
-	     else
-	     n_b_prev = 0.
+         write(*, *) 'failed to converge'
+         write(*,*) p_ext, n_b, y_e, y_n, Z_bar, A_bar, mu_e, mu_n
+         n_b_prev = 0.
 	     end if
 
          if (iwork(i_debug) /= 0) then
@@ -329,10 +319,10 @@
 		if (nonconv .eqv. .FALSE.) then
         write(y_output_id,'(8(es12.5,2x))') p_ext, n_b, y_e, y_n, Z_bar, A_bar, mu_e, mu_n
         write(*,'(8(es12.5,2x))') p_ext, n_b, y_e, y_n, z_bar, a_bar, mu_e, mu_n
+		n_b_prev = n_b
 		end if
 	
-  		 have_mu_table = .false.
-  
+
          enddo 
          
         close(y_output_id)  
