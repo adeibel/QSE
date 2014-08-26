@@ -6,8 +6,9 @@
       use utils_lib
       use phys_constants
       use mass_table 
+      use eos_table
       use rootfind      
-      use crust_eos_lib       
+      use crust_eos_lib      
 
       implicit none
       
@@ -15,7 +16,7 @@
 
       ! dimensions
       integer, parameter :: nz = 1 ! number of zones
-      integer, parameter :: nvar = 5549+2 !5284+2  ! number of variables per zone
+      integer, parameter :: nvar = 9179+2 !9179+2 !5284+2  ! number of variables per zone
       integer, parameter :: neq = nz*nvar
 
       ! information about the bandwidth of the jacobian matrix
@@ -57,18 +58,27 @@
 
 	  ! for crust
       type(mass_table_type), pointer :: mt
-      real*8 :: mu_e, mu_n, mu_i(5549), n_i(5549)
+      type(eos_table_type), pointer :: et
+      real*8 :: mu_e, mu_n, mu_i(9179)
       real*8 :: mu_e_prev, Y_e_prev
       real*8 :: Y_e, Y_n 
    	  real*8 :: n_b, n_e, n_n
+   	  real*8 :: p_ext
       real*8 :: ke, kn
+      real :: Z_bar, A_bar
       real,dimension(:),pointer :: hist
       real :: x1, x2, xacc
       integer :: eos_handle
  	  real, save :: zsum_save = 0.
  	  real :: asum, zsum
       real :: kT
-            
+      real :: mu_n_prev
+      real :: ke_prev, kn_prev
+      real :: pres_n
+      real :: ni(9179)
+      real :: Pn
+      real :: n_b_prev
+             
       contains
       
       subroutine do_test_newton
@@ -83,28 +93,34 @@
       real*8, target :: rpar(lrpar)
       character (len=64) :: decsol_option_name
       !namelist
+      real :: p_ext_start
       real :: n_b_start
       logical :: have_mu_table
       logical :: do_numerical_jacobian
       integer :: which_decsol_in, decsol    
  
  	  ! for crust
- 	  character(len=*), parameter :: mass_table_name = 'nucchem.data'   
-!	  character(len=*), parameter :: mass_table_name = 'nucchem_trunc.data'
+ ! 	  character(len=*), parameter :: mass_table_name = 'nucchem_moe2.data'
+	  character(len=*), parameter :: mass_table_name = 'moe95_converted.data'
+ 	  character(len=*), parameter :: eos_table_name = 'ashes_acc.txt'
+	  character(len=*), parameter :: y_output_file = 'y_output_2.data'
       character(len=*), parameter :: output_file = 'qse_output.data'
    	  character(len=*), parameter :: abundance_file = 'qse_abun.data'
    	  character(len=*), parameter :: default_infile = 'qse.inlist'
    	  character(len=64), parameter :: data_dir = '../../../data/crust_eos'
-	  character(len=64), parameter :: eos_table_name = 'helm_table.dat'
 	  character(len=64), parameter :: mu_table_name = 'mu_table_old.data'
       character(len=80) :: infile	
       integer :: i, j, ios
       integer :: inlist_id, output_id, abundance_id  
       integer :: mu_table_input_id, mu_table_output_id
+      integer :: y_output_id
       logical, save :: mass_table_is_loaded = .FALSE.
+      logical, save :: eos_table_is_loaded = .FALSE.
       logical, save :: ye_set = .FALSE.
+      real :: mterm, fac1(9179), fac2(9179), m_nuc, m_star
+      real, parameter :: g = 1.d0
 
-      namelist /range/ n_b_start, kT, have_mu_table, &
+      namelist /range/ P_ext_start, n_b_start, kT, have_mu_table, &
       	&	do_numerical_jacobian, which_decsol_in
      
       ! set the name of the inlist file name  
@@ -115,6 +131,7 @@
       end if
       
       ! set defaults 
+      P_ext_start = 5.d-10!fm^-4
       n_b_start = 5.0d-8 !fm^-3
       kT = 1.0d-2  !MeV
       have_mu_table = .false.
@@ -145,7 +162,20 @@
       end if
       mt => winvn_mass_table    
  	  write(*,*) 'Loaded mass table'
-   
+ 	  
+ 	  ! load eos table
+ 	  if (eos_table_is_loaded .eqv. .FALSE.) then
+ 	  call load_eos_table('../../../data',trim(eos_table_name), ierr)
+ 	  eos_table_is_loaded = .TRUE.
+ 	  if (ierr /= 0) then
+ 	  write(error_unit, '(a)') trim(alert_message)
+ 	  stop
+ 	  end if
+ 	  end if
+ 	  et => winvn_eos_table
+ 	  write(*,*) 'EOS table loaded'
+ 	  
+ 	  ! allocate units and open output files   
  	  output_id = alloc_iounit(ierr)
   	  if (io_failure(ierr,'allocating unit for output nuclei file')) stop
   	  open(unit=output_id, file=output_file, iostat=ios, status="unknown")
@@ -159,20 +189,20 @@
 	  if (io_failure(ios,'opening abundance file')) stop
 	  write(abundance_id,'(A13)') 'n_i [fm^-3]'
 
-  	  ! solve for qse distribution at each n_b  	  
-  	  do i=1,2
-  	     n_b = n_b_start*real(i)  
+	  y_output_id = alloc_iounit(ierr)
+	  if (io_failure(ierr, 'allocating unit for y fractions file')) stop
+	  open(unit=y_output_id, file = y_output_file, iostat=ios, status="unknown")
+	  write(y_output_id,'(8(A12),2x)') 'Pressure', 'n_b', 'Ye', 'Yn', 'Zbar', 'Abar', 'mu_e', 'mu_n'
 
-  	     write(*,*) 'n_b =', n_b
-  	     write(*,*) 'numerical jacobian? =', do_numerical_jacobian
-  	     write(*,*) 'have mu table? =', have_mu_table
-         write(*,*) 'decsol option', decsol     
-              
+  	  ! solve for qse distribution at each pressure	  
+  	  do i=1, et% Ntable
+  	     !n_b = et% nb(i) !n_b_start !/1000.
+  	     mu_e = (et% mue(i))*hbarc_n
+  	     p_ext = (et% pr(i))*hbarc_n !p_ext_start*hbarc_n*real(i)  
+		        
          which_decsol = which_decsol_in
          call decsol_option_str(which_decsol, decsol_option_name, ierr)
-         write(*,*) which_decsol, trim(decsol_option_name), ierr
          if (ierr /= 0) return
-         write(*,*) 'use ' // trim(decsol_option_name)
 
          if (which_decsol == mkl_pardiso) then
             if (.not. okay_to_use_mkl_pardiso()) which_decsol = lapack
@@ -181,30 +211,55 @@
          allocate(equ(nvar,nz), x(nvar,nz), xold(nvar,nz), dx(nvar,nz), xscale(nvar,nz), y(ldy, nsec), stat=ierr)
          if (ierr /= 0) stop 1
 
-55 continue 
-
          numerical_jacobian = do_numerical_jacobian
-         if (have_mu_table .eqv. .true.) then
-		 mu_table_input_id = alloc_iounit(ierr)
-		 if (io_failure(ierr, 'allocating unit for mu table read')) stop		 
-		 open(mu_table_input_id,file=mu_table_name, iostat=ios, status='unknown')
-		 do j = 1, mt% Ntable + 2
-		 read(mu_table_input_id,*) xold(j,1)
-		 enddo		 
-		 close(mu_table_input_id)
-         call free_iounit(mu_table_input_id)		 
-		 else 
-		 
-		 
-		 do j=1,mt% Ntable
-		 xold(j,1) = -mt% BE(j)
-		 end do
-		 !xold(867,1) = -492.3833 !mu_56 at 5.E-8
-		 !xold(867,1) = -492.360361 !mu_56 at 5.E-7
-		 xold(mt% Ntable+1, 1) = 1.
-		 xold(mt% Ntable+2, 1) = -1.d-3
-		 end if
 
+		 ! sets mass fractions to 1d-20 for unpopulated nuclei
+		 do j=1,mt% Ntable
+		 m_star = mn_n-mp_n-me_n
+		 m_nuc = real(mt% A(j))*amu_n
+         mterm = g*(m_nuc*kT/(twopi*hbarc_n**2))**(1.5)
+         fac1(j) = real(mt% A(j))/n_b
+         fac2(j) = mterm		 
+		 xold(j,1) = log((1.d-20)/fac1(j)/fac2(j))*kT-mt%BE(j)
+		 end do 
+		 
+		 ! set mass fraction to 1.0 for most abundant nucleus
+		 xold(22,1) = log((1.d0)/fac1(22)/fac2(22))*kT-mt%BE(22)
+		 
+		! electron wave vector fm^-1
+		if (mu_e > 0.) then
+        x1=0.0
+        x2=10.
+        xacc=1.d-15
+        ke=root_bisection(ke_solve,x1,x2,xacc,ierr,hist) !returns in fm**-1
+        if (io_failure(ierr,'Error in bisection for ke wave vector')) stop
+        n_e = ke**3/threepisquare               
+        Y_e = n_e/n_b   
+        else
+        mu_e = abs(mu_e)
+        x1=0.0
+        x2=10.
+        xacc=1.d-15
+        ke=root_bisection(ke_solve,x1,x2,xacc,ierr,hist) !returns in fm**-1
+        if (io_failure(ierr,'Error in bisection for ke wave vector')) stop
+        n_e = ke**3/threepisquare               
+        Y_e = n_e/n_b   
+        mu_e = -mu_e
+        end if		 
+		 
+		n_b = n_e/(et% Ye(i))
+		 
+		 write(*,*) i
+		 !if (n_b < 5.2d-4) cycle
+		 if (p_ext < 4.26d-3) cycle
+                 write(*,*) 'checking'
+		 
+		 mu_n = mu_e/1000.
+
+		! initial values of additional variables 
+		 xold(mt% Ntable+1,1) = n_b
+		 xold(mt% Ntable+2,1) = mu_n 
+			
          dx = 0 ! a not very good starting "guess" for the solution
          x = xold
          
@@ -213,7 +268,7 @@
                   
          first_step = .true.
          
-         tol_correction_norm = 1d-9 ! upper limit on magnitude of average scaled correction
+         tol_correction_norm=1d-9 ! upper limit on magnitude of average scaled correction
          tol_max_correction = 1d99
          tol_residual_norm = 1d99
          
@@ -232,6 +287,7 @@
          work = 0
          iwork = 0
          
+         iwork(r_tol_residual_norm) = 1
          iwork(i_try_really_hard) = 1 ! try really hard for first model
          iwork(i_model_number) = 1
              
@@ -245,23 +301,11 @@
             call do_newt(null_decsol, null_decsolblk, mkl_pardiso_decsols)
          end if
 
- !        if (nonconv) then
- !           write(*, *) 'failed to converge'
-			mu_table_output_id = alloc_iounit(ierr)
-	  		if (io_failure(ierr, 'allocating unit for mu table file for output')) stop
-	        open(unit=mu_table_output_id, file=mu_table_name, iostat=ios, status="unknown")
-	        if (io_failure(ios,'opening mu table file for output')) stop
-	        do j = 1,mt%Ntable
-	        write(mu_table_output_id,*) mu_i(j)
-	        enddo 
-	        write(mu_table_output_id,*) Y_e
-	        write(mu_table_output_id,*) Y_n
-	        close(mu_table_output_id) 
-	        call free_iounit(mu_table_output_id) 
-	        have_mu_table = .true. 
-!	        goto 55
- !           stop 2
- !        end if
+         if (nonconv) then
+         write(*, *) 'failed to converge'
+         write(*,*) p_ext, n_b, y_e, y_n, Z_bar, A_bar, mu_e, mu_n
+         n_b_prev = 0.
+	     end if
 
          if (iwork(i_debug) /= 0) then
             write(*, *) 'num_jacobians', iwork(i_num_jacobians)
@@ -271,33 +315,16 @@
          deallocate(iwork, work)
          deallocate(equ, x, xold, dx, xscale, y)
          
-         if (nonconv) then !stop 1
-         have_mu_table = .true.
-         goto 55
-         end if
-         
-         write(*,*) 'finished n_b', i
-         have_mu_table = .true. 
-         
-         if (ye_set .eqv. .false.) then
-         mu_e_prev = mu_e
-         Y_e_prev = Y_e
-         ye_set = .true.
-         end if
-
- 		write(*,*) 'mu_e=', mu_e
- 		write(*,*) 'n_e=', n_e 
-        write(*,*) 'mu_n=', mu_n
-        write(*,*) 'n_n=', n_n 
-        write(*,*) 'Y_n=', Y_n
-        write(*,*) 'Y_e=', Y_e
-		write(*,*) mu_i(1)
-	   ! write(*,*) equ(1,1), kn, ke, n_e, n_n
-	    !write(*,*) equ(mt% Ntable+1,1), equ(mt% Ntable+2,1)
-                  
-         !stop
-         
+    
+		if (nonconv .eqv. .FALSE.) then
+        write(y_output_id,'(8(es12.5,2x))') p_ext, n_b, y_e, y_n, Z_bar, A_bar, mu_e, mu_n
+        write(*,'(8(es12.5,2x))') p_ext, n_b, y_e, y_n, z_bar, a_bar, mu_e, mu_n
+		n_b_prev = n_b
+		end if
+	
          enddo 
+         
+        close(y_output_id)  
          
          contains         
          
@@ -316,8 +343,8 @@
                lrd, rpar_decsol, lid, ipar_decsol, which_decsol, &
                tol_correction_norm, &
                set_primaries, set_secondaries, default_set_xscale, &
-               default_Bdomain, default_xdomain, eval_equations, &
-               default_size_equ, default_sizeB, default_inspectB, &
+               default_Bdomain, xdomain, eval_equations, &
+               size_equ, default_sizeB, default_inspectB, &
                enter_setmatrix, exit_setmatrix, failed_in_setmatrix, default_force_another_iter, &
                xscale, equ, ldy, nsec, y, work, lwork, iwork, liwork, AF, &
                lrpar, rpar, lipar, ipar, &
@@ -340,8 +367,8 @@
 		 do i = 1, mt% Ntable
 		 mu_i(i) = x(i,1)
 		 enddo
-		 mu_e = x((mt% Ntable)+1,1)		 
-		 mu_n = x((mt% Ntable)+2,1)
+		 n_b = x(mt% Ntable+1,1)			 
+		 mu_n = x(mt% Ntable+2,1)
       end subroutine set_primaries
       
 
@@ -397,319 +424,145 @@
          integer, intent(out) :: ierr      
          real :: chi, rho      
 		 !for loop over nuclei abundances
-         real, parameter :: g=2.0d0
+         real, parameter :: g=1.0d0
 		 real :: m_star 
 		 real :: m_nuc, m_nuc1
 		 real :: m_term, m_term1		 
-		 !for analytical jacobian
-	     real, dimension(0:3), parameter :: cw0 = [ 1.2974, 15.0298, -15.2343, 7.4663 ]		
-		 real :: dmudk_n, dmudk_e, dkdn_n, dkdn_e
-		 real :: dmudne, dmudnn
 		 !for equations in log space
-		 real :: sum_lnZ(5549), sum_lnA(5549) 
+		 real :: sum_lnZ(9179), sum_lnA(9179) 
 		 real :: sum_lnZ_total, sum_lnZ_final 
 		 real :: sum_lnA_total, sum_lnA_final
 		 real :: logZ_exponent
 		 real :: logA_exponent 
 		 real :: ni_Zsum, ni_Asum
-		 real :: n_i(5549)
 		 real :: der_Zsum, der_Asum
-
+		 real :: Asum, Zsum
+		 real :: As(9179), Zs(9179)
+		 real :: Zi, Ai
+		 real :: pressure
+		 real :: Zbar, Abar
+!		 real :: ni(16)
+		 ! for chi
+		 real :: n_nin
+		 real, parameter :: n_0 = 1.740151d-1
+		 real, parameter :: n_1 = -1.577306d-2
+         real :: nl       
+         real :: iso    
+         real :: phi, phi_sum    
+         real :: R_n, R_ws
                 
          ierr = 0
 
-	     chi = use_default_nuclear_size
-         rho = (n_b*amu_n)*(mev_to_ergs/clight2)/(1.d-39) ! cgs
-
-		! if (mu_e .lt. mu_e_prev) then
-!		 if (Y_e .lt. Y_e_prev) then
-!		 Y_e = Y_e_prev
-!		 end if
-            
-
-            
-        ! electron wave vector fm^-1
+		! electron wave vector fm^-1
+		if (mu_e > 0.) then
         x1=0.0
-        x2=10.0
-        xacc=1.d-5
+        x2=10.
+        xacc=1.d-15
         ke=root_bisection(ke_solve,x1,x2,xacc,ierr,hist) !returns in fm**-1
         if (io_failure(ierr,'Error in bisection for ke wave vector')) stop
         n_e = ke**3/threepisquare               
         Y_e = n_e/n_b   
+        else
+        mu_e = abs(mu_e)
+        x1=0.0
+        x2=10.
+        xacc=1.d-15
+        ke=root_bisection(ke_solve,x1,x2,xacc,ierr,hist) !returns in fm**-1
+        if (io_failure(ierr,'Error in bisection for ke wave vector')) stop
+        n_e = ke**3/threepisquare               
+        Y_e = n_e/n_b   
+        mu_e = -mu_e
+        end if
 
-		if (mu_n == 0.) then
-		kn = 0.
+		if (mu_n > 0.) then
+        x1=0.0
+        x2=10.
+        xacc=1.d-15
+        kn=root_bisection(kn_solve,x1,x2,xacc,ierr,hist) !returns in fm**-1
+        if (io_failure(ierr,'Error in bisection for kn wave vector')) stop
+        n_n = 2.0*kn**3/threepisquare              
 		else
 		mu_n = abs(mu_n)
         x1=0.0
-        x2=10.0
-        xacc=1.d-5
+        x2=10.
+        xacc=1.d-15
         kn=root_bisection(kn_solve,x1,x2,xacc,ierr,hist) !returns in fm**-1
-        if (io_failure(ierr,'Error in bisection for kn wave vector')) stop   
-        n_n = -2.0*kn**3/threepisquare               
-        Y_n = n_n*(1.-chi)/n_b   
-		mu_n = -mu_n 
-		end if
+        if (io_failure(ierr,'Error in bisection for kn wave vector')) stop
+        n_n = 2.0*kn**3/threepisquare              
+		mu_n = -mu_n
+		end if		
 
-		 !n_n = Y_n*n_b/(1.0-chi) 
-		 !n_e = Y_e*n_b	
+         rho = (n_b*amu_n)*(mev_to_ergs/clight2)/(1.d-39) ! cgs                      
 
-		 !ke = (n_e*threepisquare)**onethird
-		 !mu_e = electron_chemical_potential(ke) 
+		! enter with mu_n and mu_e from initial conditions
+		 Asum = 0. ; Zsum = 0. 
+		 Ai = 0. ; Zi = 0.
+		 ni_Asum = 0. ; ni_Zsum = 0.
+		 phi_sum=0.
 
-!		 if (mu_e .lt. mu_e_prev) then
-!		 Y_e = Y_e + 0.1
-!		 n_e = Y_e*n_b	
-!		 ke = (n_e*threepisquare)**onethird
-!		 mu_e = electron_chemical_potential(ke) 
-!		return 
-!		 end if 
-
-!		 if (Y_e .lt. 0.) then
-!		 n_e = abs(Y_e)*n_b
-!		 ke = (abs(n_e)*threepisquare)**onethird
-!		 mu_e = -electron_chemical_potential(ke) 
-!		 end if
-!
-!		 if (Y_n .lt. 0.) then
-!		 n_n = abs(Y_n)*n_b/(1.0-chi) 		
-!		 kn = (0.5*n_n*threepisquare)**onethird
-!		 mu_n = -neutron_chemical_potential(kn)
-!		 end if
-
-	!	 kn = (0.5*n_n*threepisquare)**onethird
-	!	 mu_n = neutron_chemical_potential(kn)
 		
-		 !nearly converges in outer crust with
-		 ! Y_n free and mu_n = 0 forced
- 		 if (rho < 4.11d11) then
- 		 mu_n = -abs(mu_n)
- 		 !mu_n = 0.
- 		n_n = 0.
- 		 end if
-
-		 sum_lnA = 0. ; sum_lnA_total = 0. ; sum_lnA_final = 0. 
-		 sum_lnZ = 0. ; sum_lnZ_total = 0. ; sum_lnZ_final = 0. 
-     	 m_nuc1 = real(mt% Z(1))*mp_n + real(mt% N(1))*mn_n 
-     	 m_term1 = g*(twopi*hbarc_n**2/(m_nuc1*kT))**(-3.0/2.0)		 
- 		 sum_lnZ(1) = log(real(mt%Z(1))*m_term1) + (mu_i(1)+abs(mt%BE(1)))/kT		
-		 sum_lnA(1) = log(real(mt%A(1))*m_term1) + (mu_i(1)+abs(mt%BE(1)))/kT
-
-		 do i = 2, mt% Ntable
+		 do i = 1, mt% Ntable
+		  iso = 1.0-(2.*real(mt% Z(i))/real(mt% A(i)))
+		  n_nin = (n_0+n_1*iso**2)*(1.0+0.9208*iso)/2.	
+		  R_n = (real(mt% N(i))/n_nin/pi*0.75)**onethird 
+		  R_ws = (real(mt% Z(i))/n_e/pi*0.75)**onethird		 
           !number density of isotopes
-		  m_star = mn_n-mp_n !does not contain m_e because mu_e has rest mass in definition 
-		  m_nuc = real(mt% Z(i))*mp_n + real(mt% N(i))*mn_n         
+		  m_star = mn_n-mp_n-me_n !does not contain m_e because mu_e has rest mass in definition 
+		  m_nuc = real(mt%A(i))*amu_n !real(mt% Z(i))*mp_n+real(mt% N(i))*mn_n    
      	  m_term = g*(twopi*hbarc_n**2/(m_nuc*kT))**(-3.0/2.0)
+     	  ni(i) = m_term*exp((mu_i(i)+mt%BE(i))/kT)
+     	  phi = 1.25*pi*R_n**3*ni(i)
+     	  phi_sum = phi+phi_sum
 		  !for baryon conservation
-		  sum_lnA(i) = log(real(mt%A(i))*m_term) + (mu_i(i)+abs(mt%BE(i)))/kT
-		  sum_lnA(i) = exp(sum_lnA(i)-sum_lnA(1))
-		  sum_lnA_total = sum_lnA(i) + sum_lnA_total		  
+		  as(i) = real(mt% A(i))*m_term*exp((mu_i(i)+mt%BE(i))/kT)	 
+		  Asum = Asum + as(i) 
+		  ni_Asum = ni_Asum + m_term*exp((mu_i(i)+mt%BE(i))/kT)/n_b	
+		  Ai = Ai + as(i)/n_b
 		  !for charge conservation
-		  sum_lnZ(i) = log(real(mt%Z(i))*m_term) + (mu_i(i)+abs(mt%BE(i)))/kT
-		  sum_lnZ(i) = exp(sum_lnZ(i)-sum_lnZ(1))
-		  sum_lnZ_total = sum_lnZ(i) + sum_lnZ_total
+		  zs(i) = real(mt% Z(i))*m_term*exp((mu_i(i)+mt%BE(i))/kT)
+		  Zsum = Zsum + zs(i)
+		  ni_Zsum = ni_Zsum + m_term*exp((mu_i(i)+mt%BE(i))/kT)/n_b	
+		  Zi = Zi + zs(i)/n_b
 		  !detailed balance
-		  equ(i,1) = real(mt% Z(i))*(mu_n-mu_e+m_star)+real(mt% N(i))*mu_n-mu_i(i)-abs(mt% BE(i)) 
+		  equ(i,1) = real(mt% Z(i))*(mu_n-mu_e+m_star)+real(mt% N(i))*mu_n-mu_i(i) 
 		 enddo
 
-          equ(1,1) = real(mt% Z(1))*(mu_n-mu_e+m_star)+real(mt% N(1))*mu_n-mu_i(1)-abs(mt% BE(1))
-         	
-		  sum_lnA_final = sum_lnA(1) + log(1.0+sum_lnA_total)
-    	  sum_lnZ_final = sum_lnZ(1) + log(1.0+sum_lnZ_total) 
-		  		  
+		 Zbar = Zi/ni_Zsum
+		 Abar = Ai/ni_Asum
+		 Z_bar = Zbar
+		 A_bar = Abar
+
+		 !chi = use_default_nuclear_size
+ 		 chi = phi_sum 
+	     Y_n = n_n*(1.-chi)/n_b   
+
+	  
   		 !baryon and charge conservation 
-         equ(mt% Ntable+1,1) = sum_lnZ_final - log(n_e) 
-         equ(mt% Ntable+2,1) = sum_lnA_final - log(n_b-n_n) !- log(1.0 - Y_n/(1.0-chi))     
-        ! equ(mt% Ntable+3,1) = sum_lnA_final - log(n_b-me_n*n_e/amu_n)   log(n_b-me_n*n_e/amu_n-n_n)!
-
-		write(*,*) 'n_b=', n_b
- 		write(*,*) 'Y_e=', Y_e, 'mu_e=', mu_e, 'n_e=', n_e, 'ke=', ke
-        write(*,*) 'Y_n=', Y_n, 'mu_n=', mu_n, 'n_n=', n_n, 'kn=', kn
-	    write(*,*) 'mu_i', mu_i(1), mu_i(5549)
-	    write(*,*) 'sumZ=', sum_lnZ_final, 'log(n_e)=', log(n_e), 'equN_1=', equ(mt% Ntable+1,1)
-	    write(*,*) 'sumA=', sum_lnA_final, 'log(n_b)=', log(n_b),  'equN_2=', equ(mt% Ntable+2,1)
-     	write(*,*) '------------------------------'                   
-                          
-        !log space analytical jacobian
-		 if (.not. skip_partials) then
-
-		 sum_lnA = 0. ; sum_lnA_total = 0. ; sum_lnA_final = 0. 
-		 sum_lnZ = 0. ; sum_lnZ_total = 0. ; sum_lnZ_final = 0. 
-		 der_Zsum = 0. ; der_Asum = 0. 
-
-		 do i = 2, mt% Ntable
-          !number density of isotopes
-		  m_nuc = real(mt% Z(i))*mp_n + real(mt% N(i))*mn_n         
-     	  m_term = g*(twopi*hbarc_n**2/(m_nuc*kT))**(-3.0/2.0)
-		  !for baryon conservation
-		  sum_lnA(i) = log(real(mt%A(i))*m_term) + (mu_i(i)+abs(mt%BE(i)))/kT
-		  sum_lnA(i) = exp(sum_lnA(i)-sum_lnA(1))
-		  sum_lnA_total = sum_lnA(i) + sum_lnA_total		  
-		  !for charge conservation
-		  sum_lnZ(i) = log(real(mt%Z(i))*m_term) + (mu_i(i)+abs(mt%BE(i)))/kT
-		  sum_lnZ(i) = exp(sum_lnZ(i)-sum_lnZ(1))
-		  sum_lnZ_total = sum_lnZ(i) + sum_lnZ_total
-		  der_Zsum = -real(mt% Z(i)) + real(mt% Z(1)) + der_Zsum
-		  der_Asum = real(mt% A(i)) - real(mt% A(1)) + der_Asum
-		 enddo
-
-		n_i = 0. ; ni_Zsum = 0. ; ni_Asum = 0.
-
-		do i = 1, mt% Ntable
-		  m_nuc = real(mt% Z(i))*mp_n + real(mt% N(i))*mn_n         
-     	  m_term = g*(twopi*hbarc_n**2/(m_nuc*kT))**(-3.0/2.0)
-     	  n_i(i) = m_term*exp((mu_i(i)+abs(mt%BE(i)))/kT)
-     	  ni_Zsum = ni_Zsum + real(mt%Z(i))*n_i(i)
-     	  ni_Asum = ni_Asum + real(mt%A(i))*n_i(i)
-		enddo
-
-		 do i=1, mt% Ntable
-		 	do j=1, mt% Ntable
-		 	 ! diagonal jacobian => d(equ)/dmu_i	 	
-		 	 if(i==j) then
-		 	 A(i,j)= -1.0
-		 	 else
-		 	 A(i,j)=0.0
-		 	 endif
-		    enddo
-		 enddo
-		 
-		 do i=1, mt% Ntable    
-		    
-            dkdn_e = (1.0/3.0)*(n_e*threepisquare)**(-2.0/3.0)*(threepisquare)			
-			dmudk_e = (me_n/2.0)*(1.0+((ke*hbarc_n)/me_n)**2.0)**(-1.0/2.0) &
-				& *2.0*(ke*hbarc_n/me_n)*hbarc_n/me_n
-			dmudk_e = (hbarc_n**2.0*ke/me_n)*(1.0+((ke*hbarc_n)/me_n)**2.0)**(-1.0/2.0)
-										
-			dkdn_n = (1.0/3.0)*(n_n*threepisquare/2.0)**(-2.0/3.0)*(threepisquare/2.0)	
-			!dmudk_n = (cw0(0) + 2.0*kn*(cw0(1) + kn*(3.0*cw0(2) + 4.0*kn*cw0(3)))) + onethird*  &
-			!	& (cw0(0) + kn*(4.0*cw0(1) + kn*(9.0*cw0(2) + 16.0*kn*cw0(3))))				
-			dmudk_n = (4.0/3.0)*cw0(0)+(10.0/3.0)*cw0(1)*kn &
-				&	  + 6.0*cw0(2)*kn**2.0+(28.0/3.0)*cw0(3)*kn**3.0
-
-			dmudne=dkdn_e*dmudk_e
-			dmudnn=dkdn_n*dmudk_n
-
-            if (n_n .eq. 0.) then
-            dkdn_n = 0.
-            dmudk_n = 0.
-            end if
-            if (n_e .eq. 0.) then
-            dkdn_e = 0.
-            dmudk_e = 0. 
-            end if	
-            	
-		    m_nuc = real(mt% Z(i))*mp_n + real(mt% N(i))*mn_n         
-     	    m_term = g*(twopi*hbarc_n**2/(m_nuc*kT))**(-3.0/2.0)  
- 		    m_nuc1 = real(mt% Z(1))*mp_n + real(mt% N(1))*mn_n         
-     	    m_term1 = g*(twopi*hbarc_n**2/(m_nuc1*kT))**(-3.0/2.0)      	              
-
-            logZ_exponent = log(real(mt%Z(i))*m_term) + (mu_i(i)+mt%BE(i))/kT &
-            			&  - log(real(mt%Z(1))*m_term1) + (mu_i(1)+mt%BE(1))/kT
-            logA_exponent = log(real(mt%A(i))*m_term) + (mu_i(i)+mt%BE(i))/kT &
-            			&  - log(real(mt%A(1))*m_term1) + (mu_i(1)+mt%BE(1))/kT            			
-            
- 			! n=1 to N terms of last two rows
-       		A(mt% Ntable+1, 1) = (1.0/kT)-(1.0/kT)*sum_lnZ_total &
-       				& /(1.0+sum_lnZ_total)	
-     		A(mt% Ntable+2, 1) = (1.0/kT)-(1.0/kT)*sum_lnA_total &
-     				& /(1.0+sum_lnA_total) 
-     				
-     		A(mt% Ntable+1, i) = (1.0/kT)*exp(logZ_exponent)/ &
-     			&	(1.0+sum_lnZ_total)
-     		A(mt% Ntable+2, i) = (1.0/kT)*exp(logA_exponent)/ &
-     			&	(1.0+sum_lnA_total)     					
- 
- 			A(i, mt% Ntable+1) = -real(mt% Z(i))
-			A(i, mt% Ntable+2) = real(mt% A(i))    				
-
-			A(mt% Ntable+1, mt%Ntable+1) = -(real(mt%Z(1))/kT)+ &
-			 & (der_Zsum/kT)*sum_lnZ_total/(1.0+sum_lnZ_total)	&
-			 & - 1.0/n_e/dmudne
-
-     		A(mt%Ntable+1,mt%Ntable+2) = (real(mt%A(1))/kT)+ &
-			 & (der_Asum/kT)*sum_lnZ_total/(1.0+sum_lnZ_total)	
-			 
-     		A(mt%Ntable+2, mt%Ntable+1) =-(real(mt%Z(1))/kT)+ &
-			 & (der_Zsum/kT)*sum_lnA_total/(1.0+sum_lnA_total)	
-     				
-     		A(mt% Ntable+2, mt%Ntable+2) = (real(mt%A(1))/kT)+ &
-			 & (der_Asum/kT)*sum_lnA_total/(1.0+sum_lnA_total) &
-			 & + 1.0/(n_b-n_n)/(-dmudnn)  
-			 
-			 if (n_n == 0.) then
-     		A(mt% Ntable+2, mt%Ntable+2) = (real(mt%A(i))/kT)+ &
-			 & (der_Asum/kT)*sum_lnA_total/(1.0+sum_lnA_total)	
-			end if			 
-			   
-  		    !last two rows of jacobian, derivatives wrt the conservation equations 
-     		! n=0 term
-     		!A(mt% Ntable+1, 1) = (1.0/kT)-(1.0/kT)*sum_lnZ_total*(1.0+sum_lnZ_total)**(-1.0)
-     		!A(mt% Ntable+2, 1) = (1.0/kT)-(1.0/kT)*sum_lnA_total*(1.0+sum_lnA_total)**(-1.0)
-
-		    !last two columns 
-			!A(i, mt% Ntable+1) = -real(mt% Z(i))*dmudk_e*dkdn_e*n_b			 ! MeV		    
-			!A(i, mt% Ntable+2) = real(mt% A(i))*dmudk_n*dkdn_n*n_b/(1.0-chi) ! MeV
-     	
-     		!last two rows
-     		!A(mt% Ntable+1, i) = real(mt% Z(i))*n_i(i)/(kT*ni_Zsum)
-     		!A(mt% Ntable+2, i) = real(mt% A(i))*n_i(i)/(kT*ni_Asum)
-     			 	    		       	
-			!A(mt% Ntable+1, mt% Ntable+1) = -1.0/Y_e			
-			!A(mt% Ntable+1, mt% Ntable+2) = (1.0/ni_Zsum)*real(mt%Z(i))*n_i(i) &
-			!	& *real(mt%A(i))/kT*dmudnn*n_b/(1.0-chi)		
-				
-			!A(mt% Ntable+2, mt% Ntable+2) = 1.0 /((1.0-chi)-Y_n)  
-			!A(mt% Ntable+2, mt% Ntable+1) = (1.0/ni_Asum)*real(mt%A(i))*n_i(i) &
-			!	& *(-real(mt%Z(i)))/kT*dmudne*n_b	
-			
-			!A(mt% Ntable+1, mt% Ntable+1) = -(1.0/n_e)*1.0/dmudne
-			!A(mt% Ntable+2, mt% Ntable+2) = 1.0/dmudnn
-  				
-		
-
-!			
-!			A(mt% Ntable+1, mt% Ntable+1) = -real(mt% Z(i))**2 &
-!     				& *n_i(i)/(kT*ni_Zsum) - (1.0/n_e)/dmudne		
-!     		A(mt% Ntable+1, mt% Ntable+2) = real(mt% A(i))*real(mt%Z(i)) &
-!     				*n_i(i)/(kT*ni_Asum)     		
-!     		
-!     		A(mt% Ntable+2, mt% Ntable+1) =  -real(mt% Z(i))*real(mt%A(i)) &
-!     				& *n_i(i)/(kT*ni_Zsum) + 1.0/dmudnn
-!			if (n_n .gt. 0.) then
-!			A(mt% Ntable+2, mt% Ntable+2) = 1.0/n_n/dmudnn &
-!				& + real(mt%A(i))**2*n_i(i)/(kT*ni_Asum)
-!			else 
-!			A(mt% Ntable+2, mt% Ntable+2) = 0.
-!			end if	
-			
-		!	A(mt% Ntable+2, i) = 0.
-		!	A(mt% Ntable+2, mt% Ntable+1) = 0.
-		!	A(mt% Ntable+2, mt% Ntable+2) = 0. 
-						
-			!try	
-			!A(mt% Ntable+1, i) = 1./kT
-			!A(mt% Ntable+2, i) = 1./kT
-			!A(i, mt% Ntable+2) = real(mt% A(i))*dmudk_n*dkdn_n*n_b/(1.0-chi) ! MeV
-			!A(mt% Ntable+2, mt% Ntable+2) = 1.0/((1.0-chi)-Y_n)
-
-		 enddo 
-		 end if
+         equ(mt% Ntable+1,1) = Zsum - n_e
+         equ(mt% Ntable+2,1) = Asum - n_b + n_n*(1.0-chi)  
+    
+ 	
       end subroutine eval_equ
       
       
       subroutine eval_jacobian(ldA, A, idiag, lrpar, rpar, lipar, ipar, ierr)
          integer, intent(in) :: ldA ! leading dimension of A
          real*8 :: A(ldA, nvar*nz) ! the jacobian matrix
-         ! A(idiag+q-v, v) = partial of equation(q) wrt variable(v)
          integer, intent(inout) :: idiag 
          integer, intent(in) :: lrpar, lipar
          real*8, intent(inout) :: rpar(lrpar)
          integer, intent(inout) :: ipar(lipar)
          integer, intent(out) :: ierr         
-			logical, parameter :: skip_partials = .false.			
+		 logical, parameter :: skip_partials = .false.			
+		 real :: chi
+      	 real :: m_term, m_nuc
+      	 real, parameter :: g = 1.0d0
+      	 real :: asum2, zsum2	
+      	 real :: sumn, sume 
+      	 real :: Pressure, P_ext
+		 
          ierr = 0        
-			call eval_equ(nvar, nz, equ, skip_partials, A, lrpar, rpar, lipar, ipar, ierr)
+
       end subroutine eval_jacobian
       
 
@@ -801,7 +654,7 @@
 
 	 function neutron_chemical_potential(k) result(mu)
 		use phys_constants
-		real, intent(in) :: k	! (fm**-3)
+		real, intent(in) :: k	! (fm**-1)
 		real :: mu	! MeV
 		real :: W
 	    ! eq. 3.7
@@ -814,13 +667,98 @@
      function kn_solve(x)
       real, intent(in) :: x
       real :: kn_solve    
-      kn_solve = neutron_chemical_potential(x) - mu_n   
+      kn_solve = neutron_chemical_potential(x) - mu_n  
      end function kn_solve
+     
+     function kn_solve_pressure(x)
+     	real, intent(in) :: x
+     	real :: kn_solve_pressure
+     	kn_solve_pressure = neutron_pressure(x) - Pn
+     end function kn_solve_pressure	
 
      function ke_solve(x)
       real, intent(in) :: x
       real :: ke_solve    
       ke_solve = electron_chemical_potential(x) - mu_e  
      end function ke_solve  
-      
+     
+     function neutron_pressure(k) result(P)
+		use phys_constants
+		real, intent(in) :: k   ! fm**-1
+		real :: P       ! MeV fm**-3
+		real :: dWdk
+        real, dimension(0:3), parameter :: cw0 = [ 1.2974, 15.0298, -15.2343, 7.4663 ]			
+		!dWdk = k*(cw0(0) + k*(2.0*cw0(1) + k*(3.0*cw0(2) + k*4.0*cw0(3)))) 
+		dWdk =  (cw0(0) + k*(2.0*cw0(1) + k*(3.0*cw0(2) + k*4.0*cw0(3))))
+		P = 2.0*onethird/threepisquare* k**4 * dWdk
+     end function neutron_pressure    
+
+     function electron_pressure(k) result(P)
+		use phys_constants
+		real, intent(in) :: k   ! fm**-1
+		real :: P       ! MeV fm**-3
+		real :: n			
+		n = k**3/threepisquare
+		P = 0.25*n*k*hbarc_n
+     end function electron_pressure
+
+     function lattice_pressure(Z_average,A_average,n,ne) result(P)
+     	use phys_constants
+     	real, intent(in) :: Z_average,A_average,n,ne
+     	real :: P, p_f
+     	real :: aion
+     	real, parameter :: C_l = 3.40665d-3
+     	p_f = (threepisquare*n)**onethird
+     	aion = (Z_average/ne/pi*0.75)**onethird
+       !P = -(n/3.0)*C_l*(Z_average**2/A_average**(4.0/3.0))*p_f*hbarc_n
+     	P = -(9.0/10.0)*Z_average**2.0/aion*electroncharge**2.0 *hbarc_n*n
+     end function lattice_pressure 
+     
+          
+     function neutron_k(x)
+      real, intent(in) :: x
+      real :: neutron_k      
+      neutron_k = neutron_pressure(x) - pres_n     
+     end function neutron_k          
+     
+     subroutine size_equ(iter, nvar, nz, equ, residual_norm, residual_max, lrpar, rpar, lipar, ipar, ierr)
+     	integer, intent(in) :: iter, nvar, nz
+     	double precision, pointer :: equ(:,:) 
+     	double precision, intent(out) :: residual_norm, residual_max
+     	integer, intent(in) :: lrpar, lipar
+     	double precision, intent(inout) :: rpar(lrpar)
+     	integer, intent(inout) :: ipar(lipar)
+     	integer, intent(out) :: ierr
+     	ierr = 0
+     	residual_norm = 1.d-20
+     	residual_max = 1.d-15
+    end subroutine size_equ 	     
+       
+      subroutine xdomain(iter, nvar, nz, x, dx, xold, lrpar, rpar, lipar, ipar, ierr)
+         integer, intent(in) :: iter, nvar, nz
+         double precision, pointer, dimension(:,:) :: x, dx, xold ! (nvar, nz)
+         integer, intent(in) :: lrpar, lipar
+         double precision, intent(inout) :: rpar(lrpar)
+         integer, intent(inout) :: ipar(lipar)
+         integer, intent(out) :: ierr
+         ierr = 0
+		 ! set bounds of variables
+ 		 x(mt% Ntable+1, 1) = max(n_b_prev, x(mt% Ntable+1,1))
+ 		 x(mt% Ntable+2,1) = abs(x(mt% Ntable+2,1))
+  !   	 x(mt% Ntable+3,1) = abs(x(mt% Ntable+3,1))
+ 		 dx(mt% Ntable+1,1) = x(mt% Ntable+1,1)-xold(mt% Ntable+1,1)     
+		 dx(mt% Ntable+2,1) = x(mt% Ntable+2,1)-xold(mt% Ntable+2,1)     
+ !		 dx(mt% Ntable+3,1) = x(mt% Ntable+3,1)-xold(mt% Ntable+3,1)
+ 		 x(mt% Ntable+1,1) = xold(mt%Ntable+1,1)+dx(mt%Ntable+1,1)     
+		 x(mt% Ntable+2,1) = xold(mt%Ntable+2,1)+dx(mt%Ntable+2,1)     
+!		 x(mt% Ntable+3,1) = xold(mt%Ntable+3,1)+dx(mt%Ntable+3,1)     
+ 		 
+ 		 if (x(mt% Ntable+1,1) < n_b_prev) then
+ 		 x(mt% Ntable+1,1) = n_b_prev
+ 		 dx(mt% Ntable+1,1) = x(mt% Ntable+1,1)-xold(mt% Ntable+1,1) 
+ 		 x(mt% Ntable+1,1) = xold(mt%Ntable+1,1)+dx(mt%Ntable+1,1) 
+ 		 end if
+
+      end subroutine xdomain          
+          
     end module qse_solver
