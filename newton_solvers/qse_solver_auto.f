@@ -16,8 +16,8 @@
 
       ! dimensions
       integer, parameter :: nz = 1 ! number of zones
-      integer, parameter :: nvar = 9179+2 !9179+2 !5284+2  ! number of variables per zone
-      integer, parameter :: neq = nz*nvar
+      integer :: nvar ! number of variables per zone
+	  integer :: neq  ! number of equations (nvar*nz)
 
       ! information about the bandwidth of the jacobian matrix
       ! we have a square matrix, so set number zones sub and super both to 0
@@ -59,6 +59,7 @@
 	  ! for crust
       type(mass_table_type), pointer :: mt
       type(eos_table_type), pointer :: et
+      type(ash_table_type), pointer :: at
       real*8 :: mu_e, mu_n, mu_i(9179)
       real*8 :: mu_e_prev, Y_e_prev
       real*8 :: Y_e, Y_n 
@@ -72,8 +73,6 @@
  	  real, save :: zsum_save = 0.
  	  real :: asum, zsum
       real :: kT
-      real :: mu_n_prev
-      real :: ke_prev, kn_prev
       real :: pres_n
       real :: ni(9179)
       real :: Pn
@@ -100,7 +99,6 @@
       integer :: which_decsol_in, decsol    
  
  	  ! for crust
- ! 	  character(len=*), parameter :: mass_table_name = 'nucchem_moe2.data'
 	  character(len=*), parameter :: mass_table_name = 'moe95_converted.data'
  	  character(len=*), parameter :: eos_table_name = 'ashes_acc.txt'
 	  character(len=*), parameter :: y_output_file = 'y_output_2.data'
@@ -194,6 +192,10 @@
 	  open(unit=y_output_id, file = y_output_file, iostat=ios, status="unknown")
 	  write(y_output_id,'(8(A12),2x)') 'Pressure', 'n_b', 'Ye', 'Yn', 'Zbar', 'Abar', 'mu_e', 'mu_n'
 
+	  ! make nvar equal to number of entries in mass table +2 (for nb and mun)
+	  nvar = mt% Ntable + 2
+	  neq = nz*nvar
+
   	  ! solve for qse distribution at each pressure	  
   	  do i=1, et% Ntable
   	     !n_b = et% nb(i) !n_b_start !/1000.
@@ -256,26 +258,22 @@
 		 
 		 mu_n = mu_e/1000.
 
-		! initial values of additional variables 
+  		 ! initial values of additional variables 
 		 xold(mt% Ntable+1,1) = n_b
 		 xold(mt% Ntable+2,1) = mu_n 
-			
+		
          dx = 0 ! a not very good starting "guess" for the solution
          x = xold
          
+         ! controls
          lid = max_lid
          lrd = max_lrd
-                  
          first_step = .true.
-         
          tol_correction_norm=1d-9 ! upper limit on magnitude of average scaled correction
          tol_max_correction = 1d99
          tol_residual_norm = 1d99
-         
          epsder = 1d-6 ! relative variation to compute derivatives
-         
          doing_jacobian = .false.
-         
          matrix_type = square_matrix_type
          
          call newton_work_sizes(m1, m2, nvar, nz, nsec, matrix_type, lwork, liwork, ierr)
@@ -300,6 +298,8 @@
          else if (which_decsol == mkl_pardiso) then
             call do_newt(null_decsol, null_decsolblk, mkl_pardiso_decsols)
          end if
+        
+         n_b = x(mt% Ntable+1, 1)
 
          if (nonconv) then
          write(*, *) 'failed to converge'
