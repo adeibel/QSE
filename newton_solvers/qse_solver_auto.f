@@ -23,8 +23,8 @@
       ! we have a square matrix, so set number zones sub and super both to 0
       integer, parameter :: stencil_zones_subdiagonal = 0
       integer, parameter :: stencil_zones_superdiagonal = 0
-      integer, parameter :: m1 = (stencil_zones_subdiagonal+1)*nvar-1 ! number of subdiagonals
-      integer, parameter :: m2 = (stencil_zones_superdiagonal+1)*nvar-1 ! number of superdiagonals
+      integer :: m1 ! number of subdiagonals
+      integer :: m2 ! number of superdiagonals 
 
       ! equation residuals
       real*8, pointer, dimension(:,:) :: equ
@@ -192,9 +192,12 @@
 	  open(unit=y_output_id, file = y_output_file, iostat=ios, status="unknown")
 	  write(y_output_id,'(8(A12),2x)') 'Pressure', 'n_b', 'Ye', 'Yn', 'Zbar', 'Abar', 'mu_e', 'mu_n'
 
-	  ! make nvar equal to number of entries in mass table +2 (for nb and mun)
+	  ! set some dimensions
+	  ! make nvar equal to number of entries in mass table + 2 (for n_b and mu_n)
 	  nvar = mt% Ntable + 2
 	  neq = nz*nvar
+      m1 = (stencil_zones_subdiagonal+1)*nvar-1 ! number of subdiagonals
+      m2 = (stencil_zones_superdiagonal+1)*nvar-1  ! number of superdiagonals
 
   	  ! solve for qse distribution at each pressure	  
   	  do i=1, et% Ntable
