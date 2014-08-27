@@ -453,7 +453,7 @@
                 
          ierr = 0
 
-		! electron wave vector fm^-1
+		! solve for electron wave vector 
 		if (mu_e > 0.) then
         x1=0.0
         x2=10.
@@ -474,6 +474,7 @@
         mu_e = -mu_e
         end if
 
+	    ! solve for neutron wave vector
 		if (mu_n > 0.) then
         x1=0.0
         x2=10.
@@ -494,7 +495,7 @@
 
          rho = (n_b*amu_n)*(mev_to_ergs/clight2)/(1.d-39) ! cgs                      
 
-		! enter with mu_n and mu_e from initial conditions
+		 ! enter with mu_n and mu_e from initial conditions
 		 Asum = 0. ; Zsum = 0. 
 		 Ai = 0. ; Zi = 0.
 		 ni_Asum = 0. ; ni_Zsum = 0.
@@ -508,7 +509,7 @@
 		  R_ws = (real(mt% Z(i))/n_e/pi*0.75)**onethird		 
           !number density of isotopes
 		  m_star = mn_n-mp_n-me_n !does not contain m_e because mu_e has rest mass in definition 
-		  m_nuc = real(mt%A(i))*amu_n !real(mt% Z(i))*mp_n+real(mt% N(i))*mn_n    
+		  m_nuc = real(mt%A(i))*amu_n 
      	  m_term = g*(twopi*hbarc_n**2/(m_nuc*kT))**(-3.0/2.0)
      	  ni(i) = m_term*exp((mu_i(i)+mt%BE(i))/kT)
      	  phi = 1.25*pi*R_n**3*ni(i)
@@ -531,20 +532,13 @@
 		 Abar = Ai/ni_Asum
 		 Z_bar = Zbar
 		 A_bar = Abar
-
-		 !chi = use_default_nuclear_size
  		 chi = phi_sum 
 	     Y_n = n_n*(1.-chi)/n_b   
-
-	  
   		 !baryon and charge conservation 
          equ(mt% Ntable+1,1) = Zsum - n_e
          equ(mt% Ntable+2,1) = Asum - n_b + n_n*(1.0-chi)  
-    
- 	
       end subroutine eval_equ
-      
-      
+          
       subroutine eval_jacobian(ldA, A, idiag, lrpar, rpar, lipar, ipar, ierr)
          integer, intent(in) :: ldA ! leading dimension of A
          real*8 :: A(ldA, nvar*nz) ! the jacobian matrix
@@ -559,13 +553,10 @@
       	 real, parameter :: g = 1.0d0
       	 real :: asum2, zsum2	
       	 real :: sumn, sume 
-      	 real :: Pressure, P_ext
-		 
+      	 real :: Pressure, P_ext		 
          ierr = 0        
-
       end subroutine eval_jacobian
       
-
       subroutine enter_setmatrix(iter, nvar, nz, neqs, x, xold, xscale, xder, need_solver_to_eval_jacobian, &
             ldA, A, idiag, lrpar, rpar, lipar, ipar, ierr)
          integer, intent(in) :: iter, nvar, nz, neqs
