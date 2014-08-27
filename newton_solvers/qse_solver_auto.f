@@ -13,7 +13,7 @@
       implicit none
       
       logical, parameter :: dbg = .false.
-
+      
       ! dimensions
       integer, parameter :: nz = 1 ! number of zones
       integer :: nvar ! number of variables per zone
@@ -61,7 +61,6 @@
       type(eos_table_type), pointer :: et
       type(ash_table_type), pointer :: at
       real*8 :: mu_e, mu_n, mu_i(9179)
-      real*8 :: mu_e_prev, Y_e_prev
       real*8 :: Y_e, Y_n 
    	  real*8 :: n_b, n_e, n_n
    	  real*8 :: p_ext
@@ -69,7 +68,6 @@
       real :: Z_bar, A_bar
       real,dimension(:),pointer :: hist
       real :: x1, x2, xacc
-      integer :: eos_handle
  	  real, save :: zsum_save = 0.
  	  real :: asum, zsum
       real :: kT
@@ -444,7 +442,6 @@
 		 real :: Zi, Ai
 		 real :: pressure
 		 real :: Zbar, Abar
-!		 real :: ni(16)
 		 ! for chi
 		 real :: n_nin
 		 real, parameter :: n_0 = 1.740151d-1
