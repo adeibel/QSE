@@ -251,7 +251,7 @@
 		 
 		 write(*,*) i
 		 !if (n_b < 5.2d-4) cycle
-		 if (p_ext < 4.26d-3) cycle
+		 if (p_ext < 4.57d-3) cycle
                  write(*,*) 'checking'
 		 
 		 mu_n = mu_e/1000.
@@ -300,6 +300,8 @@
          else if (which_decsol == mkl_pardiso) then
             call do_newt(null_decsol, null_decsolblk, mkl_pardiso_decsols)
          end if
+
+		n_b = x(mt% Ntable+1,1)
 
          if (nonconv) then
          write(*, *) 'failed to converge'
