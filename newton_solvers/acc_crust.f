@@ -6,13 +6,14 @@
   	 """
       program acc_crust
 
-      use qse_solver              
       use const_def
       use const_lib
       use num_def
       use mtx_lib
       use mtx_def
-      
+	  use outer_crust
+	  use inner_crust
+             
       implicit none
       logical, parameter :: show_all = .false.  ! false for releases
       integer ::  k, solver, omp_get_thread_num

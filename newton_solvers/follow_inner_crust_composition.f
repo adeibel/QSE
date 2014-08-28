@@ -1,4 +1,5 @@
-      module qse_solver
+      module inner_crust
+ 
       use num_def
       use num_lib
       use iso_fortran_env, only: error_unit, oid=>output_unit
@@ -78,7 +79,7 @@
              
       contains
       
-      subroutine do_test_newton
+      subroutine follow_inner_crust_composition
          use mtx_lib
          use mtx_def
         
@@ -354,7 +355,7 @@
             deallocate(AF)
          end subroutine do_newt
          
-      end subroutine do_test_newton
+      end subroutine follow_inner_crust_composition
 
          
       subroutine set_primaries(nvar, nz, x, lrpar, rpar, lipar, ipar, ierr)
@@ -744,4 +745,4 @@
 
       end subroutine xdomain          
           
-    end module qse_solver
+    end module inner_crust

@@ -1,4 +1,8 @@
-program follow_chain
+module outer_crust
+
+ contains 
+
+subroutine follow_outer_crust_composition
 	use iso_fortran_env, only : error_unit, output_unit
 	use phys_constants
 	use utils_lib
@@ -536,4 +540,6 @@ program follow_chain
       neutron_k_negative = abs(neutron_pressure(x)) - abs(pres_n)   
     end function neutron_k_negative
 
-end program follow_chain
+end subroutine follow_outer_crust_composition
+
+end module outer_crust
