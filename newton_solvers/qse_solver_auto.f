@@ -60,7 +60,7 @@
       type(mass_table_type), pointer :: mt
       type(eos_table_type), pointer :: et
       type(ash_table_type), pointer :: at
-      real*8 :: mu_e, mu_n, mu_i(9179)
+      real*8 :: mu_e, mu_n, mu_i(nvar)
       real*8 :: Y_e, Y_n 
    	  real*8 :: n_b, n_e, n_n
    	  real*8 :: p_ext
@@ -72,7 +72,7 @@
  	  real :: asum, zsum
       real :: kT
       real :: pres_n
-      real :: ni(9179)
+      real :: ni(nvar)
       real :: Pn
       real :: n_b_prev
              
@@ -113,7 +113,7 @@
       logical, save :: mass_table_is_loaded = .FALSE.
       logical, save :: eos_table_is_loaded = .FALSE.
       logical, save :: ye_set = .FALSE.
-      real :: mterm, fac1(9179), fac2(9179), m_nuc, m_star
+      real :: mterm, fac1(nvar), fac2(nvar), m_nuc, m_star
       real, parameter :: g = 1.d0
 
       namelist /range/ P_ext_start, n_b_start, kT, have_mu_table, &
@@ -429,16 +429,10 @@
 		 real :: m_star 
 		 real :: m_nuc, m_nuc1
 		 real :: m_term, m_term1		 
-		 !for equations in log space
-		 real :: sum_lnZ(9179), sum_lnA(9179) 
-		 real :: sum_lnZ_total, sum_lnZ_final 
-		 real :: sum_lnA_total, sum_lnA_final
-		 real :: logZ_exponent
-		 real :: logA_exponent 
 		 real :: ni_Zsum, ni_Asum
 		 real :: der_Zsum, der_Asum
 		 real :: Asum, Zsum
-		 real :: As(9179), Zs(9179)
+		 real :: As(nvar), Zs(nvar)
 		 real :: Zi, Ai
 		 real :: pressure
 		 real :: Zbar, Abar
@@ -736,13 +730,11 @@
 		 ! set bounds of variables
  		 x(mt% Ntable+1, 1) = max(n_b_prev, x(mt% Ntable+1,1))
  		 x(mt% Ntable+2,1) = abs(x(mt% Ntable+2,1))
-  !   	 x(mt% Ntable+3,1) = abs(x(mt% Ntable+3,1))
+ 		 
  		 dx(mt% Ntable+1,1) = x(mt% Ntable+1,1)-xold(mt% Ntable+1,1)     
 		 dx(mt% Ntable+2,1) = x(mt% Ntable+2,1)-xold(mt% Ntable+2,1)     
- !		 dx(mt% Ntable+3,1) = x(mt% Ntable+3,1)-xold(mt% Ntable+3,1)
  		 x(mt% Ntable+1,1) = xold(mt%Ntable+1,1)+dx(mt%Ntable+1,1)     
 		 x(mt% Ntable+2,1) = xold(mt%Ntable+2,1)+dx(mt%Ntable+2,1)     
-!		 x(mt% Ntable+3,1) = xold(mt%Ntable+3,1)+dx(mt%Ntable+3,1)     
  		 
  		 if (x(mt% Ntable+1,1) < n_b_prev) then
  		 x(mt% Ntable+1,1) = n_b_prev
