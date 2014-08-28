@@ -34,8 +34,10 @@ subroutine follow_outer_crust_composition
 	integer :: Z, A, Zr, Ar, Nr, inlist_id
 	integer :: dist_id, index
 	integer :: ierr, id, ios, iter, iZ, iZb, iZe, iEq(1)
-	integer :: Z_int(1), A_int(1), abun_init(1)
-	integer :: Z_fin(1), A_fin(1), abun_fin(1)
+	!integer :: Z_initial(1), A_initial(1), abun_initial(1)
+	!integer :: Z_final(1), A_final(1), abun_final(1)
+	integer, dimension(:) :: Z_int, A_int, abun_init
+	integer, dimension(:) :: Z_fin, A_fin, abun_fin
 	integer :: k, l, final_id
 	integer, parameter :: ineg = 1, ipos = 2
 	integer, parameter :: fid = output_unit, max_iterations = 100
@@ -140,6 +142,9 @@ subroutine follow_outer_crust_composition
 	  at => winvn_ash_table
 	  write(*,*) 'ash table laoded'	
 	
+	 allocate(Z_initial(at% Ntable), A_initial(at% Ntable), abun_initial(at% Ntable), &
+	 &		  Z_final(at% Ntable), A_final(at% Ntable), abund_final(at% Ntable))
+	
    final_id = alloc_iounit(ierr)
    if (io_failure(ierr,'allocating unit for final array file')) stop
    open(unit=final_id, file=final_file, iostat=ios, status='unknown') 
@@ -150,10 +155,15 @@ subroutine follow_outer_crust_composition
    !main loop over pressure (pushes nucleus to higher pressures)   
    
     ! make table of nuclei the first initial nuclei array 
-    do i = 1, size(Z_int)
-   	Z_int(i) =  Z !mt% Z
-	A_int(i) =  A !mt% A
-    end do
+!    do i = 1, size(Z_int)
+!      Z_int(i) =  Z !mt% Z
+!	   A_int(i) =  A !mt% A
+!    end do
+
+   	do i = 1, at% Ntable
+   	 Z_int(i) = at% Z(i)
+   	 A_int(i) = at% A(i)
+   	end do
    
    do i = 1, pt% Ntable
 	pressure = pt% P(i)	! MeV fm**-3
