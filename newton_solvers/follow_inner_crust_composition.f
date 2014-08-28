@@ -182,7 +182,7 @@
 	  end if
 	  end if
 	  at => winvn_ash_table
-	  write(*,*) 'ash table laoded'
+	  write(*,*) 'ash table loaded'
  	  
  	  ! allocate units and open output files   
  	  output_id = alloc_iounit(ierr)
@@ -202,8 +202,6 @@
 	  if (io_failure(ierr, 'allocating unit for y fractions file')) stop
 	  open(unit=y_output_id, file = y_output_file, iostat=ios, status="unknown")
 	  write(y_output_id,'(8(A12),2x)') 'Pressure', 'n_b', 'Ye', 'Yn', 'Zbar', 'Abar', 'mu_e', 'mu_n'
-
-
 
 	  ! set some dimensions
 	  ! make nvar equal to number of entries in mass table + 2 (for n_b and mu_n)
