@@ -12,6 +12,7 @@ subroutine follow_outer_crust_composition
 	use dist_table
 	use alert_lib
 	use rootfind	
+	use ash_table_support
 	
 	character(len=*), parameter :: default_infile = 'moe_chain.inlist'
 	character(len=*), parameter :: default_dist_file = 'nuclei_distribution.data'
@@ -47,6 +48,7 @@ subroutine follow_outer_crust_composition
 	type(mass_table_type), pointer :: mt
 	type(pressure_table_type), pointer :: pt
 	type(dist_table_type), pointer :: dt
+	type(ash_table_type), pointer :: at
 	logical, dimension(max_iterations) :: neutron_capture, dineutron_capture
 	logical, dimension(max_iterations) :: neutron_emission, dineutron_emission
 	logical, dimension(max_iterations) :: en_rxn, enn_rxn, ne_rxn, nne_rxn
@@ -125,6 +127,18 @@ subroutine follow_outer_crust_composition
 	end if
 	end if
 	pt => winvn_pressure_table
+	
+	  !load ash table
+	  if (ash_table_is_loaded .eqv. .FALSE.) then
+	  call load_ash_table('../../../data', trim(ash_table_name), ierr)
+	  ash_table_is_loaded = .TRUE.
+	  if (ierr /= 0) then
+	  write(error_unit, '(a)') trim(alert_message)
+	  stop
+	  end if
+	  end if
+	  at => winvn_ash_table
+	  write(*,*) 'ash table laoded'	
 	
    final_id = alloc_iounit(ierr)
    if (io_failure(ierr,'allocating unit for final array file')) stop

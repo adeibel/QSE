@@ -110,10 +110,10 @@
       integer :: i, j, ios
       integer :: inlist_id, output_id, abundance_id  
       integer :: mu_table_input_id, mu_table_output_id
-      integer :: y_output_id
+      integer :: y_output_id, ash_id
       logical, save :: mass_table_is_loaded = .FALSE.
       logical, save :: eos_table_is_loaded = .FALSE.
-      logical, save :: ye_set = .FALSE.
+      logical, save :: ash_table_is_loaded = .FALSE.
       real :: mterm, fac1(nvar), fac2(nvar), m_nuc, m_star
       real, parameter :: g = 1.d0
 
@@ -171,6 +171,18 @@
  	  end if
  	  et => winvn_eos_table
  	  write(*,*) 'EOS table loaded'
+
+	  !load ash table
+	  if (ash_table_is_loaded .eqv. .FALSE.) then
+	  call load_ash_table('../../../data', trim(ash_table_name), ierr)
+	  ash_table_is_loaded = .TRUE.
+	  if (ierr /= 0) then
+	  write(error_unit, '(a)') trim(alert_message)
+	  stop
+	  end if
+	  end if
+	  at => winvn_ash_table
+	  write(*,*) 'ash table laoded'
  	  
  	  ! allocate units and open output files   
  	  output_id = alloc_iounit(ierr)
@@ -190,6 +202,8 @@
 	  if (io_failure(ierr, 'allocating unit for y fractions file')) stop
 	  open(unit=y_output_id, file = y_output_file, iostat=ios, status="unknown")
 	  write(y_output_id,'(8(A12),2x)') 'Pressure', 'n_b', 'Ye', 'Yn', 'Zbar', 'Abar', 'mu_e', 'mu_n'
+
+
 
 	  ! set some dimensions
 	  ! make nvar equal to number of entries in mass table + 2 (for n_b and mu_n)
