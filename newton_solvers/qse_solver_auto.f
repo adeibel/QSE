@@ -447,45 +447,45 @@
                 
          ierr = 0
 
-		! solve for electron wave vector 
-		if (mu_e > 0.) then
-        x1=0.0
-        x2=10.
-        xacc=1.d-15
-        ke=root_bisection(ke_solve,x1,x2,xacc,ierr,hist) !returns in fm**-1
-        if (io_failure(ierr,'Error in bisection for ke wave vector')) stop
-        n_e = ke**3/threepisquare               
-        Y_e = n_e/n_b   
-        else
-        mu_e = abs(mu_e)
-        x1=0.0
-        x2=10.
-        xacc=1.d-15
-        ke=root_bisection(ke_solve,x1,x2,xacc,ierr,hist) !returns in fm**-1
-        if (io_failure(ierr,'Error in bisection for ke wave vector')) stop
-        n_e = ke**3/threepisquare               
-        Y_e = n_e/n_b   
-        mu_e = -mu_e
-        end if
+		 ! solve for electron wave vector 
+		 if (mu_e > 0.) then
+         x1=0.0
+         x2=10.
+         xacc=1.d-15
+         ke=root_bisection(ke_solve,x1,x2,xacc,ierr,hist) !returns in fm**-1
+         if (io_failure(ierr,'Error in bisection for ke wave vector')) stop
+         n_e = ke**3/threepisquare               
+         Y_e = n_e/n_b   
+         else
+         mu_e = abs(mu_e)
+         x1=0.0
+         x2=10.
+         xacc=1.d-15
+         ke=root_bisection(ke_solve,x1,x2,xacc,ierr,hist) !returns in fm**-1
+         if (io_failure(ierr,'Error in bisection for ke wave vector')) stop
+         n_e = ke**3/threepisquare               
+         Y_e = n_e/n_b   
+         mu_e = -mu_e
+         end if
 
-	    ! solve for neutron wave vector
-		if (mu_n > 0.) then
-        x1=0.0
-        x2=10.
-        xacc=1.d-15
-        kn=root_bisection(kn_solve,x1,x2,xacc,ierr,hist) !returns in fm**-1
-        if (io_failure(ierr,'Error in bisection for kn wave vector')) stop
-        n_n = 2.0*kn**3/threepisquare              
-		else
-		mu_n = abs(mu_n)
-        x1=0.0
-        x2=10.
-        xacc=1.d-15
-        kn=root_bisection(kn_solve,x1,x2,xacc,ierr,hist) !returns in fm**-1
-        if (io_failure(ierr,'Error in bisection for kn wave vector')) stop
-        n_n = 2.0*kn**3/threepisquare              
-		mu_n = -mu_n
-		end if		
+	     ! solve for neutron wave vector
+		 if (mu_n > 0.) then
+         x1=0.0
+         x2=10.
+         xacc=1.d-15
+         kn=root_bisection(kn_solve,x1,x2,xacc,ierr,hist) !returns in fm**-1
+         if (io_failure(ierr,'Error in bisection for kn wave vector')) stop
+         n_n = 2.0*kn**3/threepisquare              
+		 else
+		 mu_n = abs(mu_n)
+         x1=0.0
+         x2=10.
+         xacc=1.d-15
+         kn=root_bisection(kn_solve,x1,x2,xacc,ierr,hist) !returns in fm**-1
+         if (io_failure(ierr,'Error in bisection for kn wave vector')) stop
+         n_n = 2.0*kn**3/threepisquare              
+		 mu_n = -mu_n
+		 end if		
 
          rho = (n_b*amu_n)*(mev_to_ergs/clight2)/(1.d-39) ! cgs                      
 
