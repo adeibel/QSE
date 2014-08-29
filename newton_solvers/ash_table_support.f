@@ -84,7 +84,7 @@ contains
 		at% Ntable = Ntab
 
 		! allocate the tables		
-		allocate(at% Z_ash(Ntab), A_ash(Ntab), BE_ash(Ntab), Y_ash(Ntab)) 
+		allocate(at% Z_ash(Ntab), at% A_ash(Ntab), at% BE_ash(Ntab), at% Y_ash(Ntab)) 
 		
 		! now read in the table, skipping first two lines
 		read(iounit,*,iostat=ierr)
