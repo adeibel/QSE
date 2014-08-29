@@ -20,7 +20,7 @@ module outer_crust
 	  character(len=*), parameter :: default_stable_table = 'stable_nuclei_moe95.data'
 	  character(len=*), parameter :: default_pressure_table = 'pressure_moe95.data'
 	  character(len=*), parameter :: ash_table_name = 'ash_initial.data'
-	  character(len=*), parameter :: final_file = 'ash_final.data'
+	  character(len=*), parameter :: final_file = '../../../crust_eos/ash_final.data'
 	  real :: kn, ke, mu_n
 	  real :: mu_e, ne, nn 
 	  real :: x1, x2, xacc
