@@ -30,7 +30,6 @@ subroutine follow_outer_crust_composition
 	real :: Sn, S2n, Sp, S2p, B, ecthresh, bthresh, VN
 	real :: Snr, S2nr, Spr, S2pr, Br, ecthreshr, bthreshr, VNr
 	real :: alpha(2), beta(2), gamma(2), delta(2), epsilon(2)
-	real :: mu_n_range
 	integer :: i, j, i_enter
 	integer :: Z, A, Zr, Ar, Nr, inlist_id
 	integer :: dist_id, index
@@ -65,57 +64,57 @@ subroutine follow_outer_crust_composition
 	namelist /range/ Z, A, mu_e_start, mu_e_stop, &
 				pressure_start, pressure_stop, outer_crust
 				
-   ! set defaults
-   pfile = default_infile
-   dist_file = default_dist_file
-   mass_table_used = default_mass_table
-   stable_table_used = default_stable_table
-   pressure_table_used = default_pressure_table
-   Z = 26
-   A = 56
-   mu_e_start = 0.0 !MeV
-   mu_e_stop = 30.0 !MeV
-   mu_n = 0.0 !MeV
+      ! set defaults
+      pfile = default_infile
+      dist_file = default_dist_file
+      mass_table_used = default_mass_table
+   	  stable_table_used = default_stable_table
+   	  pressure_table_used = default_pressure_table
+      Z = 26
+      A = 56
+      mu_e_start = 0.0 !MeV
+      mu_e_stop = 30.0 !MeV
+      mu_n = 0.0 !MeV
    	
-   ! read in the inputs
-   inlist_id = alloc_iounit(ierr)
-   if (io_failure(ierr,'allocating unit for namelist')) stop
-   open(unit=inlist_id, file=pfile, iostat=ios, status="old", action="read")
-   if (io_failure(ios,'opening inlist file'//trim(pfile))) stop
-   read(inlist_id,nml=io,iostat=ios)
-   if (io_failure(ios,'unable to read namelist "io"')) stop
-   read(inlist_id,nml=range,iostat=ios)
-   if (io_failure(ios,'unable to read namelist "range"')) stop
-   close(inlist_id)
-   call free_iounit(inlist_id)
+      ! read in the inputs
+      inlist_id = alloc_iounit(ierr)
+      if (io_failure(ierr,'allocating unit for namelist')) stop
+      open(unit=inlist_id, file=pfile, iostat=ios, status="old", action="read")
+      if (io_failure(ios,'opening inlist file'//trim(pfile))) stop
+      read(inlist_id,nml=io,iostat=ios)
+      if (io_failure(ios,'unable to read namelist "io"')) stop
+      read(inlist_id,nml=range,iostat=ios)
+      if (io_failure(ios,'unable to read namelist "range"')) stop
+   	  close(inlist_id)
+      call free_iounit(inlist_id)
    
-   	! load the mass table
-   	if (mass_tables_are_loaded .eqv. .FALSE.) then
-	call load_mass_table('../../../data',trim(mass_table_used),ierr)
-	mass_tables_are_loaded = .TRUE. 
-	if (ierr /= 0) then
+   	  ! load the mass table
+   	  if (mass_tables_are_loaded .eqv. .FALSE.) then
+	  call load_mass_table('../../../data',trim(mass_table_used),ierr)
+	  mass_tables_are_loaded = .TRUE. 
+	  if (ierr /= 0) then
 		write (error_unit,'(a)') 'mass table loading error'
 		stop
-	end if
-	end if
-	mt => winvn_mass_table
+	  end if
+	  end if
+	  mt => winvn_mass_table
 	
-   ! check that we are on the table
-   if (Z < mt% Zmin .or. Z > mt% Zmax) then
-      write(error_unit,'(a,"[",2i4,"]")') 'Z must be in table range ',mt% Zmin,mt% Zmax
-      stop
-   end if
+      ! check that we are on the table
+      if (Z < mt% Zmin .or. Z > mt% Zmax) then
+       write(error_unit,'(a,"[",2i4,"]")') 'Z must be in table range ',mt% Zmin,mt% Zmax
+       stop
+      end if
 
-	!load pressure table
-	if (pressure_table_loaded .eqv. .false.) then
-	call load_pressure_table('../../../data',trim(pressure_table_used), ierr)
-	pressure_table_loaded = .true.
-	if (ierr /= 0) then
+	  !load pressure table
+	  if (pressure_table_loaded .eqv. .false.) then
+	  call load_pressure_table('../../../data',trim(pressure_table_used), ierr)
+	  pressure_table_loaded = .true.
+	  if (ierr /= 0) then
 		write(error_unit,'(a)') 'pressure table loading error'
 		stop
-	end if
-	end if
-	pt => winvn_pressure_table
+	  end if
+	  end if
+	  pt => winvn_pressure_table
 	
 	  !load ash table
 	  if (ash_table_is_loaded .eqv. .FALSE.) then
@@ -132,37 +131,37 @@ subroutine follow_outer_crust_composition
 	  allocate(Z_initial(at% Ntable), A_initial(at% Ntable), abun_initial(at% Ntable), &
 	  &		  Z_final(at% Ntable), A_final(at% Ntable), abund_final(at% Ntable))
 	
-	! open output file for composition at end of outer crust
-    final_id = alloc_iounit(ierr)
-    if (io_failure(ierr,'allocating unit for final array file')) stop
-    open(unit=final_id, file=final_file, iostat=ios, status='unknown') 
-    if (io_failure(ios,'opening final array file')) stop
-    write(final_id,'(3(a10,2x),4(A10,2x))') 'Pressure', 'mu_e', 'mu_n', 'Zint', 'Aint', &
+	  ! open output file for composition at end of outer crust
+      final_id = alloc_iounit(ierr)
+      if (io_failure(ierr,'allocating unit for final array file')) stop
+      open(unit=final_id, file=final_file, iostat=ios, status='unknown') 
+      if (io_failure(ios,'opening final array file')) stop
+      write(final_id,'(3(a10,2x),4(A10,2x))') 'Pressure', 'mu_e', 'mu_n', 'Zint', 'Aint', &
    			& 'Zfin', 'Afin'
    
-   !main loop over pressure (pushes nucleus to higher pressures)   
+      !main loop over pressure (pushes nucleus to higher pressures)    
+	  
+	  ! store values from ash table into arrays
+   	  do i = 1, at% Ntable
+   	   Z_int(i) = at% Z(i)
+   	   A_int(i) = at% A(i)
+      end do
    
-	! store values from ash table into arrays
-   	do i = 1, at% Ntable
-   	 Z_int(i) = at% Z(i)
-   	 A_int(i) = at% A(i)
-   	end do
-   
-   ! scan through pressure values from pressure table
-    do i = 1, pt% Ntable
-	 pressure = pt% P(i)	! MeV fm**-3
-	 mu_n = pt% mu_n(i)
-	 mu_e = pt% mu_e(i)
+      ! scan through pressure values from pressure table
+      do i = 1, pt% Ntable
+	  pressure = pt% P(i)	! MeV fm**-3
+	  mu_n = pt% mu_n(i)
+ 	  mu_e = pt% mu_e(i)
 	
-	! end of last cascade is moved up in pressure 
-	if (i > 1 .and. Z_final(1) > 0) then
-	Z_initial(i) = Z_final(i)
-	A_initial(i) = A_final(i)
-	end if
+	  ! end of last cascade is moved up in pressure 
+	  if (i > 1 .and. Z_final(1) > 0) then
+	  Z_initial(i) = Z_final(i)
+	  A_initial(i) = A_final(i)
+	  end if
  		!initial nuclei accreted to the given pressure 
-	 	do k = 1, size(Z_int)
-		Z = Z_int(k)
-	    A = A_int(k)
+	 	do k = 1, at% Ntable
+		Z = Z_initial(k)
+	    A = A_initial(k)
 	 
 	  ! set defaults
 	  neutron_capture = .FALSE.
@@ -391,100 +390,17 @@ subroutine follow_outer_crust_composition
       	 A = Ar; Z = Zr
       	 cycle
       end if 
-
-	  Z_fin(k) = Z
-	  A_fin(k) = A
-	                     
-	goto 1
-
-	  ! begin check for baryon conservation	  	  	  
-	  if (count(neutron_capture) /= count(neutron_emission)) then
-	  write(*,*) count(neutron_capture), count(neutron_emission), Z, A
-	  if (count(neutron_capture) > count(neutron_emission)) then
-	  !scan for neutron emissions from initial nuclei array
-	    do l = 1, size(Z_int)
-	     A = A_int(l) ; Z = Z_int(l)
-	     Ar = A-1; Zr = Z 
-         call get_nucleus_properties(Zr,Ar,id,Br,Snr,S2nr,Spr,S2pr,ecthreshr,bthreshr,VNr,ierr)
-         if (ierr /= 0) then
-         ! write(error_unit,'(a)') 'unable to find nucleus'
-         ! stop
-         ! exit
-         cycle
-         end if
-         gamma(ipos) = mu_n + (B-Br)
-         if (gamma(ipos) < 0) then
-          neutron_emission(iter) = .TRUE.
-          rxn = '(,n)'
-          call print_reaction_check
-          A = Ar; Z = Zr
-          !stop
-         end if
-	   end do
-	  else
-	 !scan for neutron captures from initial nuclei array
-	   do l = 1, size(Z_int)
-	    A = A_int(l) ; Z = Z_int(l)
-	    Ar = A+1 ; Zr = Z
-        call get_nucleus_properties(Zr,Ar,id,Br,Snr,S2nr,Spr,S2pr,ecthreshr,bthreshr,VNr,ierr)
-        if (ierr /= 0) then
-         write(error_unit,'(a)') 'unable to find nucleus'
-         stop
-         exit
-        end if
-        gamma(ineg) = -mu_n + (B-Br)
-        if (gamma(ineg) < 0) then
-         neutron_capture(iter) = .TRUE.
-         rxn = '(n,)'
-         call print_reaction_check
-         A = Ar; Z = Zr
-         !stop
-        end if
-       enddo           
-	  end if
-	  end if
-	  
-	  if (count(dineutron_capture) /= count(dineutron_emission)) then	  
-	  if (count(dineutron_capture) > count(dineutron_emission)) then
-	  !scan for dineutron emissions from initial nuclei array
-	  else
-	  !scan for dineutron captures from initial nuclei array
-	  end if
-	  end if
-
-	  if (count(en_rxn) /= count(ne_rxn)) then
-	  if (count(en_rxn) > count(ne_rxn)) then
-	  !scan back for ne_rxn from initial nuclei array 
-	  else
-	  !scan for en_rxn from initial nuclei array  	  	  
-	  end if
-	  endif
-	  
-	  if (count(enn_rxn) /= count(nne_rxn)) then
-	  if (count(enn_rxn) > count(nne_rxn)) then
-	  !scan back for 2ne_rxn from initial nuclei array
-	  else
-	  !scan back for e2n_rxn from initial nuclei array 
-	  endif
-	  endif
-	  ! end of check for baryon conservation 
-
-1 continue 
-
-      end do  ! end of iteration loop
-        
-  	  Z_fin(k) = Z
-	  A_fin(k) = A
-         
-    end do  ! end of nuclei loop 
-  
-  	  do l= 1, size(Z_fin)
-	  write(final_id,'(3(e10.5,2x),4(I10,2x))') pressure, mu_e, mu_n, Z_int(l), A_int(l),&
-	  		& Z_fin(l), A_fin(l)
+      
+      end do  ! end of iteration loop      
+  	  Z_final(k) = Z
+	  A_final(k) = A         
+      end do  ! end of nuclei loop 
+  	  do l= 1, at% Ntable
+	  write(final_id,'(3(e10.5,2x),4(I10,2x))') pressure, mu_e, mu_n, Z_initial(l), &
+	  		& A_initial(l), Z_final(l), A_final(l)
 	  enddo 
-	  close(final_id)
-	    
-  end do	! end of pressure loop 
+	  close(final_id)  
+      end do	! end of pressure loop 
    
 	contains	
 	
