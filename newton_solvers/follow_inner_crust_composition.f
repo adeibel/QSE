@@ -8,6 +8,7 @@
       use phys_constants
       use mass_table 
       use eos_table
+      use ash_table
       use rootfind      
       use crust_eos_lib      
 
@@ -61,7 +62,8 @@
       type(mass_table_type), pointer :: mt
       type(eos_table_type), pointer :: et
       type(ash_table_type), pointer :: at
-      real*8 :: mu_e, mu_n, mu_i(nvar)
+      real, pointer, dimension(:) :: mu_i, ni
+      real*8 :: mu_e, mu_n
       real*8 :: Y_e, Y_n 
    	  real*8 :: n_b, n_e, n_n
    	  real*8 :: p_ext
@@ -73,7 +75,6 @@
  	  real :: asum, zsum
       real :: kT
       real :: pres_n
-      real :: ni(nvar)
       real :: Pn
       real :: n_b_prev
              
@@ -120,6 +121,8 @@
 
       namelist /range/ P_ext_start, n_b_start, kT, have_mu_table, &
       	&	do_numerical_jacobian, which_decsol_in
+      	
+      allocate(mu_i(nvar), ni(nvar))
      
       ! set the name of the inlist file name  
       if (command_argument_count() == 1) then
