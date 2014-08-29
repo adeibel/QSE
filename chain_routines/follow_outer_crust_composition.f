@@ -1,6 +1,6 @@
 module outer_crust
 
- contains 
+  contains 
 
   subroutine follow_outer_crust_composition
 	  use iso_fortran_env, only : error_unit, output_unit
@@ -38,9 +38,9 @@ module outer_crust
 	  integer, dimension(:) :: Z_final, A_final, abun_final
 	  integer :: k, l, final_id
 	  integer, parameter :: ineg = 1, ipos = 2
-	  integer, parameter :: fid = output_unit, max_iterations = 100
+	  integer, parameter :: fid = output_unit 
+	  integer, parameter :: max_iterations = 100
 	  real, parameter :: del_m = mn_n-mp_n-me_n
-	  real, parameter :: mun_max = 6.5
 	  character(len=256) :: arg, mass_table_used, pfile, mass_table_name
 	  character(len=256) :: stable_table_used, pressure_table_used, dist_file
 	  character(len=6) :: rxn
