@@ -98,6 +98,7 @@
       integer :: which_decsol_in, decsol    
  
  	  ! for crust
+ 	  character(len=*), parameter :: ash_table_name = 'final_ashes.data'
 	  character(len=*), parameter :: mass_table_name = 'moe95_converted.data'
  	  character(len=*), parameter :: eos_table_name = 'ashes_acc.txt'
 	  character(len=*), parameter :: y_output_file = 'y_output_2.data'
