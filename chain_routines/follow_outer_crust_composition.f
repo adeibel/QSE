@@ -2,66 +2,66 @@ module outer_crust
 
  contains 
 
-subroutine follow_outer_crust_composition
-	use iso_fortran_env, only : error_unit, output_unit
-	use phys_constants
-	use utils_lib
-	use mb77, only : neutron_chemical_potential, electron_pressure, neutron_pressure
-	use mass_table
-	use pressure_table
-	use dist_table
-	use alert_lib
-	use rootfind	
-	use ash_table_support
+  subroutine follow_outer_crust_composition
+	  use iso_fortran_env, only : error_unit, output_unit
+	  use phys_constants
+	  use utils_lib
+	  use mb77, only : neutron_chemical_potential, electron_pressure, neutron_pressure
+	  use mass_table
+	  use pressure_table
+	  use dist_table
+	  use alert_lib
+	  use rootfind	
+	  use ash_table_support
 	
-	character(len=*), parameter :: default_infile = 'moe_chain.inlist'
-	character(len=*), parameter :: default_dist_file = 'nuclei_distribution.data'
-	character(len=*), parameter :: default_mass_table = 'moe95_converted.data'
-	character(len=*), parameter :: default_stable_table = 'stable_nuclei_moe95.data'
-	character(len=*), parameter :: default_pressure_table = 'pressure_moe95.data'
-	character(len=*), parameter :: final_file = 'final_array.data'
-	character(len=*), parameter :: ash_table_name = 'ash_file.data'
-	real :: kn, ke, mu_n
-	real :: mu_e, ne, nn 
-	real :: x1, x2, xacc
-	real :: n, pres_n, pressure
-	real :: pressure_start, pressure_stop, pressure_increment
-	real :: mu_e_start, mu_e_stop, mu_e_increment
-	real :: Sn, S2n, Sp, S2p, B, ecthresh, bthresh, VN
-	real :: Snr, S2nr, Spr, S2pr, Br, ecthreshr, bthreshr, VNr
-	real :: alpha(2), beta(2), gamma(2), delta(2), epsilon(2)
-	integer :: i, j, i_enter
-	integer :: Z, A, Zr, Ar, Nr, inlist_id
-	integer :: dist_id, index
-	integer :: ierr, id, ios, iter, iZ, iZb, iZe, iEq(1)
-	integer, dimension(:) :: Z_initial, A_initial, abun_initial
-	integer, dimension(:) :: Z_final, A_final, abun_final
-	integer :: k, l, final_id
-	integer, parameter :: ineg = 1, ipos = 2
-	integer, parameter :: fid = output_unit, max_iterations = 100
-	real, parameter :: del_m = mn_n-mp_n-me_n
-	real, parameter :: mun_max = 6.5
-	character(len=256) :: arg, mass_table_used, pfile, mass_table_name
-	character(len=256) :: stable_table_used, pressure_table_used, dist_file
-	character(len=6) :: rxn
-	real,dimension(:),pointer :: hist
-	type(mass_table_type), pointer :: mt
-	type(pressure_table_type), pointer :: pt
-	type(dist_table_type), pointer :: dt
-	type(ash_table_type), pointer :: at
-	logical, dimension(max_iterations) :: neutron_capture, dineutron_capture
-	logical, dimension(max_iterations) :: neutron_emission, dineutron_emission
-	logical, dimension(max_iterations) :: en_rxn, enn_rxn, ne_rxn, nne_rxn
-	logical, save :: stable_table_loaded = .FALSE.
-	logical, save :: mass_tables_are_loaded = .FALSE.
-	logical, save :: pressure_set = .FALSE.
-	logical, save :: pressure_table_loaded = .FALSE.
-	logical, save :: dist_file_loaded = .FALSE.
-	logical, save :: ash_table_is_loaded = .FALSE.
-	logical :: outer_crust
+	  character(len=*), parameter :: default_infile = 'moe_chain.inlist'
+	  character(len=*), parameter :: default_dist_file = 'nuclei_distribution.data'
+	  character(len=*), parameter :: default_mass_table = 'moe95_converted.data'
+	  character(len=*), parameter :: default_stable_table = 'stable_nuclei_moe95.data'
+	  character(len=*), parameter :: default_pressure_table = 'pressure_moe95.data'
+	  character(len=*), parameter :: final_file = 'final_array.data'
+	  character(len=*), parameter :: ash_table_name = 'ash_file.data'
+	  real :: kn, ke, mu_n
+	  real :: mu_e, ne, nn 
+	  real :: x1, x2, xacc
+	  real :: n, pres_n, pressure
+	  real :: pressure_start, pressure_stop, pressure_increment
+	  real :: mu_e_start, mu_e_stop, mu_e_increment
+	  real :: Sn, S2n, Sp, S2p, B, ecthresh, bthresh, VN
+	  real :: Snr, S2nr, Spr, S2pr, Br, ecthreshr, bthreshr, VNr
+	  real :: alpha(2), beta(2), gamma(2), delta(2), epsilon(2)
+	  integer :: i, j, i_enter
+	  integer :: Z, A, Zr, Ar, Nr, inlist_id
+	  integer :: dist_id, index
+	  integer :: ierr, id, ios, iter, iZ, iZb, iZe, iEq(1)
+	  integer, dimension(:) :: Z_initial, A_initial, abun_initial
+	  integer, dimension(:) :: Z_final, A_final, abun_final
+	  integer :: k, l, final_id
+	  integer, parameter :: ineg = 1, ipos = 2
+	  integer, parameter :: fid = output_unit, max_iterations = 100
+	  real, parameter :: del_m = mn_n-mp_n-me_n
+	  real, parameter :: mun_max = 6.5
+	  character(len=256) :: arg, mass_table_used, pfile, mass_table_name
+	  character(len=256) :: stable_table_used, pressure_table_used, dist_file
+	  character(len=6) :: rxn
+	  real,dimension(:),pointer :: hist
+	  type(mass_table_type), pointer :: mt
+	  type(pressure_table_type), pointer :: pt
+	  type(dist_table_type), pointer :: dt
+	  type(ash_table_type), pointer :: at
+	  logical, dimension(max_iterations) :: neutron_capture, dineutron_capture
+	  logical, dimension(max_iterations) :: neutron_emission, dineutron_emission
+	  logical, dimension(max_iterations) :: en_rxn, enn_rxn, ne_rxn, nne_rxn
+	  logical, save :: stable_table_loaded = .FALSE.
+	  logical, save :: mass_tables_are_loaded = .FALSE.
+	  logical, save :: pressure_set = .FALSE.
+	  logical, save :: pressure_table_loaded = .FALSE.
+	  logical, save :: dist_file_loaded = .FALSE.
+	  logical, save :: ash_table_is_loaded = .FALSE.
+	  logical :: outer_crust
 	
-	namelist /io/ pressure_table_used
-	namelist /range/ Z, A, mu_e_start, mu_e_stop, &
+	  namelist /io/ pressure_table_used
+	  namelist /range/ Z, A, mu_e_start, mu_e_stop, &
 				pressure_start, pressure_stop, outer_crust
 				
       ! set defaults
@@ -143,8 +143,8 @@ subroutine follow_outer_crust_composition
 	  
 	  ! store values from ash table into arrays
    	  do i = 1, at% Ntable
-   	   Z_int(i) = at% Z(i)
-   	   A_int(i) = at% A(i)
+   	   Z_initial(i) = at% Z(i)
+   	   A_initial(i) = at% A(i)
       end do
    
       ! scan through pressure values from pressure table
