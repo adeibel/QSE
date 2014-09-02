@@ -115,7 +115,7 @@ module outer_crust
 	  pt => winvn_pressure_table
 	
 	  !load ash table
-	  if (ash_table_is_loaded .eqv. .FALSE.) then
+	  if (ash_table_loaded .eqv. .FALSE.) then
 	  call load_ash_table('../../../data', trim(ash_table_name), ierr)
 	  ash_table_loaded = .TRUE.
 	  if (ierr /= 0) then
