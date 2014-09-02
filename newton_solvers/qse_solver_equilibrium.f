@@ -103,7 +103,7 @@
  ! 	  character(len=*), parameter :: mass_table_name = 'nucchem_moe2.data'
 	  character(len=*), parameter :: mass_table_name = 'moe95_converted.data'
  	  character(len=*), parameter :: eos_table_name = 'ashes_acc.txt'
-	  character(len=*), parameter :: y_output_file = 'y_output_2.data'
+	  character(len=*), parameter :: y_output_file = 'y_output_equil.data'
       character(len=*), parameter :: output_file = 'qse_output.data'
    	  character(len=*), parameter :: abundance_file = 'qse_abun.data'
    	  character(len=*), parameter :: default_infile = 'qse.inlist'
@@ -196,9 +196,8 @@
 
   	  ! solve for qse distribution at each pressure	  
   	  do i=1, et% Ntable
-  	     !n_b = et% nb(i) !n_b_start !/1000.
   	     mu_e = (et% mue(i))*hbarc_n
-  	     p_ext = (et% pr(i))*hbarc_n !p_ext_start*hbarc_n*real(i)  
+  	     p_ext = (et% pr(i))*hbarc_n 
 		        
          which_decsol = which_decsol_in
          call decsol_option_str(which_decsol, decsol_option_name, ierr)
@@ -224,7 +223,7 @@
 		 end do 
 		 
 		 ! set mass fraction to 1.0 for most abundant nucleus
-		 xold(22,1) = log((1.d0)/fac1(22)/fac2(22))*kT-mt%BE(22)
+		 xold(868,1) = log((1.d0)/fac1(868)/fac2(868))*kT-mt%BE(868)
 		 
 		! electron wave vector fm^-1
 		if (mu_e > 0.) then
@@ -250,8 +249,7 @@
 		n_b = n_e/(et% Ye(i))
 		 
 		 write(*,*) i
-		 !if (n_b < 5.2d-4) cycle
-		 if (p_ext < 4.57d-3) cycle
+		 if (p_ext < 3.0d-4) cycle
                  write(*,*) 'checking'
 		 
 		 mu_n = mu_e/1000.
@@ -301,12 +299,10 @@
             call do_newt(null_decsol, null_decsolblk, mkl_pardiso_decsols)
          end if
 
-		n_b = x(mt% Ntable+1,1)
-
          if (nonconv) then
          write(*, *) 'failed to converge'
          write(*,*) p_ext, n_b, y_e, y_n, Z_bar, A_bar, mu_e, mu_n
-         n_b_prev = 0.
+         n_b_prev = n_b
 	     end if
 
          if (iwork(i_debug) /= 0) then
@@ -319,6 +315,8 @@
          
     
 		if (nonconv .eqv. .FALSE.) then
+		write(*,*) 'converged'
+        n_b = x(mt% Ntable+1, 1)
         write(y_output_id,'(8(es12.5,2x))') p_ext, n_b, y_e, y_n, Z_bar, A_bar, mu_e, mu_n
         write(*,'(8(es12.5,2x))') p_ext, n_b, y_e, y_n, z_bar, a_bar, mu_e, mu_n
 		n_b_prev = n_b
@@ -747,20 +745,11 @@
 		 ! set bounds of variables
  		 x(mt% Ntable+1, 1) = max(n_b_prev, x(mt% Ntable+1,1))
  		 x(mt% Ntable+2,1) = abs(x(mt% Ntable+2,1))
-  !   	 x(mt% Ntable+3,1) = abs(x(mt% Ntable+3,1))
  		 dx(mt% Ntable+1,1) = x(mt% Ntable+1,1)-xold(mt% Ntable+1,1)     
 		 dx(mt% Ntable+2,1) = x(mt% Ntable+2,1)-xold(mt% Ntable+2,1)     
- !		 dx(mt% Ntable+3,1) = x(mt% Ntable+3,1)-xold(mt% Ntable+3,1)
  		 x(mt% Ntable+1,1) = xold(mt%Ntable+1,1)+dx(mt%Ntable+1,1)     
 		 x(mt% Ntable+2,1) = xold(mt%Ntable+2,1)+dx(mt%Ntable+2,1)     
-!		 x(mt% Ntable+3,1) = xold(mt%Ntable+3,1)+dx(mt%Ntable+3,1)     
  		 
- 		 if (x(mt% Ntable+1,1) < n_b_prev) then
- 		 x(mt% Ntable+1,1) = n_b_prev
- 		 dx(mt% Ntable+1,1) = x(mt% Ntable+1,1)-xold(mt% Ntable+1,1) 
- 		 x(mt% Ntable+1,1) = xold(mt%Ntable+1,1)+dx(mt%Ntable+1,1) 
- 		 end if
-
       end subroutine xdomain          
           
     end module qse_solver
