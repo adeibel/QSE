@@ -1,9 +1,4 @@
-	 """
-     driver program for accreted crust composition solver
-     - follows composition as it is pushed through the inner crust
-     - uses Newton-Raphson solver to calculate composition in inner 
-       crust 
-  	 """
+
       program acc_crust
 
       use const_def

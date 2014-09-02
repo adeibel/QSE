@@ -29,9 +29,9 @@ module outer_crust
 	  real :: Sn, S2n, Sp, S2p, B, ecthresh, bthresh, VN
 	  real :: Snr, S2nr, Spr, S2pr, Br, ecthreshr, bthreshr, VNr
 	  real :: alpha(2), beta(2), gamma(2), delta(2), epsilon(2)
-	  real, dimension(:) :: abun_initial, abun_final
-	  integer, dimension(:) :: Z_initial, A_initial
-	  integer, dimension(:) :: Z_final, A_final
+	  real, dimension(:), pointer :: abun_initial, abun_final
+	  integer, dimension(:), pointer :: Z_initial, A_initial
+	  integer, dimension(:), pointer :: Z_final, A_final
 	  integer :: i, j, i_enter
 	  integer :: Z, A, Zr, Ar, Nr, inlist_id
 	  integer :: dist_id, index
@@ -87,7 +87,7 @@ module outer_crust
       call free_iounit(inlist_id)
    
    	  ! load the mass table
-   	  if (mass_tables_are_loaded .eqv. .FALSE.) then
+   	  if (mass_table_loaded .eqv. .FALSE.) then
 	  call load_mass_table('../../../data',trim(mass_table_used),ierr)
 	  mass_table_loaded = .TRUE. 
 	  if (ierr /= 0) then
@@ -140,10 +140,8 @@ module outer_crust
       !main loop over pressure (pushes nucleus to higher pressures)    
 	  
 	  ! store values from ash table into arrays
-   	  do i = 1, at% Ntable
-   	   Z_initial(i) = at% Z_ash(i)
-   	   A_initial(i) = at% A_ash(i)
-      end do
+   	  Z_initial = at% Z_ash
+   	  A_initial = at% A_ash
    
       ! scan through pressure values from pressure table
       do i = 1, pt% Ntable
