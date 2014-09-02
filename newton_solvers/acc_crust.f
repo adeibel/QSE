@@ -1,4 +1,3 @@
-
       program acc_crust
 
       use const_def

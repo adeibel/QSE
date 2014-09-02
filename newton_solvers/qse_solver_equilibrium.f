@@ -429,12 +429,6 @@
 		 real :: m_star 
 		 real :: m_nuc, m_nuc1
 		 real :: m_term, m_term1		 
-		 !for equations in log space
-		 real :: sum_lnZ(9179), sum_lnA(9179) 
-		 real :: sum_lnZ_total, sum_lnZ_final 
-		 real :: sum_lnA_total, sum_lnA_final
-		 real :: logZ_exponent
-		 real :: logA_exponent 
 		 real :: ni_Zsum, ni_Asum
 		 real :: der_Zsum, der_Asum
 		 real :: Asum, Zsum
@@ -442,7 +436,6 @@
 		 real :: Zi, Ai
 		 real :: pressure
 		 real :: Zbar, Abar
-!		 real :: ni(16)
 		 ! for chi
 		 real :: n_nin
 		 real, parameter :: n_0 = 1.740151d-1
