@@ -327,17 +327,17 @@
             write(*, *) 'num_solves', iwork(i_num_solves)
          end if
          
+             
+		 if (nonconv .eqv. .FALSE.) then
+		 n_b = x(mt% Ntable+1, 1)
+         write(y_output_id,'(8(es12.5,2x))') p_ext, n_b, y_e, y_n, Z_bar, A_bar, mu_e, mu_n
+         write(*,'(8(es12.5,2x))') p_ext, n_b, y_e, y_n, z_bar, a_bar, mu_e, mu_n
+		 n_b_prev = n_b
+		 end if
+         
          deallocate(iwork, work)
          deallocate(equ, x, xold, dx, xscale, y)
-         
-    
-		if (nonconv .eqv. .FALSE.) then
-		n_b = x(mt% Ntable+1, 1)
-        write(y_output_id,'(8(es12.5,2x))') p_ext, n_b, y_e, y_n, Z_bar, A_bar, mu_e, mu_n
-        write(*,'(8(es12.5,2x))') p_ext, n_b, y_e, y_n, z_bar, a_bar, mu_e, mu_n
-		n_b_prev = n_b
-		end if
-	
+         	
          enddo 
          
         close(y_output_id)  
