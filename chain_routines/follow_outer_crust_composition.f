@@ -29,12 +29,13 @@ module outer_crust
 	  real :: Sn, S2n, Sp, S2p, B, ecthresh, bthresh, VN
 	  real :: Snr, S2nr, Spr, S2pr, Br, ecthreshr, bthreshr, VNr
 	  real :: alpha(2), beta(2), gamma(2), delta(2), epsilon(2)
+	  real, dimension(:) :: abun_initial, abun_final
+	  integer, dimension(:) :: Z_initial, A_initial
+	  integer, dimension(:) :: Z_final, A_final
 	  integer :: i, j, i_enter
 	  integer :: Z, A, Zr, Ar, Nr, inlist_id
 	  integer :: dist_id, index
 	  integer :: ierr, id, ios, iter, iZ, iZb, iZe, iEq(1)
-	  integer, dimension(:) :: Z_initial, A_initial, abun_initial
-	  integer, dimension(:) :: Z_final, A_final, abun_final
 	  integer :: k, l, final_id
 	  integer, parameter :: ineg = 1, ipos = 2
 	  integer, parameter :: fid = output_unit 
@@ -51,10 +52,10 @@ module outer_crust
 	  logical, dimension(max_iterations) :: neutron_emission, dineutron_emission
 	  logical, dimension(max_iterations) :: en_rxn, enn_rxn, ne_rxn, nne_rxn
 	  logical, save :: stable_table_loaded = .FALSE.
-	  logical, save :: mass_tables_are_loaded = .FALSE.
+	  logical, save :: mass_table_loaded = .FALSE.
 	  logical, save :: pressure_set = .FALSE.
 	  logical, save :: pressure_table_loaded = .FALSE.
-	  logical, save :: ash_table_is_loaded = .FALSE.
+	  logical, save :: ash_table_loaded = .FALSE.
 	  logical :: outer_crust
 	
 	  namelist /io/ pressure_table_used
@@ -88,7 +89,7 @@ module outer_crust
    	  ! load the mass table
    	  if (mass_tables_are_loaded .eqv. .FALSE.) then
 	  call load_mass_table('../../../data',trim(mass_table_used),ierr)
-	  mass_tables_are_loaded = .TRUE. 
+	  mass_table_loaded = .TRUE. 
 	  if (ierr /= 0) then
 		write (error_unit,'(a)') 'mass table loading error'
 		stop
@@ -116,7 +117,7 @@ module outer_crust
 	  !load ash table
 	  if (ash_table_is_loaded .eqv. .FALSE.) then
 	  call load_ash_table('../../../data', trim(ash_table_name), ierr)
-	  ash_table_is_loaded = .TRUE.
+	  ash_table_loaded = .TRUE.
 	  if (ierr /= 0) then
 	  write(error_unit, '(a)') trim(alert_message)
 	  stop
@@ -126,7 +127,7 @@ module outer_crust
 	  write(*,*) 'ash table loaded'	
 	
 	  allocate(Z_initial(at% Ntable), A_initial(at% Ntable), abun_initial(at% Ntable), &
-	  &		  Z_final(at% Ntable), A_final(at% Ntable), abund_final(at% Ntable))
+	  &		  Z_final(at% Ntable), A_final(at% Ntable), abun_final(at% Ntable))
 	
 	  ! open output file for composition at end of outer crust
       final_id = alloc_iounit(ierr)
@@ -140,8 +141,8 @@ module outer_crust
 	  
 	  ! store values from ash table into arrays
    	  do i = 1, at% Ntable
-   	   Z_initial(i) = at% Z(i)
-   	   A_initial(i) = at% A(i)
+   	   Z_initial(i) = at% Z_ash(i)
+   	   A_initial(i) = at% A_ash(i)
       end do
    
       ! scan through pressure values from pressure table
