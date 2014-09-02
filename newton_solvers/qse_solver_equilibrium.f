@@ -137,6 +137,7 @@
       have_mu_table = .false.
       do_numerical_jacobian = .true.
       decsol = lapack
+      n_b_prev = 0.
     
       ! read in the inputs
  	  ierr = 0
@@ -223,7 +224,7 @@
 		 end do 
 		 
 		 ! set mass fraction to 1.0 for most abundant nucleus
-		 xold(868,1) = log((1.d0)/fac1(868)/fac2(868))*kT-mt%BE(868)
+		 xold(22,1) = log((1.d0)/fac1(22)/fac2(22))*kT-mt%BE(22)
 		 
 		! electron wave vector fm^-1
 		if (mu_e > 0.) then
@@ -249,8 +250,8 @@
 		n_b = n_e/(et% Ye(i))
 		 
 		 write(*,*) i
-		 if (p_ext < 3.0d-4) cycle
-                 write(*,*) 'checking'
+		 if (p_ext < 3.61d-4) cycle
+         write(*,*) 'checking'
 		 
 		 mu_n = mu_e/1000.
 
@@ -310,17 +311,17 @@
             write(*, *) 'num_solves', iwork(i_num_solves)
          end if
          
-         deallocate(iwork, work)
-         deallocate(equ, x, xold, dx, xscale, y)
-         
-    
-		if (nonconv .eqv. .FALSE.) then
+        if (nonconv .eqv. .FALSE.) then
 		write(*,*) 'converged'
-        n_b = x(mt% Ntable+1, 1)
+		n_b = x(mt% Ntable+1, 1)
         write(y_output_id,'(8(es12.5,2x))') p_ext, n_b, y_e, y_n, Z_bar, A_bar, mu_e, mu_n
         write(*,'(8(es12.5,2x))') p_ext, n_b, y_e, y_n, z_bar, a_bar, mu_e, mu_n
 		n_b_prev = n_b
 		end if
+         
+         deallocate(iwork, work)
+         deallocate(equ, x, xold, dx, xscale, y)
+         
 	
          enddo 
          
