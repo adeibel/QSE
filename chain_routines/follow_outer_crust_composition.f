@@ -9,7 +9,6 @@ module outer_crust
 	  use mb77, only : neutron_chemical_potential, electron_pressure, neutron_pressure
 	  use mass_table
 	  use pressure_table
-	  use dist_table
 	  use alert_lib
 	  use rootfind	
 	  use ash_table_support
@@ -47,7 +46,6 @@ module outer_crust
 	  real,dimension(:),pointer :: hist
 	  type(mass_table_type), pointer :: mt
 	  type(pressure_table_type), pointer :: pt
-	  type(dist_table_type), pointer :: dt
 	  type(ash_table_type), pointer :: at
 	  logical, dimension(max_iterations) :: neutron_capture, dineutron_capture
 	  logical, dimension(max_iterations) :: neutron_emission, dineutron_emission
@@ -56,7 +54,6 @@ module outer_crust
 	  logical, save :: mass_tables_are_loaded = .FALSE.
 	  logical, save :: pressure_set = .FALSE.
 	  logical, save :: pressure_table_loaded = .FALSE.
-	  logical, save :: dist_file_loaded = .FALSE.
 	  logical, save :: ash_table_is_loaded = .FALSE.
 	  logical :: outer_crust
 	
