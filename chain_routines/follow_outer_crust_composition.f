@@ -11,7 +11,7 @@ module outer_crust
 	  use pressure_table
 	  use alert_lib
 	  use rootfind	
-	  use ash_table_support
+	  use ash_table
 	
 	  character(len=*), parameter :: default_infile = 'moe_chain.inlist'
 	  character(len=*), parameter :: default_dist_file = 'nuclei_distribution.data'
