@@ -393,15 +393,18 @@ module outer_crust
       end if 
       
       end do  ! end of iteration loop      
-  	  ! change to include array 
+  	 
+  	 ! add Z and A to final array after chain 
   	  Z_final(k) = Z
 	  A_final(k) = A         
       end do  ! end of nuclei loop 
+      
+      ! print final ash file
   	  do l= 1, at% Ntable
 	  call get_nucleus_properties(Z_final(l),A_final(l),id,Br,Snr,S2nr,Spr,S2pr,ecthreshr,bthreshr,Vnr,ierr)
 	  write(final_id,'(3(e10.5,2x),4(I10,2x))') Z_final(l), A_final(l), Br, at% Y_ash(l)
 	  enddo 
-	  close(final_id)  
+	  close(final_id)  	  
       end do	! end of pressure loop 
       
       call ash_table_shutdown
