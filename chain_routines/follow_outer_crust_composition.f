@@ -96,6 +96,7 @@ module outer_crust
 	  end if
 	  end if
 	  mt => winvn_mass_table
+	  write(*,*) 'Mass table loaded...'
 	
       ! check that we are on the table
       if (Z < mt% Zmin .or. Z > mt% Zmax) then
@@ -113,6 +114,7 @@ module outer_crust
 	  end if
 	  end if
 	  pt => winvn_pressure_table
+	  write(*,*) 'Pressure table loaded...'
 	
 	  !load ash table
 	  if (ash_table_loaded .eqv. .FALSE.) then
@@ -124,7 +126,7 @@ module outer_crust
 	  end if
 	  end if
 	  at => winvn_ash_table
-	  write(*,*) 'ash table loaded'	
+	  write(*,*) 'Ash table loaded...'	
 	
 	  allocate(Z_initial(at% Ntable), A_initial(at% Ntable), abun_initial(at% Ntable), &
 	  &		  Z_final(at% Ntable), A_final(at% Ntable), abun_final(at% Ntable))
@@ -399,6 +401,7 @@ module outer_crust
       end do	! end of pressure loop 
       
       call ash_table_shutdown
+      write(*,*) 'Finished with outer crust...'
    
 	contains	
 	

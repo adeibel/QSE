@@ -56,20 +56,17 @@
       integer, target :: ipar_decsol(max_lid)
       real*8, target :: rpar_decsol(max_lrd)
       
-      integer :: i, j  
-
-	  ! for crust
       type(mass_table_type), pointer :: mt
       type(eos_table_type), pointer :: et
       type(ash_table_type), pointer :: at
       real, pointer, dimension(:) :: mu_i, ni
+      real,dimension(:),pointer :: hist      
       real*8 :: mu_e, mu_n
       real*8 :: Y_e, Y_n 
    	  real*8 :: n_b, n_e, n_n
    	  real*8 :: p_ext
       real*8 :: ke, kn
       real :: Z_bar, A_bar
-      real,dimension(:),pointer :: hist
       real :: x1, x2, xacc
  	  real, save :: zsum_save = 0.
  	  real :: asum, zsum
@@ -77,6 +74,7 @@
       real :: pres_n
       real :: Pn
       real :: n_b_prev
+      integer :: i, j  
              
       contains
       
