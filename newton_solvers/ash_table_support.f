@@ -22,6 +22,7 @@ contains
 		deallocate(at% BE_ash)
 		deallocate(at% Y_ash)	
 		at% Ntable = 0
+		ash_table_is_loaded = .FALSE.
 	end subroutine ash_table_shutdown
 
 	subroutine load_ash_table(datadir,datafile,ierr)

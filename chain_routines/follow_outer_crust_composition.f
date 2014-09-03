@@ -397,6 +397,8 @@ module outer_crust
 	  enddo 
 	  close(final_id)  
       end do	! end of pressure loop 
+      
+      call ash_table_shutdown
    
 	contains	
 	
