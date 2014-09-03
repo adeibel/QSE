@@ -12,14 +12,16 @@ module outer_crust
 	  use alert_lib
 	  use rootfind	
 	  use ash_table
-	
+
+	  character(len=*), parameter :: datadir = '../../../data'	
+	  character(len=*), parameter :: default_dir = 'crust_eos'
 	  character(len=*), parameter :: default_infile = 'moe_chain.inlist'
 	  character(len=*), parameter :: default_dist_file = 'nuclei_distribution.data'
 	  character(len=*), parameter :: default_mass_table = 'moe95_converted.data'
 	  character(len=*), parameter :: default_stable_table = 'stable_nuclei_moe95.data'
 	  character(len=*), parameter :: default_pressure_table = 'pressure_moe95.data'
 	  character(len=*), parameter :: ash_table_name = 'ash_initial.data'
-	  character(len=*), parameter :: final_file = '../../../crust_eos/ash_final.data'
+	  character(len=*), parameter :: final_file = 'ash_final.data'
 	  real :: kn, ke, mu_n
 	  real :: mu_e, ne, nn 
 	  real :: x1, x2, xacc
@@ -41,7 +43,7 @@ module outer_crust
 	  integer, parameter :: fid = output_unit 
 	  integer, parameter :: max_iterations = 100
 	  real, parameter :: del_m = mn_n-mp_n-me_n
-	  character(len=256) :: arg, mass_table_used, pfile, mass_table_name
+	  character(len=256) :: arg, mass_table_used, pfile, mass_table_name, filename
 	  character(len=256) :: stable_table_used, pressure_table_used, dist_file
 	  character(len=6) :: rxn
 	  real,dimension(:),pointer :: hist
@@ -134,7 +136,8 @@ module outer_crust
 	  ! open output file for composition at end of outer crust
       final_id = alloc_iounit(ierr)
       if (io_failure(ierr,'allocating unit for final array file')) stop
-      open(unit=final_id, file=final_file, iostat=ios, status='unknown') 
+      filename = trim(datadir)//'/'//default_dir//'/'//trim(final_file)
+      open(unit=final_id, file=filename, iostat=ios, status='unknown') 
       if (io_failure(ios,'opening final array file')) stop
       write(final_id,'(3(a10,2x),4(A10,2x))') 'Pressure', 'mu_e', 'mu_n', 'Zint', 'Aint', &
    			& 'Zfin', 'Afin'

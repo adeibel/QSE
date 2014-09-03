@@ -158,7 +158,7 @@
       end if
       end if
       mt => winvn_mass_table    
- 	  write(*,*) 'Loaded mass table'
+ 	  write(*,*) 'Mass table loaded...'
  	  
  	  ! load eos table
  	  if (eos_table_is_loaded .eqv. .FALSE.) then
@@ -170,7 +170,7 @@
  	  end if
  	  end if
  	  et => winvn_eos_table
- 	  write(*,*) 'EOS table loaded'
+ 	  write(*,*) 'EOS table loaded...'
 
 	  !load ash table
 	  if (ash_table_is_loaded .eqv. .FALSE.) then
@@ -182,7 +182,7 @@
 	  end if
 	  end if
 	  at => winvn_ash_table
-	  write(*,*) 'ash table loaded'
+	  write(*,*) 'Ash table loaded...'
  	  
  	  ! allocate units and open output files   
  	  output_id = alloc_iounit(ierr)
