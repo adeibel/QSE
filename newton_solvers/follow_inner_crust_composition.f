@@ -5,6 +5,7 @@
       use iso_fortran_env, only: error_unit, oid=>output_unit
       use alert_lib
       use utils_lib
+      use mass_table
       use phys_constants
       use eos_table
       use ash_table
