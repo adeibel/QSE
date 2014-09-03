@@ -151,8 +151,8 @@ module outer_crust
 	
 	  ! end of last cascade is moved up in pressure 
 	  if (i > 1 .and. Z_final(1) > 0) then
-	  Z_initial(i) = Z_final(i)
-	  A_initial(i) = A_final(i)
+	  Z_initial = Z_final
+	  A_initial = A_final
 	  end if
  		!initial nuclei accreted to the given pressure 
 	 	do k = 1, at% Ntable
