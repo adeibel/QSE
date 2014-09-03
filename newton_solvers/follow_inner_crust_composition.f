@@ -112,7 +112,8 @@
       integer :: mu_table_input_id, mu_table_output_id
       integer :: y_output_id, ash_id
       logical, save :: eos_table_is_loaded = .FALSE.
-      real :: mterm, fac1(nvar), fac2(nvar), m_nuc, m_star
+      real :: mterm, m_nuc, m_star
+      real, dimension(:), pointer :: fac1, fac2
       real, parameter :: g = 1.d0
 
       namelist /range/ P_ext_start, n_b_start, kT, have_mu_table, &
@@ -209,6 +210,7 @@
 	  neq = nz*nvar
       m1 = (stencil_zones_subdiagonal+1)*nvar-1 ! number of subdiagonals
       m2 = (stencil_zones_superdiagonal+1)*nvar-1  ! number of superdiagonals
+      allocate(fac1(nvar), fac2(nvar))
 
   	  ! solve for qse distribution at each pressure	  
   	  do i=1, et% Ntable
