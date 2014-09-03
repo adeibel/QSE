@@ -139,8 +139,8 @@ module outer_crust
       filename = trim(datadir)//'/'//default_dir//'/'//trim(final_file)
       open(unit=final_id, file=filename, iostat=ios, status='unknown') 
       if (io_failure(ios,'opening final array file')) stop
-      write(final_id,'(3(a10,2x),4(A10,2x))') 'Pressure', 'mu_e', 'mu_n', 'Zint', 'Aint', &
-   			& 'Zfin', 'Afin'
+      write(final_id,'(a10)') 'Pressure'
+      write(final_id, '(4(a10,2x))', 'Z', 'A', 'BE', 'Y' 
    
       !main loop over pressure (pushes nucleus to higher pressures)    
 	  
@@ -393,12 +393,13 @@ module outer_crust
       end if 
       
       end do  ! end of iteration loop      
+  	  ! change to include array 
   	  Z_final(k) = Z
 	  A_final(k) = A         
       end do  ! end of nuclei loop 
   	  do l= 1, at% Ntable
-	  write(final_id,'(3(e10.5,2x),4(I10,2x))') pressure, mu_e, mu_n, Z_initial(l), &
-	  		& A_initial(l), Z_final(l), A_final(l)
+	  call get_nucleus_properties(Z_final(l),A_final(l),id,Br,Snr,S2nr,Spr,S2pr,ecthreshr,bthreshr,Vnr,ierr)
+	  write(final_id,'(3(e10.5,2x),4(I10,2x))') Z_final(l), A_final(l), Br, at% Y_ash(l)
 	  enddo 
 	  close(final_id)  
       end do	! end of pressure loop 
