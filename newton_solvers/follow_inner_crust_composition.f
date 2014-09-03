@@ -6,7 +6,6 @@
       use alert_lib
       use utils_lib
       use phys_constants
-      use mass_table 
       use eos_table
       use ash_table
       use rootfind      
@@ -113,9 +112,7 @@
       integer :: inlist_id, output_id, abundance_id  
       integer :: mu_table_input_id, mu_table_output_id
       integer :: y_output_id, ash_id
-      logical, save :: mass_table_is_loaded = .FALSE.
       logical, save :: eos_table_is_loaded = .FALSE.
-      logical, save :: ash_table_is_loaded = .FALSE.
       real :: mterm, fac1(nvar), fac2(nvar), m_nuc, m_star
       real, parameter :: g = 1.d0
 
