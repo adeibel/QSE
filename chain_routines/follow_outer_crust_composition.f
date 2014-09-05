@@ -101,8 +101,8 @@ module outer_crust
 	  write(*,*) 'Mass table loaded...'
 	
       ! check that we are on the table
-      if (Z < mt% Zmin .or. Z > mt% Zmax) then
-       write(error_unit,'(a,"[",2i4,"]")') 'Z must be in table range ',mt% Zmin,mt% Zmax
+      if (Z < at% Zmin .or. Z > at% Zmax) then
+       write(error_unit,'(a,"[",2i4,"]")') 'Z must be in table range ',at% Zmin,at% Zmax
        stop
       end if
 
@@ -183,9 +183,9 @@ module outer_crust
       ! electron capture
       Ar = A; Zr = Z-1
       Nr = Ar-Zr
-      index= Zr - mt%Zmin + 1
-      if (Nr < mt% Nmin(index) .or. Nr > mt% Nmax(index)) exit
-      if (Zr < mt% Zmin .or. Zr > mt% Zmax) exit
+      index= Zr - at%Zmin + 1
+      if (Nr < at% Nmin(index) .or. Nr > at% Nmax(index)) exit
+      if (Zr < at% Zmin .or. Zr > at% Zmax) exit
       call get_nucleus_properties(Zr,Ar,id,Br,Snr,S2nr,Spr,S2pr, &
       		&	ecthreshr,bthreshr,VNr,ierr)
       if (ierr /= 0) then
@@ -204,9 +204,9 @@ module outer_crust
       ! electron emission
       Ar = A; Zr = Z+1
       Nr = Ar-Zr
-      index= Zr - mt%Zmin + 1
-      if (Nr < mt% Nmin(index) .or. Nr > mt% Nmax(index)) exit
-      if (Zr < mt% Zmin .or. Zr > mt% Zmax) exit
+      index= Zr - at%Zmin + 1
+      if (Nr < at% Nmin(index) .or. Nr > at% Nmax(index)) exit
+      if (Zr < at% Zmin .or. Zr > at% Zmax) exit
       call get_nucleus_properties(Zr,Ar,id,Br,Snr,S2nr,Spr,S2pr,ecthreshr,bthreshr,VNr,ierr)
       if (ierr /= 0) then
          write(error_unit,'(a)') 'unable to find nucleus'
@@ -224,9 +224,9 @@ module outer_crust
       ! electron capture followed by neutron emission 
       Ar = A-1; Zr = Z-1
       Nr = Ar-Zr
-      index= Zr - mt%Zmin + 1
-      if (Nr < mt% Nmin(index) .or. Nr > mt% Nmax(index)) exit
-      if (Zr < mt% Zmin .or. Zr > mt% Zmax) exit      
+      index= Zr - at%Zmin + 1
+      if (Nr < at% Nmin(index) .or. Nr > at% Nmax(index)) exit
+      if (Zr < at% Zmin .or. Zr > at% Zmax) exit      
       call get_nucleus_properties(Zr,Ar,id,Br,Snr,S2nr,Spr,S2pr,ecthreshr,bthreshr,VNr,ierr)
       if (ierr /= 0) then
          write(error_unit,'(a)') 'unable to find nucleus'
@@ -245,9 +245,9 @@ module outer_crust
       ! electron capture followed by dineutron emission
       Ar = A-2; Zr = Z-1
       Nr = Ar-Zr
-      index= Zr - mt%Zmin + 1
-      if (Nr < mt% Nmin(index) .or. Nr > mt% Nmax(index)) exit
-      if (Zr < mt% Zmin .or. Zr > mt% Zmax) exit      
+      index= Zr - at%Zmin + 1
+      if (Nr < at% Nmin(index) .or. Nr > at% Nmax(index)) exit
+      if (Zr < at% Zmin .or. Zr > at% Zmax) exit      
       call get_nucleus_properties(Zr,Ar,id,Br,Snr,S2nr,Spr,S2pr,ecthreshr,bthreshr,VNr,ierr)
       if (ierr /= 0) then
          write(error_unit,'(a)') 'unable to find nucleus'
@@ -269,9 +269,9 @@ module outer_crust
       ! neutron capture
       Ar = A+1; Zr = Z
       Nr = Ar-Zr
-      index= Zr - mt%Zmin + 1
-      if (Nr < mt% Nmin(index) .or. Nr > mt% Nmax(index)) exit
-      if (Zr < mt% Zmin .or. Zr > mt% Zmax) exit      
+      index= Zr - at%Zmin + 1
+      if (Nr < at% Nmin(index) .or. Nr > at% Nmax(index)) exit
+      if (Zr < at% Zmin .or. Zr > at% Zmax) exit      
       call get_nucleus_properties(Zr,Ar,id,Br,Snr,S2nr,Spr,S2pr,ecthreshr,bthreshr,VNr,ierr)
       if (ierr /= 0) then
          write(error_unit,'(a)') 'unable to find nucleus'
@@ -290,9 +290,9 @@ module outer_crust
       ! neutron emission
       Ar = A-1; Zr = Z
       Nr = Ar-Zr
-      index= Zr - mt%Zmin + 1
-      if (Nr < mt% Nmin(index) .or. Nr > mt% Nmax(index)) exit
-      if (Zr < mt% Zmin .or. Zr > mt% Zmax) exit      
+      index= Zr - at%Zmin + 1
+      if (Nr < at% Nmin(index) .or. Nr > at% Nmax(index)) exit
+      if (Zr < at% Zmin .or. Zr > at% Zmax) exit      
       call get_nucleus_properties(Zr,Ar,id,Br,Snr,S2nr,Spr,S2pr,ecthreshr,bthreshr,VNr,ierr)
       if (ierr /= 0) then
          write(error_unit,'(a)') 'unable to find nucleus'
@@ -311,9 +311,9 @@ module outer_crust
       ! dineutron capture
       Ar = A+2; Zr = Z
       Nr = Ar-Zr
-      index= Zr - mt%Zmin + 1
-      if (Nr < mt% Nmin(index) .or. Nr > mt% Nmax(index)) exit
-      if (Zr < mt% Zmin .or. Zr > mt% Zmax) exit      
+      index= Zr - at%Zmin + 1
+      if (Nr < at% Nmin(index) .or. Nr > at% Nmax(index)) exit
+      if (Zr < at% Zmin .or. Zr > at% Zmax) exit      
       call get_nucleus_properties(Zr,Ar,id,Br,Snr,S2nr,Spr,S2pr,ecthreshr,bthreshr,VNr,ierr)
       if (ierr /= 0) then
          write(error_unit,'(a)') 'unable to find nucleus'
@@ -332,9 +332,9 @@ module outer_crust
       ! dineutron emission
       Ar = A-2; Zr = Z
       Nr = Ar-Zr
-      index= Zr - mt%Zmin + 1
-      if (Nr < mt% Nmin(index) .or. Nr > mt% Nmax(index)) exit
-      if (Zr < mt% Zmin .or. Zr > mt% Zmax) exit      
+      index= Zr - at%Zmin + 1
+      if (Nr < at% Nmin(index) .or. Nr > at% Nmax(index)) exit
+      if (Zr < at% Zmin .or. Zr > at% Zmax) exit      
       call get_nucleus_properties(Zr,Ar,id,Br,Snr,S2nr,Spr,S2pr,ecthreshr,bthreshr,VNr,ierr)
       if (ierr /= 0) then
          write(error_unit,'(a)') 'unable to find nucleus'
@@ -353,9 +353,9 @@ module outer_crust
       ! neutron capture followed by electron emission
       Ar = A+1; Zr = Z+1
       Nr = Ar-Zr
-      index= Zr - mt%Zmin + 1
-      if (Nr < mt% Nmin(index) .or. Nr > mt% Nmax(index)) exit
-      if (Zr < mt% Zmin .or. Zr > mt% Zmax) exit      
+      index= Zr - at%Zmin + 1
+      if (Nr < at% Nmin(index) .or. Nr > at% Nmax(index)) exit
+      if (Zr < at% Zmin .or. Zr > at% Zmax) exit      
       call get_nucleus_properties(Zr,Ar,id,Br,Snr,S2nr,Spr,S2pr,ecthreshr,bthreshr,VNr,ierr)
       if (ierr /= 0) then
          write(error_unit,'(a)') 'unable to find nucleus'
@@ -374,9 +374,9 @@ module outer_crust
       !dineutron capture followed by electron emission
       Ar = A+2; Zr = Z+1
       Nr = Ar-Zr
-      index= Zr - mt%Zmin + 1
-      if (Nr < mt% Nmin(index) .or. Nr > mt% Nmax(index)) exit
-      if (Zr < mt% Zmin .or. Zr > mt% Zmax) exit      
+      index= Zr - at%Zmin + 1
+      if (Nr < at% Nmin(index) .or. Nr > at% Nmax(index)) exit
+      if (Zr < at% Zmin .or. Zr > at% Zmax) exit      
       call get_nucleus_properties(Zr,Ar,id,Br,Snr,S2nr,Spr,S2pr,ecthreshr,bthreshr,Vnr,ierr)
       if (ierr /= 0) then
       	 write(error_unit, '(a)') 'unable to find nucleus'
@@ -426,14 +426,14 @@ module outer_crust
 		if (ierr /= 0) return
 	
 		! set the properties
-		BE = mt% BE(id)
-		Sn = mt% Sn(id)
-		S2n = mt% S2n(id)
-		Sp = mt% Sp(id)
-		S2p = mt% S2p(id)
-		ecthresh = mt% Ec(id)
-		bthresh = mt% beta(id)
-		VN = mt% VN(id)	
+		BE = at% BE(id)
+		Sn = at% Sn(id)
+		S2n = at% S2n(id)
+		Sp = at% Sp(id)
+		S2p = at% S2p(id)
+		ecthresh = at% Ec(id)
+		bthresh = at% beta(id)
+		VN = at% VN(id)	
 	 end subroutine get_nucleus_properties
 	
 	 subroutine print_reaction()
