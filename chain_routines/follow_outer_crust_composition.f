@@ -140,13 +140,13 @@ module outer_crust
       open(unit=final_id, file=filename, iostat=ios, status='unknown') 
       if (io_failure(ios,'opening final array file')) stop
       write(final_id,'(a10)') 'Pressure'
-      write(final_id, '(4(a10,2x))', 'Z', 'A', 'BE', 'Y' 
+      write(final_id, '(5(a10,2x))') 'Z', 'N', 'A', 'BE', 'Y' 
    
       !main loop over pressure (pushes nucleus to higher pressures)    
 	  
 	  ! store values from ash table into arrays
-   	  Z_initial = at% Z_ash
-   	  A_initial = at% A_ash
+   	  Z_initial = at% Z
+   	  A_initial = at% A
    
       ! scan through pressure values from pressure table
       do i = 1, pt% Ntable
@@ -403,7 +403,7 @@ module outer_crust
       write(final_id,'(e10.5)') pressure
   	  do l= 1, at% Ntable
 	  call get_nucleus_properties(Z_final(l),A_final(l),id,Br,Snr,S2nr,Spr,S2pr,ecthreshr,bthreshr,Vnr,ierr)
-	  write(final_id,'(3(e10.5,2x),4(I10,2x))') Z_final(l), A_final(l), Br, at% Y_ash(l)
+	  write(final_id,'(3(e10.5,2x),4(I10,2x))') Z_final(l), A_final(l), Br, at% Y(l)
 	  enddo 
 	  close(final_id)  	  
       end do	! end of pressure loop 
@@ -427,13 +427,6 @@ module outer_crust
 	
 		! set the properties
 		BE = at% BE(id)
-		Sn = at% Sn(id)
-		S2n = at% S2n(id)
-		Sp = at% Sp(id)
-		S2p = at% S2p(id)
-		ecthresh = at% Ec(id)
-		bthresh = at% beta(id)
-		VN = at% VN(id)	
 	 end subroutine get_nucleus_properties
 	
 	 subroutine print_reaction()
