@@ -5,9 +5,10 @@ module ash_table
 		integer, dimension(:), pointer :: Zstart	! (Nelements) 
 		integer, dimension(:), pointer :: Nmin, Nmax	! (Nelements)		
 		integer :: Ntable	! number of table entries
-		real, dimension(:), pointer :: Z !average Z of distribution
-		real, dimension(:), pointer :: A !average A of distribution
-		real, dimension(:), pointer :: BE !binding energy of ashes
+		real, dimension(:), pointer :: Z 
+		real, dimension(:), pointer :: N 
+		real, dimension(:), pointer :: A 
+		real, dimension(:), pointer :: BE !binding energy 
 		real, dimension(:), pointer :: Y !abundance fraction 
 	end type ash_table_type
 	logical, save :: ash_table_is_loaded = .FALSE.
@@ -24,6 +25,7 @@ contains
 		deallocate(at% Nmin)
 		deallocate(at% Nmax)
 		deallocate(at% Z)
+		deallocate(at% N)
 		deallocate(at% A)
 		deallocate(at% BE)
 		deallocate(at% Y)	
@@ -94,7 +96,7 @@ contains
 		at% Ntable = Ntab
 
 		! allocate the tables		
-		allocate(at% Z(Ntab), at% A(Ntab), at% BE(Ntab), at% Y(Ntab)) 
+		allocate(at% Z(Ntab), at% N(Ntab), at% A(Ntab), at% BE(Ntab), at% Y(Ntab)) 
 		
 		! now read in the table, skipping first three lines
 		read(iounit,*,iostat=ierr)
