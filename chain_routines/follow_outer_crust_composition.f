@@ -400,6 +400,7 @@ module outer_crust
       end do  ! end of nuclei loop 
       
       ! print final ash file
+      write(final_id,'(e10.5)') pressure
   	  do l= 1, at% Ntable
 	  call get_nucleus_properties(Z_final(l),A_final(l),id,Br,Snr,S2nr,Spr,S2pr,ecthreshr,bthreshr,Vnr,ierr)
 	  write(final_id,'(3(e10.5,2x),4(I10,2x))') Z_final(l), A_final(l), Br, at% Y_ash(l)

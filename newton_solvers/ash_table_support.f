@@ -54,8 +54,9 @@ contains
 			return
 		end if
 
-		! read through the file to get number of entries
+		! read through the file to get number of entries (skips first three lines)
 		Ntab = 0
+		read(iounit,*,iostat=ierr)
 		read(iounit,*,iostat=ierr)
 		read(iounit,*,iostat=ierr)
 		if (ierr /= 0) then
@@ -87,7 +88,8 @@ contains
 		! allocate the tables		
 		allocate(at% Z(Ntab), at% A(Ntab), at% BE(Ntab), at% Y(Ntab)) 
 		
-		! now read in the table, skipping first two lines
+		! now read in the table, skipping first three lines
+		read(iounit,*,iostat=ierr)
 		read(iounit,*,iostat=ierr)
 		read(iounit,*,iostat=ierr)
 		if (ierr /= 0) then
