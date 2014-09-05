@@ -236,13 +236,11 @@
 		 m_nuc = real(at% A(j))*amu_n
          mterm = g*(m_nuc*kT/(twopi*hbarc_n**2))**(1.5)
          fac1(j) = real(at% A(j))/n_b
-         fac2(j) = mterm		 
-		 xold(j,1) = log((1.d-20)/fac1(j)/fac2(j))*kT-at%BE(j)
+         fac2(j) = mterm	
+         ! set mass fractions from abundance fractions	 
+		 xold(j,1) = log((at% Y(j))/fac1(j)/fac2(j))*kT-at%BE(j)
 		 end do 
-		 
-		 ! set mass fraction to 1.0 for most abundant nucleus
-		 xold(22,1) = log((1.d0)/fac1(22)/fac2(22))*kT-at%BE(22)
-		 
+		 		 
 		! electron wave vector fm^-1
 		if (mu_e > 0.) then
         x1=0.0
