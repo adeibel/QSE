@@ -110,7 +110,7 @@ contains
 		end if
 		
 		do i = 1, at% Ntable
-			read(iounit,*,iostat=ierr) 	at% Z(i), at% A(i), at% BE(i), at% Y(i) 
+			read(iounit,*,iostat=ierr) 	at% Z(i), at% N(i), at% A(i), at% BE(i), at% Y(i) 
 			if (ierr /=0) then
 			   call alert(ierr,'ash_table_support: load_ash_table:: unable to read lines')
 			   exit
