@@ -2,6 +2,7 @@ module ash_table
 	! storage for the mass table
 	type ash_table_type
 		integer :: Zmin, Zmax	! minimum, maximum Z
+		integer :: Nelements	! = Zmax-Zmin+1
 		integer, dimension(:), pointer :: Zstart	! (Nelements) 
 		integer, dimension(:), pointer :: Nmin, Nmax	! (Nelements)		
 		integer :: Ntable	! number of table entries
@@ -32,6 +33,7 @@ contains
 		at% Ntable = 0
 		at% Zmin = -1
 		at% Zmax = -1		
+		at% Nelements = 0
 		ash_table_is_loaded = .FALSE.
 	end subroutine ash_table_shutdown
 
