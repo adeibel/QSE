@@ -2,10 +2,10 @@ module ash_table
 	! storage for the mass table
 	type ash_table_type
 		integer :: Ntable	! number of table entries
-		real, dimension(:), pointer :: Z_ash !average Z of distribution
-		real, dimension(:), pointer :: A_ash !average A of distribution
-		real, dimension(:), pointer :: BE_ash !binding energy of ashes
-		real, dimension(:), pointer :: Y_ash !abundance fraction 
+		real, dimension(:), pointer :: Z !average Z of distribution
+		real, dimension(:), pointer :: A !average A of distribution
+		real, dimension(:), pointer :: BE !binding energy of ashes
+		real, dimension(:), pointer :: Y !abundance fraction 
 	end type ash_table_type
 	logical, save :: ash_table_is_loaded = .FALSE.
 
@@ -17,10 +17,10 @@ contains
 		type(ash_table_type), pointer :: at
 		if (.not.ash_table_is_loaded) return
 		at => winvn_ash_table
-		deallocate(at% Z_ash)
-		deallocate(at% A_ash)
-		deallocate(at% BE_ash)
-		deallocate(at% Y_ash)	
+		deallocate(at% Z)
+		deallocate(at% A)
+		deallocate(at% BE)
+		deallocate(at% Y)	
 		at% Ntable = 0
 		ash_table_is_loaded = .FALSE.
 	end subroutine ash_table_shutdown
@@ -85,7 +85,7 @@ contains
 		at% Ntable = Ntab
 
 		! allocate the tables		
-		allocate(at% Z_ash(Ntab), at% A_ash(Ntab), at% BE_ash(Ntab), at% Y_ash(Ntab)) 
+		allocate(at% Z(Ntab), at% A(Ntab), at% BE(Ntab), at% Y(Ntab)) 
 		
 		! now read in the table, skipping first two lines
 		read(iounit,*,iostat=ierr)
@@ -96,7 +96,7 @@ contains
 		end if
 		
 		do i = 1, at% Ntable
-			read(iounit,*,iostat=ierr) 	at% Z_ash(i), at% A_ash(i), at% BE_ash(i), at% Y_ash(i) 
+			read(iounit,*,iostat=ierr) 	at% Z(i), at% A(i), at% BE(i), at% Y(i) 
 			if (ierr /=0) then
 			   call alert(ierr,'ash_table_support: load_ash_table:: unable to read lines')
 			   exit

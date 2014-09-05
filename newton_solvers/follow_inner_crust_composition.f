@@ -206,7 +206,7 @@
 
 	  ! set some dimensions
 	  ! make nvar equal to number of entries in mass table + 2 (for n_b and mu_n)
-	  nvar = mt% Ntable + 2
+	  nvar = at% Ntable + 2
 	  neq = nz*nvar
       m1 = (stencil_zones_subdiagonal+1)*nvar-1 ! number of subdiagonals
       m2 = (stencil_zones_superdiagonal+1)*nvar-1  ! number of superdiagonals
@@ -231,17 +231,17 @@
          numerical_jacobian = do_numerical_jacobian
 
 		 ! sets mass fractions to 1d-20 for unpopulated nuclei
-		 do j=1,mt% Ntable
+		 do j=1,at% Ntable
 		 m_star = mn_n-mp_n-me_n
-		 m_nuc = real(mt% A(j))*amu_n
+		 m_nuc = real(at% A(j))*amu_n
          mterm = g*(m_nuc*kT/(twopi*hbarc_n**2))**(1.5)
-         fac1(j) = real(mt% A(j))/n_b
+         fac1(j) = real(at% A(j))/n_b
          fac2(j) = mterm		 
-		 xold(j,1) = log((1.d-20)/fac1(j)/fac2(j))*kT-mt%BE(j)
+		 xold(j,1) = log((1.d-20)/fac1(j)/fac2(j))*kT-at%BE(j)
 		 end do 
 		 
 		 ! set mass fraction to 1.0 for most abundant nucleus
-		 xold(22,1) = log((1.d0)/fac1(22)/fac2(22))*kT-mt%BE(22)
+		 xold(22,1) = log((1.d0)/fac1(22)/fac2(22))*kT-at%BE(22)
 		 
 		! electron wave vector fm^-1
 		if (mu_e > 0.) then
@@ -274,8 +274,8 @@
 		 mu_n = mu_e/1000.
 
   		 ! initial values of additional variables 
-		 xold(mt% Ntable+1,1) = n_b
-		 xold(mt% Ntable+2,1) = mu_n 
+		 xold(at% Ntable+1,1) = n_b
+		 xold(at% Ntable+2,1) = mu_n 
 		
          dx = 0 ! a not very good starting "guess" for the solution
          x = xold
@@ -327,7 +327,7 @@
          
              
 		 if (nonconv .eqv. .FALSE.) then
-		 n_b = x(mt% Ntable+1, 1)
+		 n_b = x(at% Ntable+1, 1)
          write(y_output_id,'(8(es12.5,2x))') p_ext, n_b, y_e, y_n, Z_bar, A_bar, mu_e, mu_n
          write(*,'(8(es12.5,2x))') p_ext, n_b, y_e, y_n, z_bar, a_bar, mu_e, mu_n
 		 n_b_prev = n_b
@@ -381,8 +381,8 @@
 		 do i = 1, mt% Ntable
 		 mu_i(i) = x(i,1)
 		 enddo
-		 n_b = x(mt% Ntable+1,1)			 
-		 mu_n = x(mt% Ntable+2,1)
+		 n_b = x(at% Ntable+1,1)			 
+		 mu_n = x(at% Ntable+2,1)
       end subroutine set_primaries
       
 
@@ -509,30 +509,30 @@
 		 phi_sum=0.
 
 		
-		 do i = 1, mt% Ntable
-		  iso = 1.0-(2.*real(mt% Z(i))/real(mt% A(i)))
+		 do i = 1, at% Ntable
+		  iso = 1.0-(2.*real(at% Z(i))/real(at% A(i)))
 		  n_nin = (n_0+n_1*iso**2)*(1.0+0.9208*iso)/2.	
-		  R_n = (real(mt% N(i))/n_nin/pi*0.75)**onethird 
-		  R_ws = (real(mt% Z(i))/n_e/pi*0.75)**onethird		 
+		  R_n = ((real(at% A(i))-real(at% Z(i)))/n_nin/pi*0.75)**onethird 
+		  R_ws = (real(at% Z(i))/n_e/pi*0.75)**onethird		 
           !number density of isotopes
 		  m_star = mn_n-mp_n-me_n !does not contain m_e because mu_e has rest mass in definition 
-		  m_nuc = real(mt%A(i))*amu_n 
+		  m_nuc = real(at%A(i))*amu_n 
      	  m_term = g*(twopi*hbarc_n**2/(m_nuc*kT))**(-3.0/2.0)
-     	  ni(i) = m_term*exp((mu_i(i)+mt%BE(i))/kT)
+     	  ni(i) = m_term*exp((mu_i(i)+at%BE(i))/kT)
      	  phi = 1.25*pi*R_n**3*ni(i)
      	  phi_sum = phi+phi_sum
 		  !for baryon conservation
-		  as(i) = real(mt% A(i))*m_term*exp((mu_i(i)+mt%BE(i))/kT)	 
+		  as(i) = real(at% A(i))*m_term*exp((mu_i(i)+at%BE(i))/kT)	 
 		  Asum = Asum + as(i) 
-		  ni_Asum = ni_Asum + m_term*exp((mu_i(i)+mt%BE(i))/kT)/n_b	
+		  ni_Asum = ni_Asum + m_term*exp((mu_i(i)+at%BE(i))/kT)/n_b	
 		  Ai = Ai + as(i)/n_b
 		  !for charge conservation
-		  zs(i) = real(mt% Z(i))*m_term*exp((mu_i(i)+mt%BE(i))/kT)
+		  zs(i) = real(at% Z(i))*m_term*exp((mu_i(i)+at%BE(i))/kT)
 		  Zsum = Zsum + zs(i)
-		  ni_Zsum = ni_Zsum + m_term*exp((mu_i(i)+mt%BE(i))/kT)/n_b	
+		  ni_Zsum = ni_Zsum + m_term*exp((mu_i(i)+at%BE(i))/kT)/n_b	
 		  Zi = Zi + zs(i)/n_b
 		  !detailed balance
-		  equ(i,1) = real(mt% Z(i))*(mu_n-mu_e+m_star)+real(mt% N(i))*mu_n-mu_i(i) 
+		  equ(i,1) = real(at% Z(i))*(mu_n-mu_e+m_star)+(real(at% A(i))-real(at% Z(i)))*mu_n-mu_i(i) 
 		 enddo
 
 		 Zbar = Zi/ni_Zsum
@@ -741,18 +741,18 @@
          integer, intent(out) :: ierr
          ierr = 0
 		 ! set bounds of variables
- 		 x(mt% Ntable+1, 1) = max(n_b_prev, x(mt% Ntable+1,1))
- 		 x(mt% Ntable+2,1) = abs(x(mt% Ntable+2,1))
+ 		 x(at% Ntable+1, 1) = max(n_b_prev, x(mt% Ntable+1,1))
+ 		 x(at% Ntable+2,1) = abs(x(at% Ntable+2,1))
  		 
- 		 dx(mt% Ntable+1,1) = x(mt% Ntable+1,1)-xold(mt% Ntable+1,1)     
-		 dx(mt% Ntable+2,1) = x(mt% Ntable+2,1)-xold(mt% Ntable+2,1)     
- 		 x(mt% Ntable+1,1) = xold(mt%Ntable+1,1)+dx(mt%Ntable+1,1)     
-		 x(mt% Ntable+2,1) = xold(mt%Ntable+2,1)+dx(mt%Ntable+2,1)     
+ 		 dx(at% Ntable+1,1) = x(at% Ntable+1,1)-xold(at% Ntable+1,1)     
+		 dx(at% Ntable+2,1) = x(at% Ntable+2,1)-xold(at% Ntable+2,1)     
+ 		 x(at% Ntable+1,1) = xold(at%Ntable+1,1)+dx(at%Ntable+1,1)     
+		 x(at% Ntable+2,1) = xold(at%Ntable+2,1)+dx(at%Ntable+2,1)     
  		 
- 		 if (x(mt% Ntable+1,1) < n_b_prev) then
- 		 x(mt% Ntable+1,1) = n_b_prev
- 		 dx(mt% Ntable+1,1) = x(mt% Ntable+1,1)-xold(mt% Ntable+1,1) 
- 		 x(mt% Ntable+1,1) = xold(mt%Ntable+1,1)+dx(mt%Ntable+1,1) 
+ 		 if (x(at% Ntable+1,1) < n_b_prev) then
+ 		 x(at% Ntable+1,1) = n_b_prev
+ 		 dx(at% Ntable+1,1) = x(at% Ntable+1,1)-xold(at% Ntable+1,1) 
+ 		 x(at% Ntable+1,1) = xold(at% Ntable+1,1)+dx(at% Ntable+1,1) 
  		 end if
 
       end subroutine xdomain          
