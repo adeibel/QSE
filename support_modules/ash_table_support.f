@@ -119,29 +119,6 @@ contains
 		close(iounit)
 		call free_iounit(iounit)
 
-		! set up the bookmarks; table is assumed to be sorted!
-		at% Zmin = minval(at% Z)
-		at% Zmax = maxval(at% Z)
-		
-		! allocate the bookmarks
-		Nele = at% Zmax-at% Zmin+1
-		at% Nelements = Nele
-		allocate(at% Zstart(Nele), at% Nmin(Nele), at% Nmax(Nele))
-		
-		currentZ = -1
-		id_el = 0
-		do i = 1, at% Ntable
-			if (at% Z(i) /= currentZ) then	! found a new element
-				id_el = id_el + 1
-				at% Zstart(id_el) = i
-				at% Nmin(id_el) = at% N(i)
-				if (id_el > 1) then
-					at% Nmax(id_el-1) = at% N(i-1)
-				end if
-				currentZ = at% Z(i)
-			end if
-		end do
-		at% Nmax(id_el) = at% N(at% Ntable)
 
 		if (ierr == 0) ash_table_is_loaded = .TRUE.
 	end subroutine load_ash_table
