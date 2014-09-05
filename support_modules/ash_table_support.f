@@ -1,6 +1,9 @@
 module ash_table
 	! storage for the mass table
 	type ash_table_type
+		integer :: Zmin, Zmax	! minimum, maximum Z
+		integer, dimension(:), pointer :: Zstart	! (Nelements) 
+		integer, dimension(:), pointer :: Nmin, Nmax	! (Nelements)		
 		integer :: Ntable	! number of table entries
 		real, dimension(:), pointer :: Z !average Z of distribution
 		real, dimension(:), pointer :: A !average A of distribution
@@ -17,11 +20,16 @@ contains
 		type(ash_table_type), pointer :: at
 		if (.not.ash_table_is_loaded) return
 		at => winvn_ash_table
+		deallocate(at% Zstart)
+		deallocate(at% Nmin)
+		deallocate(at% Nmax)
 		deallocate(at% Z)
 		deallocate(at% A)
 		deallocate(at% BE)
 		deallocate(at% Y)	
 		at% Ntable = 0
+		at% Zmin = -1
+		at% Zmax = -1		
 		ash_table_is_loaded = .FALSE.
 	end subroutine ash_table_shutdown
 
