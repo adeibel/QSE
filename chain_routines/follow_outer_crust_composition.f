@@ -100,12 +100,6 @@ module outer_crust
 	  mt => winvn_mass_table
 	  write(*,*) 'Mass table loaded...'
 	
-      ! check that we are on the table
-      if (Z < at% Zmin .or. Z > at% Zmax) then
-       write(error_unit,'(a,"[",2i4,"]")') 'Z must be in table range ',at% Zmin,at% Zmax
-       stop
-      end if
-
 	  !load pressure table
 	  if (pressure_table_loaded .eqv. .false.) then
 	  call load_pressure_table('../../../data',trim(pressure_table_used), ierr)
@@ -129,6 +123,12 @@ module outer_crust
 	  end if
 	  at => winvn_ash_table
 	  write(*,*) 'Ash table loaded...'	
+
+      ! check that we are on the table
+      if (Z < at% Zmin .or. Z > at% Zmax) then
+       write(error_unit,'(a,"[",2i4,"]")') 'Z must be in table range ',at% Zmin,at% Zmax
+       stop
+      end if
 	
 	  allocate(Z_initial(at% Ntable), A_initial(at% Ntable), abun_initial(at% Ntable), &
 	  &		  Z_final(at% Ntable), A_final(at% Ntable), abun_final(at% Ntable))
