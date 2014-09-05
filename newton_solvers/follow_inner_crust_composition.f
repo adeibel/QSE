@@ -376,7 +376,7 @@
          integer, intent(inout) :: ipar(lipar)
          integer, intent(out) :: ierr
          ierr = 0
-		 do i = 1, mt% Ntable
+		 do i = 1, at% Ntable
 		 mu_i(i) = x(i,1)
 		 enddo
 		 n_b = x(at% Ntable+1,1)			 
@@ -540,8 +540,8 @@
  		 chi = phi_sum 
 	     Y_n = n_n*(1.-chi)/n_b   
   		 !baryon and charge conservation 
-         equ(mt% Ntable+1,1) = Zsum - n_e
-         equ(mt% Ntable+2,1) = Asum - n_b + n_n*(1.0-chi)  
+         equ(at% Ntable+1,1) = Zsum - n_e
+         equ(at% Ntable+2,1) = Asum - n_b + n_n*(1.0-chi)  
       end subroutine eval_equ
           
       subroutine eval_jacobian(ldA, A, idiag, lrpar, rpar, lipar, ipar, ierr)
@@ -739,7 +739,7 @@
          integer, intent(out) :: ierr
          ierr = 0
 		 ! set bounds of variables
- 		 x(at% Ntable+1, 1) = max(n_b_prev, x(mt% Ntable+1,1))
+ 		 x(at% Ntable+1, 1) = max(n_b_prev, x(at% Ntable+1,1))
  		 x(at% Ntable+2,1) = abs(x(at% Ntable+2,1))
  		 
  		 dx(at% Ntable+1,1) = x(at% Ntable+1,1)-xold(at% Ntable+1,1)     
