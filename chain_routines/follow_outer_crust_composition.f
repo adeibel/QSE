@@ -400,7 +400,7 @@ module outer_crust
       end do  ! end of nuclei loop 
       
       ! print final ash file
-      write(final_id,'(e10.5)') pressure
+      write(final_id,'(e10.5)') pressure !add final pressure reached by outer crust solver
   	  do l= 1, at% Ntable
 	  call get_nucleus_properties(Z_final(l),A_final(l),id,Br,Snr,S2nr,Spr,S2pr,ecthreshr,bthreshr,Vnr,ierr)
 	  write(final_id,'(3(e10.5,2x),4(I10,2x))') Z_final(l), A_final(l), Br, at% Y(l)
@@ -418,13 +418,11 @@ module outer_crust
 		integer, intent(out) :: id
 		real, intent(out) :: BE,Sn,S2n,Sp,S2p,ecthresh,bthresh,VN
 		integer, intent(out) :: ierr
-		integer :: N
-		
+		integer :: N		
 		ierr = 0
 		N = A-Z
 		id = mass_table_index(Z,N,ierr)
 		if (ierr /= 0) return
-	
 		! set the properties
 		BE = mt% BE(id)
 	 end subroutine get_nucleus_properties
@@ -442,28 +440,27 @@ module outer_crust
 	 function io_failure(ierr,message)
       integer, intent(in) :: ierr
       character(len=*), intent(in) :: message
-      logical :: io_failure
-      
+      logical :: io_failure   
       if (ierr == 0) then
          io_failure = .FALSE.
          return
       end if
       write (error_unit,'(a,i0)') 'ERROR: '//trim(message)//'; ierr = ',ierr
       io_failure = .TRUE.
-    end function io_failure
+     end function io_failure
    
-    function neutron_k(x)
+     function neutron_k(x)
       real, intent(in) :: x
       real :: neutron_k 
       neutron_k = neutron_pressure(x) - pres_n  
-    end function neutron_k
+     end function neutron_k
    
-    function neutron_k_negative(x)
+     function neutron_k_negative(x)
       real, intent(in) :: x
       real :: neutron_k_negative
       neutron_k_negative = abs(neutron_pressure(x)) - abs(pres_n)   
-    end function neutron_k_negative
+     end function neutron_k_negative
 
-end subroutine follow_outer_crust_composition
+	end subroutine follow_outer_crust_composition
 
 end module outer_crust
