@@ -403,7 +403,7 @@ module outer_crust
       write(final_id,'(e10.5)') pressure !add final pressure reached by outer crust solver
   	  do l= 1, at% Ntable
 	  call get_nucleus_properties(Z_final(l),A_final(l),id,Br,Snr,S2nr,Spr,S2pr,ecthreshr,bthreshr,Vnr,ierr)
-	  write(final_id,'(3(e10.5,2x),4(I10,2x))') Z_final(l), A_final(l), Br, at% Y(l)
+	  write(final_id,'(2(I10,2x),2(e10.5,2x))') Z_final(l), A_final(l), Br, at% Y(l)
 	  enddo 
 	  close(final_id)  	  
       end do	! end of pressure loop 
