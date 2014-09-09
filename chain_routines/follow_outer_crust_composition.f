@@ -33,7 +33,7 @@ module outer_crust
 	  real :: alpha(2), beta(2), gamma(2), delta(2), epsilon(2)
 	  real, dimension(:), pointer :: abun_initial, abun_final
 	  integer, dimension(:), pointer :: Z_initial, A_initial
-	  integer, dimension(:), pointer :: Z_final, A_final
+	  integer, dimension(:), pointer :: Z_final, A_final, N_final
 	  integer :: i, j, i_enter
 	  integer :: Z, A, Zr, Ar, Nr, inlist_id
 	  integer :: dist_id, index
@@ -131,7 +131,7 @@ module outer_crust
 	  write(*,*) 'Ash table loaded...'	
 
 	  allocate(Z_initial(at% Ntable), A_initial(at% Ntable), abun_initial(at% Ntable), &
-	  &		  Z_final(at% Ntable), A_final(at% Ntable), abun_final(at% Ntable))
+	  &		  Z_final(at% Ntable), N_final(at% Ntable), A_final(at% Ntable), abun_final(at% Ntable))
 	
 	  ! open output file for composition at end of outer crust
       final_id = alloc_iounit(ierr)
@@ -396,14 +396,15 @@ module outer_crust
   	 
   	 ! add Z and A to final array after chain 
   	  Z_final(k) = Z
-	  A_final(k) = A         
+	  A_final(k) = A      
+	  N_final(k) = A-Z   
       end do  ! end of nuclei loop 
       
       ! print final ash file
       write(final_id,'(e10.5)') pressure !add final pressure reached by outer crust solver
   	  do l= 1, at% Ntable
 	  call get_nucleus_properties(Z_final(l),A_final(l),id,Br,Snr,S2nr,Spr,S2pr,ecthreshr,bthreshr,Vnr,ierr)
-	  write(final_id,'(2(I10,2x),2(e10.5,2x))') Z_final(l), A_final(l), Br, at% Y(l)
+	  write(final_id,'(3(I10,2x),2(e10.5,2x))') Z_final(l), N_final(l), A_final(l), Br, at% Y(l)
 	  enddo 
 	  close(final_id)  	  
       end do	! end of pressure loop 
