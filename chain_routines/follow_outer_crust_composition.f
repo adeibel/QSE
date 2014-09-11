@@ -58,11 +58,10 @@ module outer_crust
 	  logical, save :: pressure_set = .FALSE.
 	  logical, save :: pressure_table_loaded = .FALSE.
 	  logical, save :: ash_table_loaded = .FALSE.
-	  logical :: outer_crust
 	
 	  namelist /io/ pressure_table_used
 	  namelist /range/ Z, A, mu_e_start, mu_e_stop, &
-				pressure_start, pressure_stop, outer_crust
+				pressure_start, pressure_stop
 				
       ! set defaults
       pfile = default_infile
@@ -264,8 +263,6 @@ module outer_crust
          cycle
       end if
       
-      if (outer_crust .eqv. .true.) cycle
-
       ! check for strong reactions     
       ! neutron capture
       Ar = A+1; Zr = Z
