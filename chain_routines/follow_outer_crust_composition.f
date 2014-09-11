@@ -60,7 +60,7 @@ module outer_crust
 	  logical, save :: ash_table_loaded = .FALSE.
 	
 	  namelist /io/ pressure_table_used
-	  namelist /range/ Z, A, mu_e_start, mu_e_stop, &
+	  namelist /range/ mu_e_start, mu_e_stop, &
 				pressure_start, pressure_stop
 				
       ! set defaults
@@ -69,8 +69,6 @@ module outer_crust
       mass_table_used = default_mass_table
    	  stable_table_used = default_stable_table
    	  pressure_table_used = default_pressure_table
-      Z = 26
-      A = 56
       mu_e_start = 0.0 !MeV
       mu_e_stop = 30.0 !MeV
       mu_n = 0.0 !MeV
