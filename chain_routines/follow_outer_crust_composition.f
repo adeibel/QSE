@@ -142,6 +142,7 @@ module outer_crust
       ! scan through pressure values from pressure table
       do i = 1, pt% Ntable
 	  pressure = pt% P(i)	! MeV fm**-3
+	  if (pressure > 3.615d-4) exit
 	  mu_n = pt% mu_n(i)
  	  mu_e = pt% mu_e(i)
  	  write(*,*) '--------'
@@ -254,6 +255,8 @@ module outer_crust
          A = Ar; Z = Zr
          cycle
       end if
+      
+      cycle
       
       ! check for strong reactions     
       ! neutron capture
@@ -419,8 +422,8 @@ module outer_crust
 	 end subroutine get_nucleus_properties
 	
 	 subroutine print_reaction()
-		character(len=*), parameter :: form = '(2(e12.5,2x),2(i4,2x),(a6,2x),2(i4,2x))'
-		write (fid,form) mu_n,mu_e,Z,A,rxn,Zr,Ar
+		character(len=*), parameter :: form = '(3(e12.5,2x),2(i4,2x),(a6,2x),2(i4,2x))'
+		write (fid,form) pressure,mu_n,mu_e,Z,A,rxn,Zr,Ar
 	 end subroutine print_reaction
 	 	
 	 subroutine print_reaction_check()
