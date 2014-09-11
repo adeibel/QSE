@@ -97,12 +97,6 @@ module outer_crust
 	  mt => winvn_mass_table
 	  write(*,*) 'Mass table loaded...'
 
-      ! check that we are on the table
-      if (Z < mt% Zmin .or. Z > mt% Zmax) then
-       write(error_unit,'(a,"[",2i4,"]")') 'Z must be in table range '
-       stop
-      end if
-
 	  !load pressure table
 	  if (pressure_table_loaded .eqv. .false.) then
 	  call load_pressure_table('../../../data',trim(pressure_table_used), ierr)
