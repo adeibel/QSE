@@ -98,7 +98,8 @@ contains
 		at% Ntable = Ntab
 
 		! allocate the tables		
-		allocate(at% Z(Ntab), at% N(Ntab), at% A(Ntab), at% BE(Ntab), at% Y(Ntab)) 
+		allocate(at% Z(Ntab), at% N(Ntab), at% A(Ntab), at% BE(Ntab), at% Y(Ntab), &
+			&		at% Zstart(Ntab), at% Nmin(Ntab), at% Nmax(Ntab))
 		
 		! now read in the table, skipping first three lines
 		read(iounit,*,iostat=ierr)
