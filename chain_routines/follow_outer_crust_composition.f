@@ -153,6 +153,7 @@ module outer_crust
 	  pressure = pt% P(i)	! MeV fm**-3
 	  mu_n = pt% mu_n(i)
  	  mu_e = pt% mu_e(i)
+ 	  write(*,*) '--------'
 	
 	  ! end of last cascade is moved up in pressure 
 	  if (i > 1 .and. Z_final(1) > 0) then
@@ -189,8 +190,8 @@ module outer_crust
       call get_nucleus_properties(Zr,Ar,id,Br,Snr,S2nr,Spr,S2pr, &
       		&	ecthreshr,bthreshr,VNr,ierr)
       if (ierr /= 0) then
-         write(error_unit,'(a)') 'unable to find nucleus'
-         stop
+         write(error_unit,'((a,2x),2(i4,2x))') 'unable to find nucleus', Zr, Ar
+!         stop
          exit
       end if
       alpha(ineg) = del_m - mu_e + (B-Br)
@@ -209,8 +210,8 @@ module outer_crust
       if (Zr < mt% Zmin .or. Zr > mt% Zmax) exit
       call get_nucleus_properties(Zr,Ar,id,Br,Snr,S2nr,Spr,S2pr,ecthreshr,bthreshr,VNr,ierr)
       if (ierr /= 0) then
-         write(error_unit,'(a)') 'unable to find nucleus'
-         stop
+         write(error_unit,'((a,2x),2(i4,2x))') 'unable to find nucleus', Zr, Ar
+!         stop
          exit
       end if
       alpha(ipos) = mu_e - del_m + (B - Br)
@@ -229,8 +230,8 @@ module outer_crust
       if (Zr < mt% Zmin .or. Zr > mt% Zmax) exit    
       call get_nucleus_properties(Zr,Ar,id,Br,Snr,S2nr,Spr,S2pr,ecthreshr,bthreshr,VNr,ierr)
       if (ierr /= 0) then
-         write(error_unit,'(a)') 'unable to find nucleus'
-         stop
+         write(error_unit,'((a,2x),2(i4,2x))') 'unable to find nucleus', Zr, Ar
+!         stop
          exit
       end if
       beta(ineg) = mu_n - mu_e + del_m + (B - Br)
@@ -250,8 +251,8 @@ module outer_crust
       if (Zr < mt% Zmin .or. Zr > mt% Zmax) exit
       call get_nucleus_properties(Zr,Ar,id,Br,Snr,S2nr,Spr,S2pr,ecthreshr,bthreshr,VNr,ierr)
       if (ierr /= 0) then
-         write(error_unit,'(a)') 'unable to find nucleus'
-         stop
+         write(error_unit,'((a,2x),2(i4,2x))') 'unable to find nucleus', Zr, Ar
+!         stop
          exit
       end if
       beta(ipos) = 2.0*mu_n - mu_e + del_m + (B - Br)
@@ -274,8 +275,8 @@ module outer_crust
       if (Zr < mt% Zmin .or. Zr > mt% Zmax) exit  
       call get_nucleus_properties(Zr,Ar,id,Br,Snr,S2nr,Spr,S2pr,ecthreshr,bthreshr,VNr,ierr)
       if (ierr /= 0) then
-         write(error_unit,'(a)') 'unable to find nucleus'
-         stop
+         write(error_unit,'((a,2x),2(i4,2x))') 'unable to find nucleus', Zr, Ar
+!         stop
          exit
       end if
       gamma(ineg) = -mu_n + (B-Br)
@@ -295,8 +296,8 @@ module outer_crust
       if (Zr < mt% Zmin .or. Zr > mt% Zmax) exit     
       call get_nucleus_properties(Zr,Ar,id,Br,Snr,S2nr,Spr,S2pr,ecthreshr,bthreshr,VNr,ierr)
       if (ierr /= 0) then
-         write(error_unit,'(a)') 'unable to find nucleus'
-         stop
+         write(error_unit,'((a,2x),2(i4,2x))') 'unable to find nucleus', Zr, Ar
+!         stop
          exit
       end if
       gamma(ipos) = mu_n + (B-Br)
@@ -316,8 +317,8 @@ module outer_crust
       if (Zr < mt% Zmin .or. Zr > mt% Zmax) exit      
       call get_nucleus_properties(Zr,Ar,id,Br,Snr,S2nr,Spr,S2pr,ecthreshr,bthreshr,VNr,ierr)
       if (ierr /= 0) then
-         write(error_unit,'(a)') 'unable to find nucleus'
-         stop
+         write(error_unit,'((a,2x),2(i4,2x))') 'unable to find nucleus', Zr, Ar
+!         stop
          exit
       end if
       delta(ineg) = -2.0*mu_n + (B-Br)
@@ -337,8 +338,8 @@ module outer_crust
       if (Zr < mt% Zmin .or. Zr > mt% Zmax) exit     
       call get_nucleus_properties(Zr,Ar,id,Br,Snr,S2nr,Spr,S2pr,ecthreshr,bthreshr,VNr,ierr)
       if (ierr /= 0) then
-         write(error_unit,'(a)') 'unable to find nucleus'
-         stop
+         write(error_unit,'((a,2x),2(i4,2x))') 'unable to find nucleus', Zr, Ar
+!         stop
          exit
       end if
       delta(ipos) = 2.0*mu_n + (B-Br)
@@ -358,8 +359,8 @@ module outer_crust
       if (Zr < mt% Zmin .or. Zr > mt% Zmax) exit 
       call get_nucleus_properties(Zr,Ar,id,Br,Snr,S2nr,Spr,S2pr,ecthreshr,bthreshr,VNr,ierr)
       if (ierr /= 0) then
-         write(error_unit,'(a)') 'unable to find nucleus'
-         stop
+         write(error_unit,'((a,2x),2(i4,2x))') 'unable to find nucleus', Zr, Ar
+ !        stop
          exit
       end if
       epsilon(ineg) = mu_e - mu_n - del_m + (B-Br)
@@ -379,8 +380,8 @@ module outer_crust
       if (Zr < mt% Zmin .or. Zr > mt% Zmax) exit   
       call get_nucleus_properties(Zr,Ar,id,Br,Snr,S2nr,Spr,S2pr,ecthreshr,bthreshr,Vnr,ierr)
       if (ierr /= 0) then
-      	 write(error_unit, '(a)') 'unable to find nucleus'
-      	 stop
+      	 write(error_unit, '((a,2x),2(i4,2x))') 'unable to find nucleus', Zr, Ar
+!      	 stop
       	 exit
       end if
       epsilon(ipos) = mu_e - 2.0*mu_n - del_m + (B-Br)
@@ -429,8 +430,8 @@ module outer_crust
 	 end subroutine get_nucleus_properties
 	
 	 subroutine print_reaction()
-		character(len=*), parameter :: form = '(2(e12.5),4i4)'
-		write (fid,form) mu_n,mu_e,Z,A,Zr,Ar
+		character(len=*), parameter :: form = '(2(e12.5,2x),2(i4,2x),(a6,2x),2(i4,2x))'
+		write (fid,form) mu_n,mu_e,Z,A,rxn,Zr,Ar
 	 end subroutine print_reaction
 	 	
 	 subroutine print_reaction_check()
