@@ -269,9 +269,6 @@
 		 !if (p_ext < 4.26d-3) cycle
          if (p_ext < at% P) cycle
          
-         write(*,*) p_ext, at% P
-         stop
-		 
 		 mu_n = mu_e/1000.
 
   		 ! initial values of additional variables 

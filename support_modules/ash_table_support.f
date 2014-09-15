@@ -6,9 +6,7 @@ module ash_table
 		integer, dimension(:), pointer :: Zstart	! (Nelements) 
 		integer, dimension(:), pointer :: Nmin, Nmax	! (Nelements)		
 		integer :: Ntable	! number of table entries
-		real, dimension(:), pointer :: Z 
-		real, dimension(:), pointer :: N 
-		real, dimension(:), pointer :: A 
+		integer, dimension(:), pointer :: Z, N, A 
 		real, dimension(:), pointer :: BE !binding energy 
 		real, dimension(:), pointer :: Y !abundance fraction 
 		real :: P !pressure
