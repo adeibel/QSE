@@ -266,8 +266,11 @@
 		 
 		 write(*,*) i
 		 !if (n_b < 5.2d-4) cycle
-		 if (p_ext < 4.26d-3) cycle
-                 write(*,*) 'checking'
+		 !if (p_ext < 4.26d-3) cycle
+         if (p_ext < at% P) cycle
+         
+         write(*,*) p_ext, at% P
+         stop
 		 
 		 mu_n = mu_e/1000.
 

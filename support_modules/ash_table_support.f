@@ -11,6 +11,7 @@ module ash_table
 		real, dimension(:), pointer :: A 
 		real, dimension(:), pointer :: BE !binding energy 
 		real, dimension(:), pointer :: Y !abundance fraction 
+		real :: P !pressure
 	end type ash_table_type
 	logical, save :: ash_table_is_loaded = .FALSE.
 
@@ -103,8 +104,8 @@ contains
 		
 		! now read in the table, skipping first three lines
 		read(iounit,*,iostat=ierr)
-		read(iounit,*,iostat=ierr)
-		read(iounit,*,iostat=ierr)
+		read(iounit,*,iostat=ierr) 
+		read(iounit,*,iostat=ierr) at% P
 		if (ierr /= 0) then
 			call alert(ierr,'ash_table_support: load_ash_table:: unable to read any lines')
 			return
