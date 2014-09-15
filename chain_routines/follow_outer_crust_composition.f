@@ -392,7 +392,8 @@ module outer_crust
 	  A_final(k) = A      
 	  N_final(k) = A-Z   
       end do  ! end of nuclei loop 
-      
+
+      end do	! end of pressure loop       
       ! print final ash file
       write(final_id,'(e10.5)') pressure !add final pressure reached by outer crust solver
   	  do l= 1, at% Ntable
@@ -400,7 +401,6 @@ module outer_crust
 	  write(final_id,'(3(I10,2x),2(e10.5,2x))') Z_final(l), N_final(l), A_final(l), Br, at% Y(l)
 	  enddo 
 	  close(final_id)  	  
-      end do	! end of pressure loop 
       
       call ash_table_shutdown
       write(*,*) 'Finished with outer crust...'

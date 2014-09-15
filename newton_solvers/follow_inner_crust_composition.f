@@ -211,7 +211,7 @@
       m1 = (stencil_zones_subdiagonal+1)*nvar-1 ! number of subdiagonals
       m2 = (stencil_zones_superdiagonal+1)*nvar-1  ! number of superdiagonals
       allocate(fac1(nvar), fac2(nvar), mu_i(nvar), ni(nvar))
-
+      
   	  ! solve for qse distribution at each pressure	  
   	  do i=1, et% Ntable
   	     mu_e = (et% mue(i))*hbarc_n
