@@ -55,10 +55,19 @@
       integer, parameter :: max_lid = 50000, max_lrd = 100000
       integer, target :: ipar_decsol(max_lid)
       real*8, target :: rpar_decsol(max_lrd)
+
+	  type qse_table_type
+		integer :: Ntable	! number of table entries
+		integer, dimension(:), pointer :: Z, N, A 
+		real, dimension(:), pointer :: BE !binding energy 
+		real, dimension(:), pointer :: Y !abundance fraction 
+	  end type qse_table_type      
+	  type(qse_table_type), target :: winvn_qse_table  
       
       type(mass_table_type), pointer :: mt
       type(eos_table_type), pointer :: et
       type(dist_table_type), pointer :: dt
+      type(qse_table_type), pointer :: qt
       real, pointer, dimension(:) :: mu_i, ni
       real,dimension(:),pointer :: hist      
       real*8 :: mu_e, mu_n
@@ -75,7 +84,7 @@
       real :: Pn
       real :: n_b_prev
       integer :: i, j  
-             
+                          
       contains
       
       subroutine follow_inner_crust_composition
@@ -100,7 +109,7 @@
  	  character(len=*), parameter :: dist_table_name = 'ash_final.data'
 	  character(len=*), parameter :: mass_table_name = 'moe95_converted.data'
  	  character(len=*), parameter :: eos_table_name = 'ashes_acc.txt'
-	  character(len=*), parameter :: y_output_file = 'y_output_2.data'
+	  character(len=*), parameter :: y_output_file = 'y_output.data'
       character(len=*), parameter :: output_file = 'qse_output.data'
    	  character(len=*), parameter :: abundance_file = 'qse_abun.data'
    	  character(len=*), parameter :: default_infile = 'qse.inlist'
