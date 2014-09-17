@@ -11,6 +11,11 @@ module dist_table
 		real, dimension(:), pointer :: Y !abundance fraction 
 		real :: P !pressure
 	end type dist_table_type
+	integer :: index
+	integer, dimension(:), allocatable :: Z, N, A 
+	real, dimension(:), allocatable :: BE !binding energy 
+	real, dimension(:), allocatable :: Y !abundance fraction 	
+	logical, dimension(:), allocatable :: abundant_nucleus
 	logical, save :: dist_table_is_loaded = .FALSE.
 
 	type(dist_table_type), target :: winvn_dist_table
@@ -95,10 +100,9 @@ contains
 		ierr = 0
 		dt => winvn_dist_table
 		dt% Ntable = Ntab
-
+		
 		! allocate the tables		
-		allocate(dt% Z(Ntab), dt% N(Ntab), dt% A(Ntab), dt% BE(Ntab), dt% Y(Ntab), &
-			&		dt% Zstart(Ntab), dt% Nmin(Ntab), dt% Nmax(Ntab))
+		allocate(Z(Ntab), N(Ntab), A(Ntab), BE(Ntab), Y(Ntab))
 		
 		! now read in the table, skipping first three lines
 		read(iounit,*,iostat=ierr)
@@ -110,7 +114,7 @@ contains
 		end if
 		
 		do i = 1, dt% Ntable
-			read(iounit,*,iostat=ierr) 	dt% Z(i), dt% N(i), dt% A(i), dt% BE(i), dt% Y(i) 
+			read(iounit,*,iostat=ierr) 	Z(i), N(i), A(i), BE(i), Y(i) 
 			if (ierr /=0) then
 			   call alert(ierr,'dist_table_support: load_dist_table:: unable to read lines')
 			   exit
@@ -119,7 +123,35 @@ contains
 		close(iounit)
 		call free_iounit(iounit)
 
+		allocate(abundant_nucleus(Ntab))
 
+		! set Y cut off, reallocate table accordingly
+		do i = 1, dt% Ntable
+			if (Y(i) > 1.d-20) then
+			abundant_nucleus(i) = .TRUE.
+			else
+			abundant_nucleus(i) = .FALSE.
+			end if
+		end do			
+
+		Ntab = count(abundant_nucleus)
+		allocate(dt% Z(Ntab), dt% N(Ntab), dt% A(Ntab), dt% BE(Ntab), dt% Y(Ntab), &
+			&		dt% Zstart(Ntab), dt% Nmin(Ntab), dt% Nmax(Ntab))
+		
+		index = 1		
+		do i = 1, dt% Ntable
+			if (abundant_nucleus(i) .eqv. .TRUE.) then
+			dt% Z(index) = Z(i)
+			dt% N(index) = N(i)
+			dt% A(index) = A(i)
+			dt% BE(index) = BE(i)
+			dt% Y(index) = Y(i)
+			index = index+1
+			end if
+	    end do		
+		
+		write(*,*) index, count(abundant_nucleus), dt% Z(1)
+		
 		if (ierr == 0) dist_table_is_loaded = .TRUE.
 	end subroutine load_dist_table
 
