@@ -8,7 +8,7 @@
       use mass_table
       use phys_constants
       use eos_table
-      use ash_table
+      use dist_table
       use rootfind      
       use crust_eos_lib      
 
@@ -58,7 +58,7 @@
       
       type(mass_table_type), pointer :: mt
       type(eos_table_type), pointer :: et
-      type(ash_table_type), pointer :: at
+      type(dist_table_type), pointer :: dt
       real, pointer, dimension(:) :: mu_i, ni
       real,dimension(:),pointer :: hist      
       real*8 :: mu_e, mu_n
@@ -97,7 +97,7 @@
       integer :: which_decsol_in, decsol    
  
  	  ! for crust
- 	  character(len=*), parameter :: ash_table_name = 'ash_final.data'
+ 	  character(len=*), parameter :: dist_table_name = 'ash_final.data'
 	  character(len=*), parameter :: mass_table_name = 'moe95_converted.data'
  	  character(len=*), parameter :: eos_table_name = 'ashes_acc.txt'
 	  character(len=*), parameter :: y_output_file = 'y_output_2.data'
@@ -173,17 +173,17 @@
  	  et => winvn_eos_table
  	  write(*,*) 'EOS table loaded...'
 
-	  !load ash table
-	  if (ash_table_is_loaded .eqv. .FALSE.) then
-	  call load_ash_table('../../../data', trim(ash_table_name), ierr)
-	  ash_table_is_loaded = .TRUE.
+	  !load dist table
+	  if (dist_table_is_loaded .eqv. .FALSE.) then
+	  call load_dist_table('../../../data', trim(dist_table_name), ierr)
+	  dist_table_is_loaded = .TRUE.
 	  if (ierr /= 0) then
 	  write(error_unit, '(a)') trim(alert_message)
 	  stop
 	  end if
 	  end if
-	  at => winvn_ash_table
-	  write(*,*) 'Ash table loaded...'
+	  dt => winvn_dist_table
+	  write(*,*) 'Dist table loaded...'
  	  
  	  ! allocate units and open output files   
  	  output_id = alloc_iounit(ierr)
@@ -206,7 +206,7 @@
 
 	  ! set some dimensions
 	  ! make nvar equal to number of entries in mass table + 2 (for n_b and mu_n)
-	  nvar = at% Ntable + 2
+	  nvar = dt% Ntable + 2
 	  neq = nz*nvar
       m1 = (stencil_zones_subdiagonal+1)*nvar-1 ! number of subdiagonals
       m2 = (stencil_zones_superdiagonal+1)*nvar-1  ! number of superdiagonals
@@ -231,14 +231,14 @@
          numerical_jacobian = do_numerical_jacobian
 
 		 ! sets mass fractions to 1d-20 for unpopulated nuclei
-		 do j=1,at% Ntable
+		 do j=1,dt% Ntable
 		 m_star = mn_n-mp_n-me_n
-		 m_nuc = real(at% A(j))*amu_n
+		 m_nuc = real(dt% A(j))*amu_n
          mterm = g*(m_nuc*kT/(twopi*hbarc_n**2))**(1.5)
-         fac1(j) = real(at% A(j))/n_b
+         fac1(j) = real(dt% A(j))/n_b
          fac2(j) = mterm	
          ! set mass fractions from abundance fractions	 
-		 xold(j,1) = log((at% Y(j))/fac1(j)/fac2(j))*kT-at%BE(j)
+		 xold(j,1) = log((dt% Y(j))/fac1(j)/fac2(j))*kT-dt%BE(j)
 		 end do 
 		 		 
 		! electron wave vector fm^-1
@@ -267,13 +267,15 @@
 		 write(*,*) i
 		 !if (n_b < 5.2d-4) cycle
 		 !if (p_ext < 4.26d-3) cycle
-         if (p_ext < at% P) cycle
+         if (p_ext < dt% P) cycle
+         
+         write(*,*) dt% Z, dt% Y
          
 		 mu_n = mu_e/1000.
 
   		 ! initial values of additional variables 
-		 xold(at% Ntable+1,1) = n_b
-		 xold(at% Ntable+2,1) = mu_n 
+		 xold(dt% Ntable+1,1) = n_b
+		 xold(dt% Ntable+2,1) = mu_n 
 		
          dx = 0 ! a not very good starting "guess" for the solution
          x = xold
@@ -325,7 +327,7 @@
          
              
 		 if (nonconv .eqv. .FALSE.) then
-		 n_b = x(at% Ntable+1, 1)
+		 n_b = x(dt% Ntable+1, 1)
          write(y_output_id,'(8(es12.5,2x))') p_ext, n_b, y_e, y_n, Z_bar, A_bar, mu_e, mu_n
          write(*,'(8(es12.5,2x))') p_ext, n_b, y_e, y_n, z_bar, a_bar, mu_e, mu_n
 		 n_b_prev = n_b
@@ -376,11 +378,11 @@
          integer, intent(inout) :: ipar(lipar)
          integer, intent(out) :: ierr
          ierr = 0
-		 do i = 1, at% Ntable
+		 do i = 1, dt% Ntable
 		 mu_i(i) = x(i,1)
 		 enddo
-		 n_b = x(at% Ntable+1,1)			 
-		 mu_n = x(at% Ntable+2,1)
+		 n_b = x(dt% Ntable+1,1)			 
+		 mu_n = x(dt% Ntable+2,1)
       end subroutine set_primaries
       
 
@@ -507,30 +509,30 @@
 		 phi_sum=0.
 
 		
-		 do i = 1, at% Ntable
-		  iso = 1.0-(2.*real(at% Z(i))/real(at% A(i)))
+		 do i = 1, dt% Ntable
+		  iso = 1.0-(2.*real(dt% Z(i))/real(dt% A(i)))
 		  n_nin = (n_0+n_1*iso**2)*(1.0+0.9208*iso)/2.	
-		  R_n = ((real(at% A(i))-real(at% Z(i)))/n_nin/pi*0.75)**onethird 
-		  R_ws = (real(at% Z(i))/n_e/pi*0.75)**onethird		 
+		  R_n = ((real(dt% A(i))-real(dt% Z(i)))/n_nin/pi*0.75)**onethird 
+		  R_ws = (real(dt% Z(i))/n_e/pi*0.75)**onethird		 
           !number density of isotopes
 		  m_star = mn_n-mp_n-me_n !does not contain m_e because mu_e has rest mass in definition 
-		  m_nuc = real(at%A(i))*amu_n 
+		  m_nuc = real(dt%A(i))*amu_n 
      	  m_term = g*(twopi*hbarc_n**2/(m_nuc*kT))**(-3.0/2.0)
-     	  ni(i) = m_term*exp((mu_i(i)+at%BE(i))/kT)
+     	  ni(i) = m_term*exp((mu_i(i)+dt%BE(i))/kT)
      	  phi = 1.25*pi*R_n**3*ni(i)
      	  phi_sum = phi+phi_sum
 		  !for baryon conservation
-		  as(i) = real(at% A(i))*m_term*exp((mu_i(i)+at%BE(i))/kT)	 
+		  as(i) = real(dt% A(i))*m_term*exp((mu_i(i)+dt%BE(i))/kT)	 
 		  Asum = Asum + as(i) 
-		  ni_Asum = ni_Asum + m_term*exp((mu_i(i)+at%BE(i))/kT)/n_b	
+		  ni_Asum = ni_Asum + m_term*exp((mu_i(i)+dt%BE(i))/kT)/n_b	
 		  Ai = Ai + as(i)/n_b
 		  !for charge conservation
-		  zs(i) = real(at% Z(i))*m_term*exp((mu_i(i)+at%BE(i))/kT)
+		  zs(i) = real(dt% Z(i))*m_term*exp((mu_i(i)+dt%BE(i))/kT)
 		  Zsum = Zsum + zs(i)
-		  ni_Zsum = ni_Zsum + m_term*exp((mu_i(i)+at%BE(i))/kT)/n_b	
+		  ni_Zsum = ni_Zsum + m_term*exp((mu_i(i)+dt%BE(i))/kT)/n_b	
 		  Zi = Zi + zs(i)/n_b
 		  !detailed balance
-		  equ(i,1) = real(at% Z(i))*(mu_n-mu_e+m_star)+(real(at% A(i))-real(at% Z(i)))*mu_n-mu_i(i) 
+		  equ(i,1) = real(dt% Z(i))*(mu_n-mu_e+m_star)+(real(dt% A(i))-real(dt% Z(i)))*mu_n-mu_i(i) 
 		 enddo
 
 		 Zbar = Zi/ni_Zsum
@@ -540,8 +542,8 @@
  		 chi = phi_sum 
 	     Y_n = n_n*(1.-chi)/n_b   
   		 !baryon and charge conservation 
-         equ(at% Ntable+1,1) = Zsum - n_e
-         equ(at% Ntable+2,1) = Asum - n_b + n_n*(1.0-chi)  
+         equ(dt% Ntable+1,1) = Zsum - n_e
+         equ(dt% Ntable+2,1) = Asum - n_b + n_n*(1.0-chi)  
       end subroutine eval_equ
           
       subroutine eval_jacobian(ldA, A, idiag, lrpar, rpar, lipar, ipar, ierr)
@@ -739,18 +741,18 @@
          integer, intent(out) :: ierr
          ierr = 0
 		 ! set bounds of variables
- 		 x(at% Ntable+1, 1) = max(n_b_prev, x(at% Ntable+1,1))
- 		 x(at% Ntable+2,1) = abs(x(at% Ntable+2,1))
+ 		 x(dt% Ntable+1, 1) = max(n_b_prev, x(dt% Ntable+1,1))
+ 		 x(dt% Ntable+2,1) = abs(x(dt% Ntable+2,1))
  		 
- 		 dx(at% Ntable+1,1) = x(at% Ntable+1,1)-xold(at% Ntable+1,1)     
-		 dx(at% Ntable+2,1) = x(at% Ntable+2,1)-xold(at% Ntable+2,1)     
- 		 x(at% Ntable+1,1) = xold(at%Ntable+1,1)+dx(at%Ntable+1,1)     
-		 x(at% Ntable+2,1) = xold(at%Ntable+2,1)+dx(at%Ntable+2,1)     
+ 		 dx(dt% Ntable+1,1) = x(dt% Ntable+1,1)-xold(dt% Ntable+1,1)     
+		 dx(dt% Ntable+2,1) = x(dt% Ntable+2,1)-xold(dt% Ntable+2,1)     
+ 		 x(dt% Ntable+1,1) = xold(dt%Ntable+1,1)+dx(dt%Ntable+1,1)     
+		 x(dt% Ntable+2,1) = xold(dt%Ntable+2,1)+dx(dt%Ntable+2,1)     
  		 
- 		 if (x(at% Ntable+1,1) < n_b_prev) then
- 		 x(at% Ntable+1,1) = n_b_prev
- 		 dx(at% Ntable+1,1) = x(at% Ntable+1,1)-xold(at% Ntable+1,1) 
- 		 x(at% Ntable+1,1) = xold(at% Ntable+1,1)+dx(at% Ntable+1,1) 
+ 		 if (x(dt% Ntable+1,1) < n_b_prev) then
+ 		 x(dt% Ntable+1,1) = n_b_prev
+ 		 dx(dt% Ntable+1,1) = x(dt% Ntable+1,1)-xold(dt% Ntable+1,1) 
+ 		 x(dt% Ntable+1,1) = xold(dt% Ntable+1,1)+dx(dt% Ntable+1,1) 
  		 end if
 
       end subroutine xdomain          
