@@ -278,7 +278,7 @@
 		 !if (p_ext < 4.26d-3) cycle
          if (p_ext < dt% P) cycle
          
-         write(*,*) dt% Z, dt% Y
+         call check_all_rxns
          
 		 mu_n = mu_e/1000.
 
@@ -350,7 +350,7 @@
         close(y_output_id)  
          
          contains         
-         
+                  
          subroutine do_newt(decsol, decsolblk, decsols)
             interface
                include "mtx_decsol.dek"
@@ -764,6 +764,257 @@
  		 x(dt% Ntable+1,1) = xold(dt% Ntable+1,1)+dx(dt% Ntable+1,1) 
  		 end if
 
-      end subroutine xdomain          
+      end subroutine xdomain   
+      
+      subroutine check_all_rxns
+      integer :: i, j
+      integer :: Z, A
+	  integer :: Zr, Ar, Nr
+	  real :: Sn, S2n, Sp, S2p, B, ecthresh, bthresh, VN
+	  real :: Snr, S2nr, Spr, S2pr, Br, ecthreshr, bthreshr, VNr
+	  integer, parameter :: ineg = 1, ipos = 2
+	  integer, parameter :: max_iterations = 100
+	  real, parameter :: del_m = mn_n-mp_n-me_n
+      logical, dimension(max_iterations) :: neutron_capture, dineutron_capture
+	  logical, dimension(max_iterations) :: neutron_emission, dineutron_emission
+	  logical, dimension(max_iterations) :: en_rxn, enn_rxn, ne_rxn, nne_rxn
+      
+      	  ! set defaults
+	  neutron_capture = .FALSE.
+	  neutron_emission = .FALSE.
+	  dineutron_capture = .FALSE.
+	  dineutron_emission = .FALSE.
+	  en_rxn = .FALSE.
+	  enn_rxn = .FALSE. 
+	  ne_rxn = .FALSE.
+	  nne_rxn = .FALSE.
+	 
+	  do i = 1, dt% Ntable
+	 
+	  Z = dt% Z(i)
+	  A = dt% A(i)
+	 
+      ! loop over rxns 
+      do iter = 1, max_iterations
+   	  !get properties of nucleus that is being pushed deeper
+	  call get_nucleus_properties(dt% Z(i),dt% A(i),id,B,Sn,S2n,Sp,S2p,ecthresh,bthresh,VN,ierr)
+	 
+      ! check for weak reactions                 
+      ! electron capture
+      Ar = A; Zr = Z-1
+      Nr = Ar-Zr
+!      index= Zr - mt%Zmin + 1
+!      if (Nr < mt% Nmin(index) .or. Nr > mt% Nmax(index)) exit
+      if (Zr < mt% Zmin .or. Zr > mt% Zmax) exit
+      call get_nucleus_properties(Zr,Ar,id,Br,Snr,S2nr,Spr,S2pr, &
+      		&	ecthreshr,bthreshr,VNr,ierr)
+      if (ierr /= 0) then
+         write(error_unit,'((a,2x),2(i4,2x))') 'unable to find nucleus', Zr, Ar
+!         stop
+         exit
+      end if
+      alpha(ineg) = del_m - mu_e + (B-Br)
+      if (alpha(ineg) < 0) then
+         rxn = '(e,)'
+         call print_reaction
+         A = Ar; Z = Zr
+         cycle
+      end if
+      
+      ! electron emission
+      Ar = A; Zr = Z+1
+      Nr = Ar-Zr
+!      index= Zr - mt%Zmin + 1
+!      if (Nr < mt% Nmin(index) .or. Nr > mt% Nmax(index)) exit
+      if (Zr < mt% Zmin .or. Zr > mt% Zmax) exit
+      call get_nucleus_properties(Zr,Ar,id,Br,Snr,S2nr,Spr,S2pr,ecthreshr,bthreshr,VNr,ierr)
+      if (ierr /= 0) then
+         write(error_unit,'((a,2x),2(i4,2x))') 'unable to find nucleus', Zr, Ar
+!         stop
+         exit
+      end if
+      alpha(ipos) = mu_e - del_m + (B - Br)
+      if (alpha(ipos) < 0) then
+         rxn = '(,e)'
+         call print_reaction
+         A = Ar; Z = Zr
+         cycle
+      end if
+      
+      ! electron capture followed by neutron emission 
+      Ar = A-1; Zr = Z-1
+      Nr = Ar-Zr
+!      index= Zr - mt%Zmin + 1
+!      if (Nr < mt% Nmin(index) .or. Nr > mt% Nmax(index)) exit
+      if (Zr < mt% Zmin .or. Zr > mt% Zmax) exit    
+      call get_nucleus_properties(Zr,Ar,id,Br,Snr,S2nr,Spr,S2pr,ecthreshr,bthreshr,VNr,ierr)
+      if (ierr /= 0) then
+         write(error_unit,'((a,2x),2(i4,2x))') 'unable to find nucleus', Zr, Ar
+!         stop
+         exit
+      end if
+      beta(ineg) = mu_n - mu_e + del_m + (B - Br)
+      if (beta(ineg) < 0) then
+      	 en_rxn(iter) = .TRUE.
+         rxn = '(e,n)'
+         call print_reaction
+         A = Ar; Z = Zr
+         cycle
+      end if
+            
+      ! electron capture followed by dineutron emission
+      Ar = A-2; Zr = Z-1
+      Nr = Ar-Zr
+!      index= Zr - mt%Zmin + 1
+!      if (Nr < mt% Nmin(index) .or. Nr > mt% Nmax(index)) exit
+      if (Zr < mt% Zmin .or. Zr > mt% Zmax) exit
+      call get_nucleus_properties(Zr,Ar,id,Br,Snr,S2nr,Spr,S2pr,ecthreshr,bthreshr,VNr,ierr)
+      if (ierr /= 0) then
+         write(error_unit,'((a,2x),2(i4,2x))') 'unable to find nucleus', Zr, Ar
+!         stop
+         exit
+      end if
+      beta(ipos) = 2.0*mu_n - mu_e + del_m + (B - Br)
+      if (beta(ipos) < 0) then
+      	 enn_rxn(iter) = .TRUE.
+         rxn = '(e,2n)'
+         call print_reaction
+         A = Ar; Z = Zr
+         cycle
+      end if
+      
+      cycle
+      
+      ! check for strong reactions     
+      ! neutron capture
+      Ar = A+1; Zr = Z
+      Nr = Ar-Zr
+!      index= Zr - mt%Zmin + 1
+!      if (Nr < mt% Nmin(index) .or. Nr > mt% Nmax(index)) exit
+      if (Zr < mt% Zmin .or. Zr > mt% Zmax) exit  
+      call get_nucleus_properties(Zr,Ar,id,Br,Snr,S2nr,Spr,S2pr,ecthreshr,bthreshr,VNr,ierr)
+      if (ierr /= 0) then
+         write(error_unit,'((a,2x),2(i4,2x))') 'unable to find nucleus', Zr, Ar
+!         stop
+         exit
+      end if
+      gamma(ineg) = -mu_n + (B-Br)
+      if (gamma(ineg) < 0) then
+         neutron_capture(iter) = .TRUE.
+         rxn = '(n,)'
+         call print_reaction
+         A = Ar; Z = Zr
+         cycle
+      end if
+      
+      ! neutron emission
+      Ar = A-1; Zr = Z
+      Nr = Ar-Zr
+!      index= Zr - mt%Zmin + 1
+!      if (Nr < mt% Nmin(index) .or. Nr > mt% Nmax(index)) exit
+      if (Zr < mt% Zmin .or. Zr > mt% Zmax) exit     
+      call get_nucleus_properties(Zr,Ar,id,Br,Snr,S2nr,Spr,S2pr,ecthreshr,bthreshr,VNr,ierr)
+      if (ierr /= 0) then
+         write(error_unit,'((a,2x),2(i4,2x))') 'unable to find nucleus', Zr, Ar
+!         stop
+         exit
+      end if
+      gamma(ipos) = mu_n + (B-Br)
+      if (gamma(ipos) < 0) then
+         neutron_emission(iter) = .TRUE.
+         rxn = '(,n)'
+         call print_reaction
+         A = Ar; Z = Zr
+         cycle
+      end if
+      
+      ! dineutron capture
+      Ar = A+2; Zr = Z
+      Nr = Ar-Zr
+!      index= Zr - mt%Zmin + 1
+!      if (Nr < mt% Nmin(index) .or. Nr > mt% Nmax(index)) exit
+      if (Zr < mt% Zmin .or. Zr > mt% Zmax) exit      
+      call get_nucleus_properties(Zr,Ar,id,Br,Snr,S2nr,Spr,S2pr,ecthreshr,bthreshr,VNr,ierr)
+      if (ierr /= 0) then
+         write(error_unit,'((a,2x),2(i4,2x))') 'unable to find nucleus', Zr, Ar
+!         stop
+         exit
+      end if
+      delta(ineg) = -2.0*mu_n + (B-Br)
+      if (delta(ineg) < 0) then
+      	 dineutron_capture(iter) = .TRUE.
+         rxn = '(2n,)'
+         call print_reaction
+         A = Ar; Z = Zr
+         cycle
+      end if
+      
+      ! dineutron emission
+      Ar = A-2; Zr = Z
+      Nr = Ar-Zr
+!      index= Zr - mt%Zmin + 1
+!      if (Nr < mt% Nmin(index) .or. Nr > mt% Nmax(index)) exit
+      if (Zr < mt% Zmin .or. Zr > mt% Zmax) exit     
+      call get_nucleus_properties(Zr,Ar,id,Br,Snr,S2nr,Spr,S2pr,ecthreshr,bthreshr,VNr,ierr)
+      if (ierr /= 0) then
+         write(error_unit,'((a,2x),2(i4,2x))') 'unable to find nucleus', Zr, Ar
+!         stop
+         exit
+      end if
+      delta(ipos) = 2.0*mu_n + (B-Br)
+      if (delta(ipos) < 0) then
+         dineutron_emission(iter) = .TRUE.
+         rxn = '(,2n)'
+         call print_reaction
+         A = Ar; Z = Zr
+         cycle
+      end if      
+         
+      ! neutron capture followed by electron emission
+      Ar = A+1; Zr = Z+1
+      Nr = Ar-Zr
+!      index= Zr - mt%Zmin + 1
+!      if (Nr < mt% Nmin(index) .or. Nr > mt% Nmax(index)) exit
+      if (Zr < mt% Zmin .or. Zr > mt% Zmax) exit 
+      call get_nucleus_properties(Zr,Ar,id,Br,Snr,S2nr,Spr,S2pr,ecthreshr,bthreshr,VNr,ierr)
+      if (ierr /= 0) then
+         write(error_unit,'((a,2x),2(i4,2x))') 'unable to find nucleus', Zr, Ar
+ !        stop
+         exit
+      end if
+      epsilon(ineg) = mu_e - mu_n - del_m + (B-Br)
+      if (epsilon(ineg) < 0) then
+      	 ne_rxn(iter) = .TRUE.
+         rxn = '(n,e)'
+         call print_reaction
+         A = Ar; Z = Zr
+         cycle
+      end if
+      
+      !dineutron capture followed by electron emission
+      Ar = A+2; Zr = Z+1
+      Nr = Ar-Zr
+!      index= Zr - mt%Zmin + 1
+!      if (Nr < mt% Nmin(index) .or. Nr > mt% Nmax(index)) exit
+      if (Zr < mt% Zmin .or. Zr > mt% Zmax) exit   
+      call get_nucleus_properties(Zr,Ar,id,Br,Snr,S2nr,Spr,S2pr,ecthreshr,bthreshr,Vnr,ierr)
+      if (ierr /= 0) then
+      	 write(error_unit, '((a,2x),2(i4,2x))') 'unable to find nucleus', Zr, Ar
+!      	 stop
+      	 exit
+      end if
+      epsilon(ipos) = mu_e - 2.0*mu_n - del_m + (B-Br)
+      if (epsilon(ipos) < 0) then
+      	 nne_rxn(iter) = .TRUE.
+      	 rxn = '(2n,e)'
+      	 call print_reaction
+      	 A = Ar; Z = Zr
+      	 cycle
+      end if 
+      
+      end do  ! end of iteration loop      
+      end do ! end of dt% table loop
+      
+      end subroutine check_all_rxns       
           
     end module inner_crust
