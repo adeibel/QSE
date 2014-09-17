@@ -14,7 +14,7 @@ module dist_table
 	integer :: index
 	integer, dimension(:), allocatable :: Z, N, A 
 	real, dimension(:), allocatable :: BE !binding energy 
-	real, dimension(:), allocatable :: Y !abundance fraction 	
+	real, dimension(:), allocatable :: YY !abundance fraction 	
 	logical, dimension(:), allocatable :: abundant_nucleus
 	logical, save :: dist_table_is_loaded = .FALSE.
 
@@ -102,7 +102,7 @@ contains
 		dt% Ntable = Ntab
 		
 		! allocate the tables		
-		allocate(Z(Ntab), N(Ntab), A(Ntab), BE(Ntab), Y(Ntab))
+		allocate(Z(Ntab), N(Ntab), A(Ntab), BE(Ntab), YY(Ntab))
 		
 		! now read in the table, skipping first three lines
 		read(iounit,*,iostat=ierr)
@@ -114,7 +114,7 @@ contains
 		end if
 		
 		do i = 1, dt% Ntable
-			read(iounit,*,iostat=ierr) 	Z(i), N(i), A(i), BE(i), Y(i) 
+			read(iounit,*,iostat=ierr) 	Z(i), N(i), A(i), BE(i), YY(i) 
 			if (ierr /=0) then
 			   call alert(ierr,'dist_table_support: load_dist_table:: unable to read lines')
 			   exit
@@ -127,7 +127,7 @@ contains
 
 		! set Y cut off, reallocate table accordingly
 		do i = 1, dt% Ntable
-			if (Y(i) > 1.d-20) then
+			if (YY(i) > 1.d-20) then
 			abundant_nucleus(i) = .TRUE.
 			else
 			abundant_nucleus(i) = .FALSE.
@@ -145,13 +145,12 @@ contains
 			dt% N(index) = N(i)
 			dt% A(index) = A(i)
 			dt% BE(index) = BE(i)
-			dt% Y(index) = Y(i)
+			dt% Y(index) = YY(i)
 			index = index+1
 			end if
 	    end do		
-		
-		write(*,*) index, count(abundant_nucleus), dt% Z(1)
-		
+	    dt% Ntable = count(abundant_nucleus)
+				
 		if (ierr == 0) dist_table_is_loaded = .TRUE.
 	end subroutine load_dist_table
 
