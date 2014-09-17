@@ -278,7 +278,7 @@
 		 !if (p_ext < 4.26d-3) cycle
          if (p_ext < dt% P) cycle
          
-         call check_all_rxns
+         call check_all_rxns(mu_e, mu_n)
          
 		 mu_n = mu_e/1000.
 
@@ -766,7 +766,8 @@
 
       end subroutine xdomain   
       
-      subroutine check_all_rxns
+      subroutine check_all_rxns(mu_e,mu_n)
+      real :: pressure, mu_e, mu_n
       integer :: i, j
       integer :: Z, A
 	  integer :: Zr, Ar, Nr
@@ -778,6 +779,10 @@
       logical, dimension(max_iterations) :: neutron_capture, dineutron_capture
 	  logical, dimension(max_iterations) :: neutron_emission, dineutron_emission
 	  logical, dimension(max_iterations) :: en_rxn, enn_rxn, ne_rxn, nne_rxn
+	  real :: alpha(2), beta(2), gamma(2), delta(2), epsilon(2)
+	  integer :: ierr, id, ios, iter, iZ, iZb, iZe, iEq(1) 
+	  character(len=6) :: rxn
+
       
       	  ! set defaults
 	  neutron_capture = .FALSE.
@@ -797,7 +802,7 @@
       ! loop over rxns 
       do iter = 1, max_iterations
    	  !get properties of nucleus that is being pushed deeper
-	  call get_nucleus_properties(dt% Z(i),dt% A(i),id,B,Sn,S2n,Sp,S2p,ecthresh,bthresh,VN,ierr)
+	  call get_nucleus_properties(Z,A,id,B,Sn,S2n,Sp,S2p,ecthresh,bthresh,VN,ierr)
 	 
       ! check for weak reactions                 
       ! electron capture
@@ -1016,5 +1021,29 @@
       end do ! end of dt% table loop
       
       end subroutine check_all_rxns       
+
+	 subroutine get_nucleus_properties(Z,A,id,BE,Sn,S2n,Sp,S2p,ecthresh,bthresh,VN,ierr)
+		integer, intent(in) :: Z,A
+		integer, intent(out) :: id
+		real, intent(out) :: BE,Sn,S2n,Sp,S2p,ecthresh,bthresh,VN
+		integer, intent(out) :: ierr
+		integer :: N		
+		ierr = 0
+		N = A-Z
+		id = mass_table_index(Z,N,ierr)
+		if (ierr /= 0) return
+		! set the properties
+		BE = mt% BE(id)
+	 end subroutine get_nucleus_properties
+	
+	 subroutine print_reaction()
+		character(len=*), parameter :: form = '(3(e12.5,2x),2(i4,2x),(a6,2x),2(i4,2x))'
+		!write (*,form) pressure,mu_n,mu_e,Z,A,rxn,Zr,Ar
+	 end subroutine print_reaction
+	 	
+	 subroutine print_reaction_check()
+		character(len=*), parameter :: form = '((a6),2(i6))'
+	!	write(*,form) rxn, Z, A
+	 end subroutine print_reaction_check
           
     end module inner_crust
