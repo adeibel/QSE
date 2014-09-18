@@ -129,6 +129,7 @@
       	&	do_numerical_jacobian, which_decsol_in
       	
       allocate(mu_i(nvar), ni(nvar))
+      qt => winvn_qse_table
      
       ! set the name of the inlist file name  
       if (command_argument_count() == 1) then
@@ -278,7 +279,10 @@
 		 !if (p_ext < 4.26d-3) cycle
          if (p_ext < dt% P) cycle
          
-         call check_all_rxns(mu_e, mu_n)
+         write(*,*) 'entering check all rxns'
+         call check_all_rxns
+         
+         stop
          
 		 mu_n = mu_e/1000.
 
@@ -766,13 +770,13 @@
 
       end subroutine xdomain   
       
-      subroutine check_all_rxns(mu_e,mu_n)
-      real :: pressure, mu_e, mu_n
+      subroutine check_all_rxns
+      real :: pressure
 	  real :: Sn, S2n, Sp, S2p, B, ecthresh, bthresh, VN
 	  real :: Snr, S2nr, Spr, S2pr, Br, ecthreshr, bthreshr, VNr 
 	  real :: alpha(2), beta(2), gamma(2), delta(2), epsilon(2)
 	  real, parameter :: del_m = mn_n-mp_n-me_n
-      integer :: i, j
+      integer :: i, j, index
       integer :: Z, A
 	  integer :: Zr, Ar, Nr
 	  integer :: ierr, id, ios, iter, iZ, iZb, iZe, iEq(1) 	  
@@ -781,10 +785,8 @@
       logical, dimension(max_iterations) :: neutron_capture, dineutron_capture
 	  logical, dimension(max_iterations) :: neutron_emission, dineutron_emission
 	  logical, dimension(max_iterations) :: en_rxn, enn_rxn, ne_rxn, nne_rxn
-	  logical, dimension(*), allocatable :: nucleus_appears
 	  character(len=6) :: rxn
 
-      
       ! set defaults
 	  neutron_capture = .FALSE.
 	  neutron_emission = .FALSE.
@@ -794,18 +796,29 @@
 	  enn_rxn = .FALSE. 
 	  ne_rxn = .FALSE.
 	  nne_rxn = .FALSE.
-	  allocate(nucleus_appears(mt% Ntable))
+ 
+	  allocate(qt% Z(mt% Ntable), qt% A(mt% Ntable), qt% BE(mt% Ntable))
+	  index = 1
+
+	  do j = 1, dt% Ntable
 	 
-	  do i = 1, dt% Ntable
-	 
-	  Z = dt% Z(i)
-	  A = dt% A(i)
+	  Z = dt% Z(j)
+	  A = dt% A(j)
 	 
       ! loop over rxns 
       do iter = 1, max_iterations
    	  !get properties of nucleus that is being pushed deeper
 	  call get_nucleus_properties(Z,A,id,B,Sn,S2n,Sp,S2p,ecthresh,bthresh,VN,ierr)
-	 
+      
+      qt% Z(index) = Z
+      qt% A(index) = A
+      qt% BE(index) = B
+      index = index+1
+      if (index > mt% Ntable) then
+      write(*,*) 'need to allocate more space for qse_table_type'
+      stop
+      end if
+
       ! check for weak reactions                 
       ! electron capture
       Ar = A; Zr = Z-1
@@ -823,7 +836,7 @@
       alpha(ineg) = del_m - mu_e + (B-Br)
       if (alpha(ineg) < 0) then
          rxn = '(e,)'
-         call print_reaction
+         call print_reaction_check
          A = Ar; Z = Zr
          cycle
       end if
@@ -843,7 +856,7 @@
       alpha(ipos) = mu_e - del_m + (B - Br)
       if (alpha(ipos) < 0) then
          rxn = '(,e)'
-         call print_reaction
+         call print_reaction_check
          A = Ar; Z = Zr
          cycle
       end if
@@ -864,7 +877,7 @@
       if (beta(ineg) < 0) then
       	 en_rxn(iter) = .TRUE.
          rxn = '(e,n)'
-         call print_reaction
+         call print_reaction_check
          A = Ar; Z = Zr
          cycle
       end if
@@ -885,7 +898,7 @@
       if (beta(ipos) < 0) then
       	 enn_rxn(iter) = .TRUE.
          rxn = '(e,2n)'
-         call print_reaction
+         call print_reaction_check
          A = Ar; Z = Zr
          cycle
       end if
@@ -909,7 +922,7 @@
       if (gamma(ineg) < 0) then
          neutron_capture(iter) = .TRUE.
          rxn = '(n,)'
-         call print_reaction
+         call print_reaction_check
          A = Ar; Z = Zr
          cycle
       end if
@@ -930,7 +943,7 @@
       if (gamma(ipos) < 0) then
          neutron_emission(iter) = .TRUE.
          rxn = '(,n)'
-         call print_reaction
+         call print_reaction_check
          A = Ar; Z = Zr
          cycle
       end if
@@ -951,7 +964,7 @@
       if (delta(ineg) < 0) then
       	 dineutron_capture(iter) = .TRUE.
          rxn = '(2n,)'
-         call print_reaction
+         call print_reaction_check
          A = Ar; Z = Zr
          cycle
       end if
@@ -972,7 +985,7 @@
       if (delta(ipos) < 0) then
          dineutron_emission(iter) = .TRUE.
          rxn = '(,2n)'
-         call print_reaction
+         call print_reaction_check
          A = Ar; Z = Zr
          cycle
       end if      
@@ -993,7 +1006,7 @@
       if (epsilon(ineg) < 0) then
       	 ne_rxn(iter) = .TRUE.
          rxn = '(n,e)'
-         call print_reaction
+         call print_reaction_check
          A = Ar; Z = Zr
          cycle
       end if
@@ -1014,14 +1027,14 @@
       if (epsilon(ipos) < 0) then
       	 nne_rxn(iter) = .TRUE.
       	 rxn = '(2n,e)'
-      	 call print_reaction
+      	 call print_reaction_check
       	 A = Ar; Z = Zr
       	 cycle
       end if 
       
       end do  ! end of iteration loop      
       end do ! end of dt% table loop
-      
+
       end subroutine check_all_rxns       
 
 	 subroutine get_nucleus_properties(Z,A,id,BE,Sn,S2n,Sp,S2p,ecthresh,bthresh,VN,ierr)
@@ -1031,7 +1044,7 @@
 		integer, intent(out) :: ierr
 		integer :: N		
 		ierr = 0
-		N = A-Z
+		N = A-Z	
 		id = mass_table_index(Z,N,ierr)
 		if (ierr /= 0) return
 		! set the properties
@@ -1045,7 +1058,8 @@
 	 	
 	 subroutine print_reaction_check()
 		character(len=*), parameter :: form = '((a6),2(i6))'
-	!	write(*,form) rxn, Z, A
+		character(len=6) :: rxn
+		write(*,form) rxn, Z, A
 	 end subroutine print_reaction_check
           
     end module inner_crust
