@@ -768,23 +768,24 @@
       
       subroutine check_all_rxns(mu_e,mu_n)
       real :: pressure, mu_e, mu_n
+	  real :: Sn, S2n, Sp, S2p, B, ecthresh, bthresh, VN
+	  real :: Snr, S2nr, Spr, S2pr, Br, ecthreshr, bthreshr, VNr 
+	  real :: alpha(2), beta(2), gamma(2), delta(2), epsilon(2)
+	  real, parameter :: del_m = mn_n-mp_n-me_n
       integer :: i, j
       integer :: Z, A
 	  integer :: Zr, Ar, Nr
-	  real :: Sn, S2n, Sp, S2p, B, ecthresh, bthresh, VN
-	  real :: Snr, S2nr, Spr, S2pr, Br, ecthreshr, bthreshr, VNr
+	  integer :: ierr, id, ios, iter, iZ, iZb, iZe, iEq(1) 	  
 	  integer, parameter :: ineg = 1, ipos = 2
 	  integer, parameter :: max_iterations = 100
-	  real, parameter :: del_m = mn_n-mp_n-me_n
       logical, dimension(max_iterations) :: neutron_capture, dineutron_capture
 	  logical, dimension(max_iterations) :: neutron_emission, dineutron_emission
 	  logical, dimension(max_iterations) :: en_rxn, enn_rxn, ne_rxn, nne_rxn
-	  real :: alpha(2), beta(2), gamma(2), delta(2), epsilon(2)
-	  integer :: ierr, id, ios, iter, iZ, iZb, iZe, iEq(1) 
+	  logical, dimension(*), allocatable :: nucleus_appears
 	  character(len=6) :: rxn
 
       
-      	  ! set defaults
+      ! set defaults
 	  neutron_capture = .FALSE.
 	  neutron_emission = .FALSE.
 	  dineutron_capture = .FALSE.
@@ -793,6 +794,7 @@
 	  enn_rxn = .FALSE. 
 	  ne_rxn = .FALSE.
 	  nne_rxn = .FALSE.
+	  allocate(nucleus_appears(mt% Ntable))
 	 
 	  do i = 1, dt% Ntable
 	 
