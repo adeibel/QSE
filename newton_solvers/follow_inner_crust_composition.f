@@ -280,7 +280,7 @@
          
          write(*,*) 'found correct pressure, starting qse solver'
          
-         mu_n = mu_e/1000.
+         mu_n = mu_e/10.
          
   		 ! initial values of additional variables 
 		 xold(dt% Ntable+1,1) = n_b
