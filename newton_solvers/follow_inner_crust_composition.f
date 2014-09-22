@@ -779,6 +779,7 @@
       integer :: i, j, index, Ntable
       integer :: Z, A
 	  integer :: Zr, Ar, Nr
+	  integer :: Z_in, A_in
 	  integer :: ierr, id, ios, iter, iZ, iZb, iZe, iEq(1) 	  
 	  integer, parameter :: ineg = 1, ipos = 2
 	  integer, parameter :: max_iterations = 100
@@ -801,9 +802,9 @@
       if (.not. dt_table_used) then
       Ntable = dt% Ntable
 	  allocate(qt% Z(mt% Ntable), qt% A(mt% Ntable), qt% BE(mt% Ntable))
-	  index = 1      
-      end if
- 	  if (dt_table_used) then
+	  index = 1  
+	  dt_table_used = .true.    
+      else
  	  Ntable = qt% Ntable
  	  index = qt% Ntable+1
  	  end if
@@ -813,9 +814,11 @@
 	  if (.not. dt_table_used) then
 	  Z = dt% Z(j)
 	  A = dt% A(j)
+	  Z_in = Z ; A_in = A
 	  else
 	  Z = qt% Z(j)
 	  A = qt% A(j)
+	  Z_in = Z ; A_in = A
 	  end if
 	 
       ! loop over rxns 
@@ -823,10 +826,12 @@
    	  !get properties of nucleus that is being pushed deeper
 	  call get_nucleus_properties(Z,A,id,B,Sn,S2n,Sp,S2p,ecthresh,bthresh,VN,ierr)
       
+      if (Z /= Z_in .and. A /= A_in) then
       qt% Z(index) = Z
       qt% A(index) = A
       qt% BE(index) = B
       index = index+1
+      end if
       if (index > mt% Ntable) then
       write(*,*) 'need to allocate more space for qse_table_type'
       stop
