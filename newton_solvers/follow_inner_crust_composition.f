@@ -806,8 +806,6 @@
       Ntable = dt% Ntable
 	  allocate(qt% Z(mt% Ntable), qt% A(mt% Ntable), qt% BE(mt% Ntable))
 	  index = 1  
-	  call dist_table_shutdown
-	  dt_table_used = .true.    
       else
  	  Ntable = qt% Ntable
  	  index = qt% Ntable+1
@@ -921,8 +919,6 @@
          A = Ar; Z = Zr
          cycle
       end if
-      
-      cycle
       
       ! check for strong reactions     
       ! neutron capture
@@ -1051,10 +1047,18 @@
       	 cycle
       end if 
       
+      exit
+      
       end do  ! end of iteration loop      
       end do ! end of dt% table loop
 
 	  qt% Ntable = index-1
+
+	  ! flip logical for dt% 
+	  if (dt_table_used .eqv. .false.) then
+	  dt_table_used = .true.
+	  call dist_table_shutdown
+	  end if
 
       end subroutine check_all_rxns       
 
