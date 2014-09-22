@@ -279,13 +279,13 @@
 		 !if (p_ext < 4.26d-3) cycle
          if (p_ext < dt% P) cycle
          
+         mu_n = mu_e/1000.
+
          write(*,*) 'entering check all rxns'
-         call check_all_rxns
+         call check_all_rxns(mu_e, mu_n)
          
          stop
          
-		 mu_n = mu_e/1000.
-
   		 ! initial values of additional variables 
 		 xold(dt% Ntable+1,1) = n_b
 		 xold(dt% Ntable+2,1) = mu_n 
@@ -770,7 +770,8 @@
 
       end subroutine xdomain   
       
-      subroutine check_all_rxns
+      subroutine check_all_rxns(mu_e, mu_n)
+      real, intent(in) :: mu_e, mu_n
       real :: pressure
 	  real :: Sn, S2n, Sp, S2p, B, ecthresh, bthresh, VN
 	  real :: Snr, S2nr, Spr, S2pr, Br, ecthreshr, bthreshr, VNr 
@@ -1059,7 +1060,7 @@
 	 subroutine print_reaction_check()
 		character(len=*), parameter :: form = '((a6),2(i6))'
 		character(len=6) :: rxn
-		write(*,form) rxn, Z, A
+		!write(*,form) rxn, Z, A
 	 end subroutine print_reaction_check
           
     end module inner_crust
