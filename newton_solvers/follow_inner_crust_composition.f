@@ -281,7 +281,6 @@
          
          mu_n = mu_e/1000.
 
-         write(*,*) 'entering check all rxns'
          call check_all_rxns(mu_e, mu_n)
          
          stop
@@ -1035,6 +1034,8 @@
       
       end do  ! end of iteration loop      
       end do ! end of dt% table loop
+
+	  qt% Ntable = index-1
 
       end subroutine check_all_rxns       
 
