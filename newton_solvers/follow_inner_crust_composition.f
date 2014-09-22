@@ -776,12 +776,13 @@
 	  real :: Snr, S2nr, Spr, S2pr, Br, ecthreshr, bthreshr, VNr 
 	  real :: alpha(2), beta(2), gamma(2), delta(2), epsilon(2)
 	  real, parameter :: del_m = mn_n-mp_n-me_n
-      integer :: i, j, index
+      integer :: i, j, index, Ntable
       integer :: Z, A
 	  integer :: Zr, Ar, Nr
 	  integer :: ierr, id, ios, iter, iZ, iZb, iZe, iEq(1) 	  
 	  integer, parameter :: ineg = 1, ipos = 2
 	  integer, parameter :: max_iterations = 100
+	  logical, save :: dt_table_used = .false.
       logical, dimension(max_iterations) :: neutron_capture, dineutron_capture
 	  logical, dimension(max_iterations) :: neutron_emission, dineutron_emission
 	  logical, dimension(max_iterations) :: en_rxn, enn_rxn, ne_rxn, nne_rxn
@@ -796,14 +797,26 @@
 	  enn_rxn = .FALSE. 
 	  ne_rxn = .FALSE.
 	  nne_rxn = .FALSE.
- 
+      
+      if (.not. dt_table_used) then
+      Ntable = dt% Ntable
 	  allocate(qt% Z(mt% Ntable), qt% A(mt% Ntable), qt% BE(mt% Ntable))
-	  index = 1
+	  index = 1      
+      end if
+ 	  if (dt_table_used) then
+ 	  Ntable = qt% Ntable
+ 	  index = qt% Ntable+1
+ 	  end if
 
-	  do j = 1, dt% Ntable
+	  do j = 1, Ntable
 	 
+	  if (.not. dt_table_used) then
 	  Z = dt% Z(j)
 	  A = dt% A(j)
+	  else
+	  Z = qt% Z(j)
+	  A = qt% A(j)
+	  end if
 	 
       ! loop over rxns 
       do iter = 1, max_iterations
