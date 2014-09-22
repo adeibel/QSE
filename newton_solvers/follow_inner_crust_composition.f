@@ -776,7 +776,7 @@
 	  real :: Snr, S2nr, Spr, S2pr, Br, ecthreshr, bthreshr, VNr 
 	  real :: alpha(2), beta(2), gamma(2), delta(2), epsilon(2)
 	  real, parameter :: del_m = mn_n-mp_n-me_n
-      integer :: i, j, index, Ntable
+      integer :: i, j, k, index, Ntable
       integer :: Z, A
 	  integer :: Zr, Ar, Nr
 	  integer :: ierr, id, ios, iter, iZ, iZb, iZe, iEq(1) 	  
@@ -807,6 +807,8 @@
  	  index = qt% Ntable+1
  	  end if
 
+	  Zr = 0 ; Ar = 0
+
 	  do j = 1, Ntable
 	 
 	  if (dt_table_used .eqv. .false.) then
@@ -822,11 +824,17 @@
    	  !get properties of nucleus that is being pushed deeper
 	  call get_nucleus_properties(Z,A,id,B,Sn,S2n,Sp,S2p,ecthresh,bthresh,VN,ierr)
       
+      ! remove duplicate nuclei in qt%
+      do k=2,Ntable
+      if (Z == qt% Z(k) .and. A == qt% A(k) .and. dt_table_used .eqv. .false.) exit
+      if (qt% Z(k) == qt% Z(k-1) .and. qt% A(k) == qt% A(k-1)) exit 
+      end do
+      
       qt% Z(index) = Z
       qt% A(index) = A
       qt% BE(index) = B
       index = index+1
-
+	  
       if (index > mt% Ntable) then
       write(*,*) 'need to allocate more space for qse_table_type'
       stop
