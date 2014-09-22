@@ -274,20 +274,13 @@
 		 
 		n_b = n_e/(et% Ye(i))
 		 
-		 write(*,*) i
 		 !if (n_b < 5.2d-4) cycle
 		 !if (p_ext < 4.26d-3) cycle
          if (p_ext < dt% P) cycle
          
+         write(*,*) 'found correct pressure, starting qse solver'
+         
          mu_n = mu_e/1000.
-
-         call check_all_rxns(mu_e, mu_n)
-         
-         do j=1, qt% Ntable
-         write(*,*) qt% Z(j), qt% A(j)
-         end do
-         
-         stop
          
   		 ! initial values of additional variables 
 		 xold(dt% Ntable+1,1) = n_b
@@ -515,6 +508,9 @@
          n_n = 2.0*kn**3/threepisquare              
 		 mu_n = -mu_n
 		 end if		
+
+		 ! check stability of distribution against current chemical potentials
+		 call check_all_rxns(mu_e, mu_n)
 
          rho = (n_b*amu_n)*(mev_to_ergs/clight2)/(1.d-39) ! cgs                      
 
