@@ -825,9 +825,8 @@
 	  call get_nucleus_properties(Z,A,id,B,Sn,S2n,Sp,S2p,ecthresh,bthresh,VN,ierr)
       
       ! remove duplicate nuclei in qt%
-      do k=2,Ntable
-      if (Z == qt% Z(k) .and. A == qt% A(k) .and. dt_table_used .eqv. .false.) exit
-      if (qt% Z(k) == qt% Z(k-1) .and. qt% A(k) == qt% A(k-1)) exit 
+      do k=1,Ntable
+      if (Z == qt% Z(k) .and. A == qt% A(k) .and. dt_table_used .eqv. .true.) exit
       end do
       
       qt% Z(index) = Z
