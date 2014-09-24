@@ -775,10 +775,12 @@
 	  real :: Sn, S2n, Sp, S2p, B, ecthresh, bthresh, VN
 	  real :: Snr, S2nr, Spr, S2pr, Br, ecthreshr, bthreshr, VNr 
 	  real :: alpha(2), beta(2), gamma(2), delta(2), epsilon(2)
+	  real :: B_temp
 	  real, parameter :: del_m = mn_n-mp_n-me_n
       integer :: i, j, k, index, Ntable
       integer :: Z, A
 	  integer :: Zr, Ar, Nr
+	  integer :: Z_temp, A_temp
 	  integer :: ierr, id, ios, iter, iZ, iZb, iZe, iEq(1) 	  
 	  integer, parameter :: ineg = 1, ipos = 2
 	  integer, parameter :: max_iterations = 100
@@ -828,11 +830,17 @@
       do k=1,Ntable
       if (Z == qt% Z(k) .and. A == qt% A(k) .and. dt_table_used .eqv. .true.) exit
       end do
-      
+
+	  if (Z/=Z_temp .and. A/=A_temp) then      
       qt% Z(index) = Z
       qt% A(index) = A
       qt% BE(index) = B
       index = index+1
+      end if
+	  
+	  Z_temp = Z
+	  A_temp = A
+	  B_temp = B
 	  
       if (index > mt% Ntable) then
       write(*,*) 'need to allocate more space for qse_table_type'
