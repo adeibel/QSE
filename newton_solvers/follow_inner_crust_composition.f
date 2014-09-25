@@ -775,7 +775,7 @@
 	  real :: alpha(2), beta(2), gamma(2), delta(2), epsilon(2)
 	  real :: B_temp
 	  real, parameter :: del_m = mn_n-mp_n-me_n
-      integer :: i, j, k, index, Ntable
+      integer :: i, j, k, index, Ntable, index_change, index_temp
       integer :: Z, A
 	  integer :: Zr, Ar, Nr
 	  integer :: Z_temp, A_temp
@@ -810,7 +810,6 @@
 
 	  allocate(Z_new(qt_temp), A_new(qt_temp), B_new(qt_temp))
 	  index = 1
-	  Z_temp = 0. ; A_temp = 0.
 
 	  do j = 1, Ntable
 	 
@@ -827,6 +826,9 @@
 	  Z_new(index) = Z
 	  A_new(index) = A
 	  B_new(index) = B
+	  Z_temp = Z
+	  A_temp = A
+	  B_temp = B	  
       index = index+1
       	 
       ! loop over rxns 
@@ -839,10 +841,10 @@
 	  Z_new(index) = Z
 	  A_new(index) = A
 	  B_new(index) = B
-      index = index+1
 	  Z_temp = Z
 	  A_temp = A
 	  B_temp = B
+	  index = index+1
       end if
 
       if (index > qt_temp) then
@@ -1026,15 +1028,44 @@
       end do  ! end of iteration loop      
       end do ! end of dt% table loop
 	
-	  qt% Ntable = index-1
-	  allocate(qt% Z(qt% Ntable), qt% A(qt% Ntable), qt% BE(qt% Ntable))
-	  do j = 1, qt% Ntable 
-	  qt% Z(j) = Z_new(j)
-	  qt% A(j) = A_new(j)
-	  qt% BE(j) = B_new(j)
+      ! make duplicate entries zero
+	  do j=1,index-1
+	   do k=1,index-1
+	    if (Z_new(k) == Z_new(j) .and. A_new(k) == A_new(j) .and. j/=k) then
+	    Z_new(k) = 0
+	    A_new(k) = 0
+	    B_new(k) = 0
+	    end if 
+	   end do
 	  end do
-	  deallocate(Z_new, A_new, B_new)
 
+	  ! find the number of duplicate entries
+	  index_change = 0
+	  do j = 1, index-1
+	  if (Z_new(j) == 0) then
+	  index_change = index_change+1
+	  end if
+	  end do
+
+	  ! allocate memory without space for duplicates
+      index_temp = 0
+	  qt% Ntable = index-1-index_change
+	  allocate(qt% Z(qt% Ntable), qt% A(qt% Ntable), qt% BE(qt% Ntable))
+	  do j=1,index-1
+	   if (Z_new(j) == 0) then
+	   cycle
+	   else
+	   index_temp = index_temp + 1
+	   qt% Z(index_temp) = Z_new(j)
+	   qt% A(index_temp) = A_new(j)
+ 	   qt% BE(index_temp) = B_new(j)	   
+	   end if
+	  end do  
+
+
+
+	  deallocate(Z_new, A_new, B_new)
+	  
 	  ! flip logical for dt% 
 	  if (dt_table_used .eqv. .false.) then
 	  dt_table_used = .true.
