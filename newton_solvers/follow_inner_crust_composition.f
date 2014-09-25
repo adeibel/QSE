@@ -779,6 +779,8 @@
       integer :: Z, A
 	  integer :: Zr, Ar, Nr
 	  integer :: Z_temp, A_temp
+      integer, dimension(:), allocatable :: Z_new, A_new
+      real, dimension(:), allocatable :: B_new
 	  integer :: ierr, id, ios, iter, iZ, iZb, iZe, iEq(1) 	  
 	  integer, parameter :: ineg = 1, ipos = 2
 	  integer, parameter :: max_iterations = 100
@@ -799,15 +801,14 @@
 	  ne_rxn = .FALSE.
 	  nne_rxn = .FALSE.
       
+      ! set size of do loop depending on input table
       if (dt_table_used .eqv. .false.) then
       Ntable = dt% Ntable
-	  allocate(qt% Z(qt_temp), qt% A(qt_temp), qt% BE(qt_temp))
-	  !index = 1  
-      else
- 	  Ntable = qt% Ntable
- 	  !index = qt% Ntable+1
- 	  end if
+	  else
+	  Ntable = qt% Ntable
+	  end if
 
+	  allocate(Z_new(qt_temp), A_new(qt_temp), B_new(qt_temp))
 	  index = 1
 	  Z_temp = 0. ; A_temp = 0.
 
@@ -821,23 +822,29 @@
 	  Z = qt% Z(j)
 	  A = qt% A(j)
 	  end if
-	 
+	  
+	  ! add nucleus to new table before it's checked for rxns 
+	  Z_new(index) = Z
+	  A_new(index) = A
+	  B_new(index) = B
+      index = index+1
+      	 
       ! loop over rxns 
       do iter = 1, max_iterations
    	  !get properties of nucleus that is being pushed deeper
 	  call get_nucleus_properties(Z,A,id,B,Sn,S2n,Sp,S2p,ecthresh,bthresh,VN,ierr)
       
-	  if (Z/=Z_temp .and. A/=A_temp .and. ierr==0) then      
-      qt% Z(index) = Z
-      qt% A(index) = A
-      qt% BE(index) = B
+	  if (Z/=Z_new(index) .and. A/=A_new(index) .and. ierr==0 &
+	  	& .and. Z/=Z_temp .and. A/=A_temp) then      
+	  Z_new(index) = Z
+	  A_new(index) = A
+	  B_new(index) = B
       index = index+1
-      end if
-	  
 	  Z_temp = Z
 	  A_temp = A
 	  B_temp = B
-	  
+      end if
+
       if (index > qt_temp) then
       write(*,*) 'need to allocate more space for qse_table_type'
       stop
@@ -885,7 +892,6 @@
       if (Zr < mt% Zmin .or. Zr > mt% Zmax) exit    
       call get_nucleus_properties(Zr,Ar,id,Br,Snr,S2nr,Spr,S2pr,ecthreshr,bthreshr,VNr,ierr)
       if (ierr /= 0) exit
-      end if
       beta(ineg) = mu_n - mu_e + del_m + (B - Br)
       if (beta(ineg) < 0) then
       	 en_rxn(iter) = .TRUE.
@@ -903,7 +909,6 @@
       if (Zr < mt% Zmin .or. Zr > mt% Zmax) exit
       call get_nucleus_properties(Zr,Ar,id,Br,Snr,S2nr,Spr,S2pr,ecthreshr,bthreshr,VNr,ierr)
       if (ierr /= 0) exit
-      end if
       beta(ipos) = 2.0*mu_n - mu_e + del_m + (B - Br)
       if (beta(ipos) < 0) then
       	 enn_rxn(iter) = .TRUE.
@@ -922,7 +927,6 @@
       if (Zr < mt% Zmin .or. Zr > mt% Zmax) exit  
       call get_nucleus_properties(Zr,Ar,id,Br,Snr,S2nr,Spr,S2pr,ecthreshr,bthreshr,VNr,ierr)
       if (ierr /= 0) exit
-      end if
       gamma(ineg) = -mu_n + (B-Br)
       if (gamma(ineg) < 0) then
          neutron_capture(iter) = .TRUE.
@@ -940,7 +944,6 @@
       if (Zr < mt% Zmin .or. Zr > mt% Zmax) exit     
       call get_nucleus_properties(Zr,Ar,id,Br,Snr,S2nr,Spr,S2pr,ecthreshr,bthreshr,VNr,ierr)
       if (ierr /= 0) exit
-      end if
       gamma(ipos) = mu_n + (B-Br)
       if (gamma(ipos) < 0) then
          neutron_emission(iter) = .TRUE.
@@ -958,7 +961,6 @@
       if (Zr < mt% Zmin .or. Zr > mt% Zmax) exit      
       call get_nucleus_properties(Zr,Ar,id,Br,Snr,S2nr,Spr,S2pr,ecthreshr,bthreshr,VNr,ierr)
       if (ierr /= 0) exit
-      end if
       delta(ineg) = -2.0*mu_n + (B-Br)
       if (delta(ineg) < 0) then
       	 dineutron_capture(iter) = .TRUE.
@@ -976,7 +978,6 @@
       if (Zr < mt% Zmin .or. Zr > mt% Zmax) exit     
       call get_nucleus_properties(Zr,Ar,id,Br,Snr,S2nr,Spr,S2pr,ecthreshr,bthreshr,VNr,ierr)
       if (ierr /= 0) exit
-      end if
       delta(ipos) = 2.0*mu_n + (B-Br)
       if (delta(ipos) < 0) then
          dineutron_emission(iter) = .TRUE.
@@ -994,7 +995,6 @@
       if (Zr < mt% Zmin .or. Zr > mt% Zmax) exit 
       call get_nucleus_properties(Zr,Ar,id,Br,Snr,S2nr,Spr,S2pr,ecthreshr,bthreshr,VNr,ierr)
       if (ierr /= 0) exit
-      end if
       epsilon(ineg) = mu_e - mu_n - del_m + (B-Br)
       if (epsilon(ineg) < 0) then
       	 ne_rxn(iter) = .TRUE.
@@ -1012,7 +1012,6 @@
       if (Zr < mt% Zmin .or. Zr > mt% Zmax) exit   
       call get_nucleus_properties(Zr,Ar,id,Br,Snr,S2nr,Spr,S2pr,ecthreshr,bthreshr,Vnr,ierr)
       if (ierr /= 0) exit
-      end if
       epsilon(ipos) = mu_e - 2.0*mu_n - del_m + (B-Br)
       if (epsilon(ipos) < 0) then
       	 nne_rxn(iter) = .TRUE.
@@ -1026,8 +1025,15 @@
       
       end do  ! end of iteration loop      
       end do ! end of dt% table loop
-
+	
 	  qt% Ntable = index-1
+	  allocate(qt% Z(qt% Ntable), qt% A(qt% Ntable), qt% BE(qt% Ntable))
+	  do j = 1, qt% Ntable 
+	  qt% Z(j) = Z_new(j)
+	  qt% A(j) = A_new(j)
+	  qt% BE(j) = B_new(j)
+	  end do
+	  deallocate(Z_new, A_new, B_new)
 
 	  ! flip logical for dt% 
 	  if (dt_table_used .eqv. .false.) then
@@ -1040,7 +1046,7 @@
 	  do j=1,qt% Ntable
 	  write(*,*) qt% Z(j), qt% A(j)
 	  end do
-	  !stop
+	  stop
 
       end subroutine check_all_rxns       
 
