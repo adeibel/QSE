@@ -519,30 +519,30 @@
 		 phi_sum=0.
 
 		
-		 do i = 1, dt% Ntable
-		  iso = 1.0-(2.*real(dt% Z(i))/real(dt% A(i)))
+		 do i = 1, qt% Ntable
+		  iso = 1.0-(2.*real(qt% Z(i))/real(qt% A(i)))
 		  n_nin = (n_0+n_1*iso**2)*(1.0+0.9208*iso)/2.	
-		  R_n = ((real(dt% A(i))-real(dt% Z(i)))/n_nin/pi*0.75)**onethird 
-		  R_ws = (real(dt% Z(i))/n_e/pi*0.75)**onethird		 
+		  R_n = ((real(qt% A(i))-real(qt% Z(i)))/n_nin/pi*0.75)**onethird 
+		  R_ws = (real(qt% Z(i))/n_e/pi*0.75)**onethird		 
           !number density of isotopes
 		  m_star = mn_n-mp_n-me_n !does not contain m_e because mu_e has rest mass in definition 
-		  m_nuc = real(dt%A(i))*amu_n 
+		  m_nuc = real(qt%A(i))*amu_n 
      	  m_term = g*(twopi*hbarc_n**2/(m_nuc*kT))**(-3.0/2.0)
      	  ni(i) = m_term*exp((mu_i(i)+dt%BE(i))/kT)
      	  phi = 1.25*pi*R_n**3*ni(i)
      	  phi_sum = phi+phi_sum
 		  !for baryon conservation
-		  as(i) = real(dt% A(i))*m_term*exp((mu_i(i)+dt%BE(i))/kT)	 
+		  as(i) = real(qt% A(i))*m_term*exp((mu_i(i)+qt%BE(i))/kT)	 
 		  Asum = Asum + as(i) 
-		  ni_Asum = ni_Asum + m_term*exp((mu_i(i)+dt%BE(i))/kT)/n_b	
+		  ni_Asum = ni_Asum + m_term*exp((mu_i(i)+qt%BE(i))/kT)/n_b	
 		  Ai = Ai + as(i)/n_b
 		  !for charge conservation
-		  zs(i) = real(dt% Z(i))*m_term*exp((mu_i(i)+dt%BE(i))/kT)
+		  zs(i) = real(qt% Z(i))*m_term*exp((mu_i(i)+qt%BE(i))/kT)
 		  Zsum = Zsum + zs(i)
-		  ni_Zsum = ni_Zsum + m_term*exp((mu_i(i)+dt%BE(i))/kT)/n_b	
+		  ni_Zsum = ni_Zsum + m_term*exp((mu_i(i)+qt%BE(i))/kT)/n_b	
 		  Zi = Zi + zs(i)/n_b
 		  !detailed balance
-		  equ(i,1) = real(dt% Z(i))*(mu_n-mu_e+m_star)+(real(dt% A(i))-real(dt% Z(i)))*mu_n-mu_i(i) 
+		  equ(i,1) = real(qt% Z(i))*(mu_n-mu_e+m_star)+(real(qt% A(i))-real(qt% Z(i)))*mu_n-mu_i(i) 
 		 enddo
 
 		 Zbar = Zi/ni_Zsum
@@ -552,8 +552,8 @@
  		 chi = phi_sum 
 	     Y_n = n_n*(1.-chi)/n_b   
   		 !baryon and charge conservation 
-         equ(dt% Ntable+1,1) = Zsum - n_e
-         equ(dt% Ntable+2,1) = Asum - n_b + n_n*(1.0-chi)  
+         equ(qt% Ntable+1,1) = Zsum - n_e
+         equ(qt% Ntable+2,1) = Asum - n_b + n_n*(1.0-chi)  
       end subroutine eval_equ
           
       subroutine eval_jacobian(ldA, A, idiag, lrpar, rpar, lipar, ipar, ierr)
@@ -1062,8 +1062,6 @@
 	   end if
 	  end do  
 
-
-
 	  deallocate(Z_new, A_new, B_new)
 	  
 	  ! flip logical for dt% 
@@ -1072,12 +1070,12 @@
 	  call dist_table_shutdown
 	  end if
 	  
-	  write(*,*) '-------'
-	  write(*,*) qt% Ntable
-	  do j=1,qt% Ntable
-	  write(*,*) qt% Z(j), qt% A(j)
-	  end do
-	  stop
+!	  write(*,*) '-------'
+!	  write(*,*) qt% Ntable
+!	  do j=1,qt% Ntable
+!	  write(*,*) qt% Z(j), qt% A(j)
+!	  end do
+!	  stop
 
       end subroutine check_all_rxns       
 
