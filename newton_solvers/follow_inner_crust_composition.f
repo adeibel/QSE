@@ -804,12 +804,13 @@
       if (dt_table_used .eqv. .false.) then
       Ntable = dt% Ntable
 	  allocate(qt% Z(qt_temp), qt% A(qt_temp), qt% BE(qt_temp))
-	  index = 1  
+	  !index = 1  
       else
  	  Ntable = qt% Ntable
- 	  index = qt% Ntable+1
+ 	  !index = qt% Ntable+1
  	  end if
 
+	  index = 1
 	  Z_temp = 0. ; A_temp = 0.
 
 	  do j = 1, Ntable
