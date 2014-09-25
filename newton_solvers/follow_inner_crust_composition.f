@@ -784,12 +784,13 @@
 	  integer :: ierr, id, ios, iter, iZ, iZb, iZe, iEq(1) 	  
 	  integer, parameter :: ineg = 1, ipos = 2
 	  integer, parameter :: max_iterations = 100
+	  integer, parameter :: qt_temp = 100000
 	  logical, save :: dt_table_used = .false.
       logical, dimension(max_iterations) :: neutron_capture, dineutron_capture
 	  logical, dimension(max_iterations) :: neutron_emission, dineutron_emission
 	  logical, dimension(max_iterations) :: en_rxn, enn_rxn, ne_rxn, nne_rxn
 	  character(len=6) :: rxn
-
+	  ierr=0
       ! set defaults
 	  neutron_capture = .FALSE.
 	  neutron_emission = .FALSE.
@@ -802,14 +803,14 @@
       
       if (dt_table_used .eqv. .false.) then
       Ntable = dt% Ntable
-	  allocate(qt% Z(mt% Ntable), qt% A(mt% Ntable), qt% BE(mt% Ntable))
+	  allocate(qt% Z(qt_temp), qt% A(qt_temp), qt% BE(qt_temp))
 	  index = 1  
       else
  	  Ntable = qt% Ntable
  	  index = qt% Ntable+1
  	  end if
 
-	  Zr = 0 ; Ar = 0
+	  Z_temp = 0. ; A_temp = 0.
 
 	  do j = 1, Ntable
 	 
@@ -826,12 +827,7 @@
    	  !get properties of nucleus that is being pushed deeper
 	  call get_nucleus_properties(Z,A,id,B,Sn,S2n,Sp,S2p,ecthresh,bthresh,VN,ierr)
       
-      ! remove duplicate nuclei in qt%
-      do k=1,Ntable
-      if (Z == qt% Z(k) .and. A == qt% A(k) .and. dt_table_used .eqv. .true.) exit
-      end do
-
-	  if (Z/=Z_temp .and. A/=A_temp) then      
+	  if (Z/=Z_temp .and. A/=A_temp .and. ierr==0) then      
       qt% Z(index) = Z
       qt% A(index) = A
       qt% BE(index) = B
@@ -842,7 +838,7 @@
 	  A_temp = A
 	  B_temp = B
 	  
-      if (index > mt% Ntable) then
+      if (index > qt_temp) then
       write(*,*) 'need to allocate more space for qse_table_type'
       stop
       end if
