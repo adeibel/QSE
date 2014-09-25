@@ -277,9 +277,7 @@
 		 !if (n_b < 5.2d-4) cycle
 		 !if (p_ext < 4.26d-3) cycle
          if (p_ext < dt% P) cycle
-         
-         write(*,*) 'found correct pressure, starting qse solver'
-         
+                  
          mu_n = mu_e/10.
          
   		 ! initial values of additional variables 
@@ -790,7 +788,7 @@
 	  logical, dimension(max_iterations) :: neutron_emission, dineutron_emission
 	  logical, dimension(max_iterations) :: en_rxn, enn_rxn, ne_rxn, nne_rxn
 	  character(len=6) :: rxn
-	  ierr=0
+
       ! set defaults
 	  neutron_capture = .FALSE.
 	  neutron_emission = .FALSE.
@@ -815,6 +813,7 @@
 
 	  do j = 1, Ntable
 	 
+	  ierr=0
 	  if (dt_table_used .eqv. .false.) then
 	  Z = dt% Z(j)
 	  A = dt% A(j)
@@ -853,11 +852,7 @@
       if (Zr < mt% Zmin .or. Zr > mt% Zmax) exit
       call get_nucleus_properties(Zr,Ar,id,Br,Snr,S2nr,Spr,S2pr, &
       		&	ecthreshr,bthreshr,VNr,ierr)
-      if (ierr /= 0) then
-         write(error_unit,'((a,2x),2(i4,2x))') 'unable to find nucleus', Zr, Ar
-!         stop
-         exit
-      end if
+      if (ierr /= 0) exit
       alpha(ineg) = del_m - mu_e + (B-Br)
       if (alpha(ineg) < 0) then
          rxn = '(e,)'
@@ -873,11 +868,7 @@
 !      if (Nr < mt% Nmin(index) .or. Nr > mt% Nmax(index)) exit
       if (Zr < mt% Zmin .or. Zr > mt% Zmax) exit
       call get_nucleus_properties(Zr,Ar,id,Br,Snr,S2nr,Spr,S2pr,ecthreshr,bthreshr,VNr,ierr)
-      if (ierr /= 0) then
-         write(error_unit,'((a,2x),2(i4,2x))') 'unable to find nucleus', Zr, Ar
-!         stop
-         exit
-      end if
+      if (ierr /= 0) exit
       alpha(ipos) = mu_e - del_m + (B - Br)
       if (alpha(ipos) < 0) then
          rxn = '(,e)'
@@ -893,10 +884,7 @@
 !      if (Nr < mt% Nmin(index) .or. Nr > mt% Nmax(index)) exit
       if (Zr < mt% Zmin .or. Zr > mt% Zmax) exit    
       call get_nucleus_properties(Zr,Ar,id,Br,Snr,S2nr,Spr,S2pr,ecthreshr,bthreshr,VNr,ierr)
-      if (ierr /= 0) then
-         write(error_unit,'((a,2x),2(i4,2x))') 'unable to find nucleus', Zr, Ar
-!         stop
-         exit
+      if (ierr /= 0) exit
       end if
       beta(ineg) = mu_n - mu_e + del_m + (B - Br)
       if (beta(ineg) < 0) then
@@ -914,10 +902,7 @@
 !      if (Nr < mt% Nmin(index) .or. Nr > mt% Nmax(index)) exit
       if (Zr < mt% Zmin .or. Zr > mt% Zmax) exit
       call get_nucleus_properties(Zr,Ar,id,Br,Snr,S2nr,Spr,S2pr,ecthreshr,bthreshr,VNr,ierr)
-      if (ierr /= 0) then
-         write(error_unit,'((a,2x),2(i4,2x))') 'unable to find nucleus', Zr, Ar
-!         stop
-         exit
+      if (ierr /= 0) exit
       end if
       beta(ipos) = 2.0*mu_n - mu_e + del_m + (B - Br)
       if (beta(ipos) < 0) then
@@ -936,10 +921,7 @@
 !      if (Nr < mt% Nmin(index) .or. Nr > mt% Nmax(index)) exit
       if (Zr < mt% Zmin .or. Zr > mt% Zmax) exit  
       call get_nucleus_properties(Zr,Ar,id,Br,Snr,S2nr,Spr,S2pr,ecthreshr,bthreshr,VNr,ierr)
-      if (ierr /= 0) then
-         write(error_unit,'((a,2x),2(i4,2x))') 'unable to find nucleus', Zr, Ar
-!         stop
-         exit
+      if (ierr /= 0) exit
       end if
       gamma(ineg) = -mu_n + (B-Br)
       if (gamma(ineg) < 0) then
@@ -957,10 +939,7 @@
 !      if (Nr < mt% Nmin(index) .or. Nr > mt% Nmax(index)) exit
       if (Zr < mt% Zmin .or. Zr > mt% Zmax) exit     
       call get_nucleus_properties(Zr,Ar,id,Br,Snr,S2nr,Spr,S2pr,ecthreshr,bthreshr,VNr,ierr)
-      if (ierr /= 0) then
-         write(error_unit,'((a,2x),2(i4,2x))') 'unable to find nucleus', Zr, Ar
-!         stop
-         exit
+      if (ierr /= 0) exit
       end if
       gamma(ipos) = mu_n + (B-Br)
       if (gamma(ipos) < 0) then
@@ -978,10 +957,7 @@
 !      if (Nr < mt% Nmin(index) .or. Nr > mt% Nmax(index)) exit
       if (Zr < mt% Zmin .or. Zr > mt% Zmax) exit      
       call get_nucleus_properties(Zr,Ar,id,Br,Snr,S2nr,Spr,S2pr,ecthreshr,bthreshr,VNr,ierr)
-      if (ierr /= 0) then
-         write(error_unit,'((a,2x),2(i4,2x))') 'unable to find nucleus', Zr, Ar
-!         stop
-         exit
+      if (ierr /= 0) exit
       end if
       delta(ineg) = -2.0*mu_n + (B-Br)
       if (delta(ineg) < 0) then
@@ -999,10 +975,7 @@
 !      if (Nr < mt% Nmin(index) .or. Nr > mt% Nmax(index)) exit
       if (Zr < mt% Zmin .or. Zr > mt% Zmax) exit     
       call get_nucleus_properties(Zr,Ar,id,Br,Snr,S2nr,Spr,S2pr,ecthreshr,bthreshr,VNr,ierr)
-      if (ierr /= 0) then
-         write(error_unit,'((a,2x),2(i4,2x))') 'unable to find nucleus', Zr, Ar
-!         stop
-         exit
+      if (ierr /= 0) exit
       end if
       delta(ipos) = 2.0*mu_n + (B-Br)
       if (delta(ipos) < 0) then
@@ -1020,10 +993,7 @@
 !      if (Nr < mt% Nmin(index) .or. Nr > mt% Nmax(index)) exit
       if (Zr < mt% Zmin .or. Zr > mt% Zmax) exit 
       call get_nucleus_properties(Zr,Ar,id,Br,Snr,S2nr,Spr,S2pr,ecthreshr,bthreshr,VNr,ierr)
-      if (ierr /= 0) then
-         write(error_unit,'((a,2x),2(i4,2x))') 'unable to find nucleus', Zr, Ar
- !        stop
-         exit
+      if (ierr /= 0) exit
       end if
       epsilon(ineg) = mu_e - mu_n - del_m + (B-Br)
       if (epsilon(ineg) < 0) then
@@ -1041,10 +1011,7 @@
 !      if (Nr < mt% Nmin(index) .or. Nr > mt% Nmax(index)) exit
       if (Zr < mt% Zmin .or. Zr > mt% Zmax) exit   
       call get_nucleus_properties(Zr,Ar,id,Br,Snr,S2nr,Spr,S2pr,ecthreshr,bthreshr,Vnr,ierr)
-      if (ierr /= 0) then
-      	 write(error_unit, '((a,2x),2(i4,2x))') 'unable to find nucleus', Zr, Ar
-!      	 stop
-      	 exit
+      if (ierr /= 0) exit
       end if
       epsilon(ipos) = mu_e - 2.0*mu_n - del_m + (B-Br)
       if (epsilon(ipos) < 0) then
@@ -1067,6 +1034,13 @@
 	  dt_table_used = .true.
 	  call dist_table_shutdown
 	  end if
+	  
+	  write(*,*) '-------'
+	  write(*,*) qt% Ntable
+	  do j=1,qt% Ntable
+	  write(*,*) qt% Z(j), qt% A(j)
+	  end do
+	  !stop
 
       end subroutine check_all_rxns       
 
