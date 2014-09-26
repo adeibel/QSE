@@ -216,11 +216,7 @@
 
 	  ! set some dimensions
 	  ! make nvar equal to number of entries in mass table + 2 (for n_b and mu_n)
-	  nvar = dt% Ntable + 2
-	  neq = nz*nvar
-      m1 = (stencil_zones_subdiagonal+1)*nvar-1 ! number of subdiagonals
-      m2 = (stencil_zones_superdiagonal+1)*nvar-1  ! number of superdiagonals
-      allocate(fac1(nvar), fac2(nvar), mu_i(nvar), ni(nvar))
+
       
   	  ! solve for qse distribution at each pressure	  
   	  do i=1, et% Ntable
@@ -235,21 +231,7 @@
             if (.not. okay_to_use_mkl_pardiso()) which_decsol = lapack
          end if
          
-         allocate(equ(nvar,nz), x(nvar,nz), xold(nvar,nz), dx(nvar,nz), xscale(nvar,nz), y(ldy, nsec), stat=ierr)
-         if (ierr /= 0) stop 1
-
          numerical_jacobian = do_numerical_jacobian
-
-		 ! sets mass fractions to 1d-20 for unpopulated nuclei
-		 do j=1,dt% Ntable
-		 m_star = mn_n-mp_n-me_n
-		 m_nuc = real(dt% A(j))*amu_n
-         mterm = g*(m_nuc*kT/(twopi*hbarc_n**2))**(1.5)
-         fac1(j) = real(dt% A(j))/n_b
-         fac2(j) = mterm	
-         ! set mass fractions from abundance fractions	 
-		 xold(j,1) = log((dt% Y(j))/fac1(j)/fac2(j))*kT-dt%BE(j)
-		 end do 
 		 		 
 		! electron wave vector fm^-1
 		if (mu_e > 0.) then
@@ -279,10 +261,32 @@
          if (p_ext < dt% P) cycle
                   
          mu_n = mu_e/10.
+ 
+ 		 ! check stability of distribution against current chemical potentials
+		 call check_all_rxns(mu_e, mu_n)
+		 
+	     nvar = qt% Ntable + 2
+	     neq = nz*nvar
+         m1 = (stencil_zones_subdiagonal+1)*nvar-1 ! number of subdiagonals
+         m2 = (stencil_zones_superdiagonal+1)*nvar-1  ! number of superdiagonals
+         allocate(fac1(qt% Ntable), fac2(qt% Ntable), mu_i(qt% Ntable), ni(qt% Ntable))
+         allocate(equ(nvar,nz), x(nvar,nz), xold(nvar,nz), dx(nvar,nz), xscale(nvar,nz), y(ldy, nsec), stat=ierr)
+         if (ierr /= 0) stop 1
+         
+		 ! sets mass fractions to 1d-20 for unpopulated nuclei
+		 do j=1,qt% Ntable
+		 m_star = mn_n-mp_n-me_n
+		 m_nuc = real(qt% A(j))*amu_n
+         mterm = g*(m_nuc*kT/(twopi*hbarc_n**2))**(1.5)
+         fac1(j) = real(qt% A(j))/n_b
+         fac2(j) = mterm	
+         ! set mass fractions from abundance fractions	 
+		 xold(j,1) = log((qt% Y(j))/fac1(j)/fac2(j))*kT-qt%BE(j)
+		 end do          
          
   		 ! initial values of additional variables 
-		 xold(dt% Ntable+1,1) = n_b
-		 xold(dt% Ntable+2,1) = mu_n 
+		 xold(qt% Ntable+1,1) = n_b
+		 xold(qt% Ntable+2,1) = mu_n 
 		
          dx = 0 ! a not very good starting "guess" for the solution
          x = xold
@@ -385,11 +389,11 @@
          integer, intent(inout) :: ipar(lipar)
          integer, intent(out) :: ierr
          ierr = 0
-		 do i = 1, dt% Ntable
+		 do i = 1, qt% Ntable
 		 mu_i(i) = x(i,1)
 		 enddo
-		 n_b = x(dt% Ntable+1,1)			 
-		 mu_n = x(dt% Ntable+2,1)
+		 n_b = x(qt% Ntable+1,1)			 
+		 mu_n = x(qt% Ntable+2,1)
       end subroutine set_primaries
       
 
@@ -507,12 +511,9 @@
 		 mu_n = -mu_n
 		 end if		
 
-		 ! check stability of distribution against current chemical potentials
-		 call check_all_rxns(mu_e, mu_n)
-
          rho = (n_b*amu_n)*(mev_to_ergs/clight2)/(1.d-39) ! cgs                      
 
-		 ! enter with mu_n and mu_e from initial conditions
+		 ! zero out secondary variables
 		 Asum = 0. ; Zsum = 0. 
 		 Ai = 0. ; Zi = 0.
 		 ni_Asum = 0. ; ni_Zsum = 0.
@@ -528,7 +529,7 @@
 		  m_star = mn_n-mp_n-me_n !does not contain m_e because mu_e has rest mass in definition 
 		  m_nuc = real(qt%A(i))*amu_n 
      	  m_term = g*(twopi*hbarc_n**2/(m_nuc*kT))**(-3.0/2.0)
-     	  ni(i) = m_term*exp((mu_i(i)+dt%BE(i))/kT)
+     	  ni(i) = m_term*exp((mu_i(i)+qt%BE(i))/kT)
      	  phi = 1.25*pi*R_n**3*ni(i)
      	  phi_sum = phi+phi_sum
 		  !for baryon conservation
@@ -1050,7 +1051,8 @@
 	  ! allocate memory without space for duplicates
       index_temp = 0
 	  qt% Ntable = index-1-index_change
-	  allocate(qt% Z(qt% Ntable), qt% A(qt% Ntable), qt% BE(qt% Ntable))
+	  allocate(qt% Z(qt% Ntable), qt% A(qt% Ntable), qt% BE(qt% Ntable), &
+	  			& qt% Y(qt% Ntable))
 	  do j=1,index-1
 	   if (Z_new(j) == 0) then
 	   cycle
