@@ -259,8 +259,11 @@
 		 !if (n_b < 5.2d-4) cycle
 		 !if (p_ext < 4.26d-3) cycle
          if (p_ext < dt% P) cycle
+        
+         write(*,*) p_ext
                   
          mu_n = mu_e/10.
+ 		
  
  		 ! check stability of distribution against current chemical potentials
 		 call check_all_rxns(mu_e, mu_n)
@@ -555,6 +558,15 @@
   		 !baryon and charge conservation 
          equ(qt% Ntable+1,1) = Zsum - n_e
          equ(qt% Ntable+2,1) = Asum - n_b + n_n*(1.0-chi)  
+         
+         
+         write(*,*) qt% Z
+         write(*,*) qt% A
+         write(*,*) qt% BE
+         write(*,*) Zbar, Abar, chi, Y_n
+         write(*,*) Zsum, n_e, mu_e
+         write(*,*) Asum, n_b, n_n 
+         stop
       end subroutine eval_equ
           
       subroutine eval_jacobian(ldA, A, idiag, lrpar, rpar, lipar, ipar, ierr)
@@ -837,8 +849,9 @@
    	  !get properties of nucleus that is being pushed deeper
 	  call get_nucleus_properties(Z,A,id,B,Sn,S2n,Sp,S2p,ecthresh,bthresh,VN,ierr)
       
-	  if (Z/=Z_new(index) .and. A/=A_new(index) .and. ierr==0 &
-	  	& .and. Z/=Z_temp .and. A/=A_temp) then      
+!	  if (Z/=Z_new(index) .and. A/=A_new(index) .and. ierr==0 &
+!	  	& .and. Z/=Z_temp .or. A/=A_temp) then      
+	  if (Z/=Z_temp .or. A/=A_temp) then
 	  Z_new(index) = Z
 	  A_new(index) = A
 	  B_new(index) = B
