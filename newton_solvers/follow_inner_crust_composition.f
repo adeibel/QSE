@@ -262,7 +262,7 @@
         
          write(*,*) p_ext
                   
-         mu_n = mu_e/10.
+         mu_n = mu_e/100.
  		
  		 ! check stability of distribution against current chemical potentials
 		 call check_all_rxns(mu_e, mu_n)
@@ -279,9 +279,6 @@
          
 		 ! sets mass fractions to 1d-20 for unpopulated nuclei
 		 do j=1,qt% Ntable
-		 if (qt% Y(j) == 0.) then
-		 qt% Y(j) = 1.d-20
-		 end if
 		 m_star = mn_n-mp_n-me_n
 		 m_nuc = real(qt% A(j))*amu_n
          mterm = g*(m_nuc*kT/(twopi*hbarc_n**2))**(1.5)
