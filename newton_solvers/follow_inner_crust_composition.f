@@ -789,14 +789,14 @@
 	  real :: Sn, S2n, Sp, S2p, B, ecthresh, bthresh, VN
 	  real :: Snr, S2nr, Spr, S2pr, Br, ecthreshr, bthreshr, VNr 
 	  real :: alpha(2), beta(2), gamma(2), delta(2), epsilon(2)
-	  real :: B_temp
+	  real :: B_temp, Y_temp, Yr
 	  real, parameter :: del_m = mn_n-mp_n-me_n
       integer :: i, j, k, index, Ntable, index_change, index_temp
       integer :: Z, A
 	  integer :: Zr, Ar, Nr
 	  integer :: Z_temp, A_temp
       integer, dimension(:), allocatable :: Z_new, A_new
-      real, dimension(:), allocatable :: B_new
+      real, dimension(:), allocatable :: B_new, Y_new
 	  integer :: ierr, id, ios, iter, iZ, iZb, iZe, iEq(1) 	  
 	  integer, parameter :: ineg = 1, ipos = 2
 	  integer, parameter :: max_iterations = 100
@@ -824,7 +824,7 @@
 	  Ntable = qt% Ntable
 	  end if
 
-	  allocate(Z_new(qt_temp), A_new(qt_temp), B_new(qt_temp))
+	  allocate(Z_new(qt_temp), A_new(qt_temp), B_new(qt_temp), Y_new(qt_temp))
 	  index = 1
 
 	  do j = 1, Ntable
@@ -833,18 +833,24 @@
 	  if (dt_table_used .eqv. .false.) then
 	  Z = dt% Z(j)
 	  A = dt% A(j)
+	  B = dt% BE(j)
+	  Yr = dt% Y(j)
 	  else
 	  Z = qt% Z(j)
 	  A = qt% A(j)
+	  B = qt% BE(j)
+	  Yr = qt% Y(j)
 	  end if
 	  
 	  ! add nucleus to new table before it's checked for rxns 
 	  Z_new(index) = Z
 	  A_new(index) = A
-	  B_new(index) = B
+	  B_new(index) = B 
+	  Y_new(index) = Yr
 	  Z_temp = Z
 	  A_temp = A
-	  B_temp = B	  
+	  B_temp = B	 
+	  Y_temp = Yr 
 !      index = index+1
       	 
       ! loop over rxns 
@@ -855,13 +861,15 @@
 !	  if (Z/=Z_new(index) .and. A/=A_new(index) .and. ierr==0 &
 !	  	& .and. Z/=Z_temp .or. A/=A_temp) then      
 	  if (Z/=Z_temp .or. A/=A_temp) then
+	  index = index+1
 	  Z_new(index) = Z
 	  A_new(index) = A
 	  B_new(index) = B
+	  Y_new(index) = 0. !if nucleus is new to distribution, Y=0.
 	  Z_temp = Z
 	  A_temp = A
 	  B_temp = B
-	  index = index+1
+	  Y_temp = 0.
       end if
 
       if (index > qt_temp) then
@@ -1044,14 +1052,23 @@
       
       end do  ! end of iteration loop      
       end do ! end of dt% table loop
+      
+      ! take care of abundances (need to be nonzero for log space)
+      do j=1,index-1
+      if (Y_new(j) == 0.) then
+      Y_new(j) = 1.d-20
+      end if
+      end do
 	
       ! make duplicate entries zero
 	  do j=1,index-1
 	   do k=1,index-1
-	    if (Z_new(k) == Z_new(j) .and. A_new(k) == A_new(j) .and. j/=k) then
+	    if (Z_new(k) == Z_new(j) .and. A_new(k) == A_new(j)  &
+	    	& .and. j/=k .and. Y_new(j) == 0.) then
 	    Z_new(k) = 0
 	    A_new(k) = 0
-	    B_new(k) = 0
+	    B_new(k) = 0.
+	    Y_new(k) = 0.
 	    end if 
 	   end do
 	  end do
@@ -1076,11 +1093,12 @@
 	   index_temp = index_temp + 1
 	   qt% Z(index_temp) = Z_new(j)
 	   qt% A(index_temp) = A_new(j)
- 	   qt% BE(index_temp) = B_new(j)	   
+ 	   qt% BE(index_temp) = B_new(j)
+ 	   qt% Y(index_temp) = Y_new(j)	   
 	   end if
 	  end do  
 
-	  deallocate(Z_new, A_new, B_new)
+	  deallocate(Z_new, A_new, B_new, Y_new)
 	  
 	  ! flip logical for dt% 
 	  if (dt_table_used .eqv. .false.) then
