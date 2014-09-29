@@ -264,7 +264,6 @@
                   
          mu_n = mu_e/10.
  		
- 
  		 ! check stability of distribution against current chemical potentials
 		 call check_all_rxns(mu_e, mu_n)
 		 
@@ -276,8 +275,13 @@
          allocate(equ(nvar,nz), x(nvar,nz), xold(nvar,nz), dx(nvar,nz), xscale(nvar,nz), y(ldy, nsec), stat=ierr)
          if (ierr /= 0) stop 1
          
+         write(*,*) qt% Y
+         
 		 ! sets mass fractions to 1d-20 for unpopulated nuclei
 		 do j=1,qt% Ntable
+		 if (qt% Y(j) == 0.) then
+		 qt% Y(j) = 1.d-20
+		 end if
 		 m_star = mn_n-mp_n-me_n
 		 m_nuc = real(qt% A(j))*amu_n
          mterm = g*(m_nuc*kT/(twopi*hbarc_n**2))**(1.5)
@@ -559,13 +563,12 @@
          equ(qt% Ntable+1,1) = Zsum - n_e
          equ(qt% Ntable+2,1) = Asum - n_b + n_n*(1.0-chi)  
          
-         
-         write(*,*) qt% Z
-         write(*,*) qt% A
-         write(*,*) qt% BE
-         write(*,*) Zbar, Abar, chi, Y_n
-         write(*,*) Zsum, n_e, mu_e
-         write(*,*) Asum, n_b, n_n 
+		 write(*,*) mu_n, n_n, Y_n
+		 write(*,*) mu_e, n_e, Y_e
+		 write(*,*) chi, iso, n_nin, R_n, R_ws
+		 write(*,*) m_star, m_nuc, m_term, phi, phi_sum
+         write(*,*) Zbar, Abar
+		 write(*,*) Zsum, Asum
          stop
       end subroutine eval_equ
           
@@ -842,7 +845,7 @@
 	  Z_temp = Z
 	  A_temp = A
 	  B_temp = B	  
-      index = index+1
+!      index = index+1
       	 
       ! loop over rxns 
       do iter = 1, max_iterations
