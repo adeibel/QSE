@@ -128,7 +128,6 @@
       namelist /range/ P_ext_start, n_b_start, kT, have_mu_table, &
       	&	do_numerical_jacobian, which_decsol_in
       	
-      allocate(mu_i(nvar), ni(nvar))
       qt => winvn_qse_table
      
       ! set the name of the inlist file name  
@@ -262,7 +261,7 @@
         
          write(*,*) p_ext
                   
-         mu_n = mu_e/100.
+         mu_n = mu_e/1000.
  		
  		 ! check stability of distribution against current chemical potentials
 		 call check_all_rxns(mu_e, mu_n)
@@ -273,10 +272,9 @@
          m2 = (stencil_zones_superdiagonal+1)*nvar-1  ! number of superdiagonals
          allocate(fac1(qt% Ntable), fac2(qt% Ntable), mu_i(qt% Ntable), ni(qt% Ntable))
          allocate(equ(nvar,nz), x(nvar,nz), xold(nvar,nz), dx(nvar,nz), xscale(nvar,nz), y(ldy, nsec), stat=ierr)
+         allocate(mu_i(qt% Ntable), ni(qt% Ntable))
          if (ierr /= 0) stop 1
-         
-         write(*,*) qt% Y
-         
+                  
 		 ! sets mass fractions to 1d-20 for unpopulated nuclei
 		 do j=1,qt% Ntable
 		 m_star = mn_n-mp_n-me_n
@@ -289,12 +287,12 @@
 		 end do          
          
   		 ! initial values of additional variables 
-		 xold(qt% Ntable+1,1) = n_b
-		 xold(qt% Ntable+2,1) = mu_n 
+		 xold(qt% Ntable + 1,1) = n_b
+		 xold(qt% Ntable + 2,1) = mu_n 
 		
          dx = 0 ! a not very good starting "guess" for the solution
          x = xold
-         
+
          ! controls
          lid = max_lid
          lrd = max_lrd
@@ -319,7 +317,9 @@
          iwork(i_try_really_hard) = 1 ! try really hard for first model
          iwork(i_model_number) = 1
              
-         xold = x-dx; dx = x-xold
+         xold = x-dx
+         dx = x-xold
+         
          
          if (which_decsol == lapack) then
             call do_newt(lapack_decsol, null_decsolblk, null_decsols)
@@ -342,6 +342,7 @@
          
              
 		 if (nonconv .eqv. .FALSE.) then
+		 write(*,*) 'converged'
 		 n_b = x(dt% Ntable+1, 1)
          write(y_output_id,'(8(es12.5,2x))') p_ext, n_b, y_e, y_n, Z_bar, A_bar, mu_e, mu_n
          write(*,'(8(es12.5,2x))') p_ext, n_b, y_e, y_n, z_bar, a_bar, mu_e, mu_n
@@ -393,11 +394,11 @@
          integer, intent(inout) :: ipar(lipar)
          integer, intent(out) :: ierr
          ierr = 0
-		 do i = 1, qt% Ntable
-		 mu_i(i) = x(i,1)
-		 enddo
-		 n_b = x(qt% Ntable+1,1)			 
-		 mu_n = x(qt% Ntable+2,1)
+		 do j = 1, qt% Ntable
+		 mu_i(j) = x(j,1)
+		 enddo	 
+		 n_b = x(qt% Ntable + 1,1)			 
+		 mu_n = x(qt% Ntable + 2,1)
       end subroutine set_primaries
       
 
@@ -538,6 +539,7 @@
      	  phi_sum = phi+phi_sum
 		  !for baryon conservation
 		  as(i) = real(qt% A(i))*m_term*exp((mu_i(i)+qt%BE(i))/kT)	 
+!		  write(*,*) qt% Z(i), qt% A(i), qt% BE(i), qt% Y(i), as(i), mu_i(i)
 		  Asum = Asum + as(i) 
 		  ni_Asum = ni_Asum + m_term*exp((mu_i(i)+qt%BE(i))/kT)/n_b	
 		  Ai = Ai + as(i)/n_b
@@ -559,14 +561,14 @@
   		 !baryon and charge conservation 
          equ(qt% Ntable+1,1) = Zsum - n_e
          equ(qt% Ntable+2,1) = Asum - n_b + n_n*(1.0-chi)  
-         
-		 write(*,*) mu_n, n_n, Y_n
-		 write(*,*) mu_e, n_e, Y_e
-		 write(*,*) chi, iso, n_nin, R_n, R_ws
-		 write(*,*) m_star, m_nuc, m_term, phi, phi_sum
-         write(*,*) Zbar, Abar
-		 write(*,*) Zsum, Asum
-         stop
+!         
+!		 write(*,*) mu_n, n_n, Y_n
+!		 write(*,*) mu_e, n_e, Y_e
+!		 write(*,*) chi, iso, n_nin, R_n, R_ws
+!		 write(*,*) m_star, m_nuc, m_term, phi, phi_sum
+!         write(*,*) Zbar, Abar
+!		 write(*,*) Zsum, Asum
+!         stop
       end subroutine eval_equ
           
       subroutine eval_jacobian(ldA, A, idiag, lrpar, rpar, lipar, ipar, ierr)
@@ -764,18 +766,18 @@
          integer, intent(out) :: ierr
          ierr = 0
 		 ! set bounds of variables
- 		 x(dt% Ntable+1, 1) = max(n_b_prev, x(dt% Ntable+1,1))
- 		 x(dt% Ntable+2,1) = abs(x(dt% Ntable+2,1))
+ 		 x(qt% Ntable+1, 1) = max(n_b_prev, x(qt% Ntable+1,1))
+ 		 x(qt% Ntable+2,1) = abs(x(qt% Ntable+2,1))
  		 
- 		 dx(dt% Ntable+1,1) = x(dt% Ntable+1,1)-xold(dt% Ntable+1,1)     
-		 dx(dt% Ntable+2,1) = x(dt% Ntable+2,1)-xold(dt% Ntable+2,1)     
- 		 x(dt% Ntable+1,1) = xold(dt%Ntable+1,1)+dx(dt%Ntable+1,1)     
-		 x(dt% Ntable+2,1) = xold(dt%Ntable+2,1)+dx(dt%Ntable+2,1)     
+ 		 dx(qt% Ntable+1,1) = x(qt% Ntable+1,1)-xold(qt% Ntable+1,1)     
+		 dx(qt% Ntable+2,1) = x(qt% Ntable+2,1)-xold(qt% Ntable+2,1)     
+ 		 x(qt% Ntable+1,1) = xold(qt%Ntable+1,1)+dx(qt%Ntable+1,1)     
+		 x(qt% Ntable+2,1) = xold(qt%Ntable+2,1)+dx(qt%Ntable+2,1)     
  		 
- 		 if (x(dt% Ntable+1,1) < n_b_prev) then
- 		 x(dt% Ntable+1,1) = n_b_prev
- 		 dx(dt% Ntable+1,1) = x(dt% Ntable+1,1)-xold(dt% Ntable+1,1) 
- 		 x(dt% Ntable+1,1) = xold(dt% Ntable+1,1)+dx(dt% Ntable+1,1) 
+ 		 if (x(qt% Ntable+1,1) < n_b_prev) then
+ 		 x(qt% Ntable+1,1) = n_b_prev
+ 		 dx(qt% Ntable+1,1) = x(qt% Ntable+1,1)-xold(qt% Ntable+1,1) 
+ 		 x(qt% Ntable+1,1) = xold(qt% Ntable+1,1)+dx(qt% Ntable+1,1) 
  		 end if
 
       end subroutine xdomain   
