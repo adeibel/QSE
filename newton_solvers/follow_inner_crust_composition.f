@@ -259,7 +259,8 @@
 		 !if (p_ext < 4.26d-3) cycle
          if (p_ext < dt% P) cycle
         
-         write(*,*) p_ext
+         write(*,*) 'Pressure =', p_ext
+         write(*,*) 'n_b =', n_b
                   
          mu_n = mu_e/1000.
  		
@@ -343,7 +344,7 @@
              
 		 if (nonconv .eqv. .FALSE.) then
 		 write(*,*) 'converged'
-		 n_b = x(dt% Ntable+1, 1)
+		 !n_b = x(dt% Ntable+1, 1)
          write(y_output_id,'(8(es12.5,2x))') p_ext, n_b, y_e, y_n, Z_bar, A_bar, mu_e, mu_n
          write(*,'(8(es12.5,2x))') p_ext, n_b, y_e, y_n, z_bar, a_bar, mu_e, mu_n
 		 n_b_prev = n_b
@@ -523,7 +524,6 @@
 		 Ai = 0. ; Zi = 0.
 		 ni_Asum = 0. ; ni_Zsum = 0.
 		 phi_sum=0.
-
 		
 		 do i = 1, qt% Ntable
 		  iso = 1.0-(2.*real(qt% Z(i))/real(qt% A(i)))
@@ -539,7 +539,6 @@
      	  phi_sum = phi+phi_sum
 		  !for baryon conservation
 		  as(i) = real(qt% A(i))*m_term*exp((mu_i(i)+qt%BE(i))/kT)	 
-!		  write(*,*) qt% Z(i), qt% A(i), qt% BE(i), qt% Y(i), as(i), mu_i(i)
 		  Asum = Asum + as(i) 
 		  ni_Asum = ni_Asum + m_term*exp((mu_i(i)+qt%BE(i))/kT)/n_b	
 		  Ai = Ai + as(i)/n_b
@@ -561,14 +560,6 @@
   		 !baryon and charge conservation 
          equ(qt% Ntable+1,1) = Zsum - n_e
          equ(qt% Ntable+2,1) = Asum - n_b + n_n*(1.0-chi)  
-!         
-!		 write(*,*) mu_n, n_n, Y_n
-!		 write(*,*) mu_e, n_e, Y_e
-!		 write(*,*) chi, iso, n_nin, R_n, R_ws
-!		 write(*,*) m_star, m_nuc, m_term, phi, phi_sum
-!         write(*,*) Zbar, Abar
-!		 write(*,*) Zsum, Asum
-!         stop
       end subroutine eval_equ
           
       subroutine eval_jacobian(ldA, A, idiag, lrpar, rpar, lipar, ipar, ierr)
@@ -767,6 +758,7 @@
          ierr = 0
 		 ! set bounds of variables
  		 x(qt% Ntable+1, 1) = max(n_b_prev, x(qt% Ntable+1,1))
+ 		 x(qt% Ntable+1, 1) = max(0.0, x(qt% Ntable+1,1))
  		 x(qt% Ntable+2,1) = abs(x(qt% Ntable+2,1))
  		 
  		 dx(qt% Ntable+1,1) = x(qt% Ntable+1,1)-xold(qt% Ntable+1,1)     
@@ -774,11 +766,11 @@
  		 x(qt% Ntable+1,1) = xold(qt%Ntable+1,1)+dx(qt%Ntable+1,1)     
 		 x(qt% Ntable+2,1) = xold(qt%Ntable+2,1)+dx(qt%Ntable+2,1)     
  		 
- 		 if (x(qt% Ntable+1,1) < n_b_prev) then
- 		 x(qt% Ntable+1,1) = n_b_prev
- 		 dx(qt% Ntable+1,1) = x(qt% Ntable+1,1)-xold(qt% Ntable+1,1) 
- 		 x(qt% Ntable+1,1) = xold(qt% Ntable+1,1)+dx(qt% Ntable+1,1) 
- 		 end if
+! 		 if (x(qt% Ntable+1,1) < n_b_prev) then
+! 		 x(qt% Ntable+1,1) = n_b_prev
+! 		 dx(qt% Ntable+1,1) = x(qt% Ntable+1,1)-xold(qt% Ntable+1,1) 
+! 		 x(qt% Ntable+1,1) = xold(qt% Ntable+1,1)+dx(qt% Ntable+1,1) 
+! 		 end if
 
       end subroutine xdomain   
       
