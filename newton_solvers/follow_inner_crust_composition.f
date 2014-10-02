@@ -121,8 +121,9 @@
       integer :: mu_table_input_id, mu_table_output_id
       integer :: y_output_id, ash_id
       logical, save :: eos_table_is_loaded = .FALSE.
-      real :: mterm, m_nuc, m_star
-      real, dimension(:), pointer :: fac1, fac2
+      real :: mterm, m_nuc, m_star 
+      real :: Z_average, A_average
+      real, dimension(:), pointer :: fac1, fac2, mass_frac
       real, parameter :: g = 1.d0
 
       namelist /range/ P_ext_start, n_b_start, kT, have_mu_table, &
@@ -271,17 +272,29 @@
 	     neq = nz*nvar
          m1 = (stencil_zones_subdiagonal+1)*nvar-1 ! number of subdiagonals
          m2 = (stencil_zones_superdiagonal+1)*nvar-1  ! number of superdiagonals
-         allocate(fac1(qt% Ntable), fac2(qt% Ntable), mu_i(qt% Ntable), ni(qt% Ntable))
+         allocate(fac1(qt% Ntable), fac2(qt% Ntable), mu_i(qt% Ntable), ni(qt% Ntable), &
+         		& mass_frac(qt% Ntable))
          allocate(equ(nvar,nz), x(nvar,nz), xold(nvar,nz), dx(nvar,nz), xscale(nvar,nz), y(ldy, nsec), stat=ierr)
-         allocate(mu_i(qt% Ntable), ni(qt% Ntable))
          if (ierr /= 0) stop 1
-                  
+         
+         A_average = 0.
+         ! get average mass number of distribution 
+         do j=1,qt% Ntable
+         Z_average = (qt% Y(j))*real(qt% Z(j)) + Z_average
+         A_average = (qt% Y(j))*real(qt% A(j)) + A_average
+         enddo
+         
+         write(*,*) Z_average, A_average
+         stop
+                
+         ! xold is the initial guess for nuclei chemical potentials         
 		 ! sets mass fractions to 1d-20 for unpopulated nuclei
 		 do j=1,qt% Ntable
+		 mass_frac(j) = real(qt% A(j))*(qt% Y(j))/A_average
 		 m_star = mn_n-mp_n-me_n
 		 m_nuc = real(qt% A(j))*amu_n
          mterm = g*(m_nuc*kT/(twopi*hbarc_n**2))**(1.5)
-         fac1(j) = real(qt% A(j))/n_b
+         fac1(j) = real(qt% A(j))/n_b/A_average 
          fac2(j) = mterm	
          ! set mass fractions from abundance fractions	 
 		 xold(j,1) = log((qt% Y(j))/fac1(j)/fac2(j))*kT-qt%BE(j)
