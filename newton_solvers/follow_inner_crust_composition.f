@@ -1141,5 +1141,22 @@
 		character(len=6) :: rxn
 		!write(*,form) rxn, Z, A
 	 end subroutine print_reaction_check
+	 
+	 subroutine alloc_qse_table(Ntable, Ntable_new)
+	 	real, dimension(:), allocatable :: BEi_temp, Yi_temp
+		integer, dimension(:), allocatable :: Zi_temp, Ai_temp
+		integer :: Ntable, Ntable_new		
+		Zi_temp(1:Ntable) = qt% Z(1:Ntable)
+		Ai_temp(1:Ntable) = qt% A(1:Ntable)
+		BEi_temp(1:Ntable) = qt% BE(1:Ntable)
+		Yi_temp(1:Ntable) = qt% Y(1:Ntable)
+		deallocate(qt% Z, qt% A, qt% BE, qt% Y)
+		allocate(qt% Z(Ntable_new), qt% A(Ntable_new), &
+				& qt% BE(Ntable_new), qt% Y(Ntable_new))
+		qt% Z(1:Ntable) = Zi_temp(1:Ntable)
+		qt% A(1:Ntable) = Ai_temp(1:Ntable)
+		qt% BE(1:Ntable) = BEi_temp(1:Ntable)
+		qt% Y(1:Ntable) = Yi_temp(1:Ntable)
+	 end subroutine
           
     end module inner_crust
