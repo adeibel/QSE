@@ -25,6 +25,7 @@ module outer_crust
 	  real :: kn, ke, mu_n
 	  real :: mu_e, ne, nn 
 	  real :: x1, x2, xacc
+	  real :: A_average, Z_average
 	  real :: n, pres_n, pressure
 	  real :: pressure_start, pressure_stop, pressure_increment
 	  real :: mu_e_start, mu_e_stop, mu_e_increment
@@ -391,7 +392,17 @@ module outer_crust
   	  Z_final(k) = Z
 	  A_final(k) = A      
 	  N_final(k) = A-Z   
-      end do  ! end of nuclei loop 
+      end do  ! end of nuclei loop    
+
+	  A_average = 0.
+	  Z_average = 0.
+      ! get average mass number of distribution 
+      do j=1,at% Ntable
+      Z_average = (at% Y(j))*real(Z_final(j)) + Z_average
+      A_average = (at% Y(j))*real(A_final(j)) + A_average
+      enddo
+         
+      write(*,*) pressure, Z_average, A_average
 
       end do	! end of pressure loop       
       ! print final ash file
