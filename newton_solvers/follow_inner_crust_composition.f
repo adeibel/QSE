@@ -1085,10 +1085,14 @@
 
 	  ! allocate memory without space for duplicates
       index_temp = 0
+      if (dt_table_used .eqv. .false.) then
+      qt% Ntable = index-1-index_change	  	
+	  allocate(qt% Z(qt% Ntable), qt% A(qt% Ntable), qt% BE(qt% Ntable), &
+	  			& qt% Y(qt% Ntable))
+	  else
       call alloc_qse_table(qt% Ntable, index-1-index_change)
-!	  qt% Ntable = index-1-index_change	  	
-!	  allocate(qt% Z(qt% Ntable), qt% A(qt% Ntable), qt% BE(qt% Ntable), &
-!	  			& qt% Y(qt% Ntable))
+	  end if
+	  
 	  do j=1,index-1
 	   if (Z_new(j) == 0) then
 	   cycle
@@ -1146,7 +1150,9 @@
 	 subroutine alloc_qse_table(Ntable, Ntable_new)
 	 	real, dimension(:), allocatable :: BEi_temp, Yi_temp
 		integer, dimension(:), allocatable :: Zi_temp, Ai_temp
-		integer :: Ntable, Ntable_new		
+		integer :: Ntable, Ntable_new	
+		allocate(Zi_temp(Ntable), Ai_temp(Ntable), &
+				& BEi_temp(Ntable), Yi_temp(Ntable))
 		Zi_temp(1:Ntable) = qt% Z(1:Ntable)
 		Ai_temp(1:Ntable) = qt% A(1:Ntable)
 		BEi_temp(1:Ntable) = qt% BE(1:Ntable)
@@ -1158,6 +1164,7 @@
 		qt% A(1:Ntable) = Ai_temp(1:Ntable)
 		qt% BE(1:Ntable) = BEi_temp(1:Ntable)
 		qt% Y(1:Ntable) = Yi_temp(1:Ntable)
+		deallocate(Zi_temp, Ai_temp, BEi_temp, Yi_temp)
 	 end subroutine
           
     end module inner_crust
