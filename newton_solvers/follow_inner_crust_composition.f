@@ -1085,9 +1085,10 @@
 
 	  ! allocate memory without space for duplicates
       index_temp = 0
-	  qt% Ntable = index-1-index_change
-	  allocate(qt% Z(qt% Ntable), qt% A(qt% Ntable), qt% BE(qt% Ntable), &
-	  			& qt% Y(qt% Ntable))
+      call alloc_qse_table(qt% Ntable, index-1-index_change)
+!	  qt% Ntable = index-1-index_change	  	
+!	  allocate(qt% Z(qt% Ntable), qt% A(qt% Ntable), qt% BE(qt% Ntable), &
+!	  			& qt% Y(qt% Ntable))
 	  do j=1,index-1
 	   if (Z_new(j) == 0) then
 	   cycle
