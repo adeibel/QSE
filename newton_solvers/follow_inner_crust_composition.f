@@ -278,15 +278,13 @@
          if (ierr /= 0) stop 1
          
          A_average = 0.
+         Z_average = 0.
          ! get average mass number of distribution 
          do j=1,qt% Ntable
          Z_average = (qt% Y(j))*real(qt% Z(j)) + Z_average
          A_average = (qt% Y(j))*real(qt% A(j)) + A_average
          enddo
-         
-         write(*,*) Z_average, A_average
-         stop
-                
+                  
          ! xold is the initial guess for nuclei chemical potentials         
 		 ! sets mass fractions to 1d-20 for unpopulated nuclei
 		 do j=1,qt% Ntable
