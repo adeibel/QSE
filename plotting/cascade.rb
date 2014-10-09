@@ -20,8 +20,9 @@ class MyPlots
         t.save_dir = 'plots_out'
         t.def_eval_function { |str| eval(str) }
         
-        @data_filename = "y_output_equil.data"
-        @data_filename2 = "ashes_outer_crust.data"
+        @data_filename = "y_output.data"
+       # @data_filename2 = "ashes_outer_crust.data"
+		@data_filename2 = "outer_crust.txt"
         @data_filename3 = "ashes_acc.txt"
         @data_filename4 = "SLy4_0_14_freq.o2.txt"
         @opacity_data = nil
@@ -169,27 +170,27 @@ EOD
 		t.line_width = 0.5
 
         t.show_plot(plot_boundaries(xs,ys,@margin)){
-        #t.show_polyline(xs,ys,Blue)
-        #t.show_polyline(xs,ys2,Black)
+        t.show_polyline(xs,ys,Blue)
+        t.show_polyline(xs,ys2,Blue)
         #t.show_polyline(xs,ys_n,Green)
         t.show_polyline(xs4, ys7, Black)
-        t.show_polyline(xs4,ys8, Blue)
-        
-        
+        t.show_polyline(xs4,ys8, Black)
+            
         t.line_type = LINE_TYPE_DASH
-        t.show_polyline([(4.32E-4).log10,(4.32E-4).log10],[0,200], Red)
+#        t.show_polyline([(4.32E-4).log10,(4.32E-4).log10],[0,200], Red)
         t.line_type = LINE_TYPE_SOLID
-        t.show_polyline(xs2,ys3,Purple)
-        t.show_polyline(xs2,ys4,Crimson)
-        t.show_polyline([(4.32E-4).log10,(0.1).log10],[18,18], Purple)
-        t.show_polyline([(4.32E-4).log10,(0.1).log10],[60,60], Crimson)
+        t.show_polyline(xs2,ys3,Blue)
+        t.show_polyline(xs2,ys4,Blue)
+
+		t.show_polyline([(2.14748E-004).log10,(4.32E-4).log10],[24.8719,22],Blue)
+		t.show_polyline([(2.14748E-004).log10,(4.32E-4).log10],[74.7766,74],Blue)
 
         }
         
-#         t.show_label('text' => '$<$Z$>$', 'x' => -3 , 'y' => 50, 
-#             'justification' => CENTERED, 'color' => Blue, 'scale' => 1.0) 
-#         t.show_label('text' => '$<$A$>$', 'x' => -3 , 'y' => 130, 
-#             'justification' => CENTERED, 'color' => Black, 'scale' => 1.0)
+        t.show_label('text' => '$<$Z$>$', 'x' => -5.5 , 'y' => 45, 
+            'justification' => CENTERED, 'color' => Black, 'scale' => 1.0) 
+        t.show_label('text' => '$<$A$>$', 'x' => -5.5 , 'y' => 95, 
+            'justification' => CENTERED, 'color' => Black, 'scale' => 1.0)
     end
     
 

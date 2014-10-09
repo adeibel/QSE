@@ -20,8 +20,9 @@ class MyPlots
         t.save_dir = 'plots_out'
         t.def_eval_function { |str| eval(str) }
         
-        @data_filename = "y_output_equil.data"
-        @data_filename2 = "ashes_outer_crust.data"
+        @data_filename = "y_output.data"
+        #@data_filename2 = "ashes_outer_crust.data"
+        @data_filename2 = "outer_crust.txt"
         @data_filename3 = "ashes_acc.txt"
         @opacity_data = nil
         
@@ -156,8 +157,8 @@ EOD
 		t.line_width = 0.5
 
         t.show_plot(plot_boundaries(xs,ys,@margin)){
-        #t.show_polyline(xs,ys,Blue)
-        #t.show_polyline(xs,ys2,Black)
+        t.show_polyline(xs,ys,Purple)
+        t.show_polyline(xs,ys2,Green)
         #t.show_polyline(xs,ys_n,Green)
         t.show_polyline(xs3, ys5, Black)
         t.show_polyline(xs3,ys6, Blue)
@@ -166,9 +167,8 @@ EOD
         t.show_polyline([(4.32E-4).log10,(4.32E-4).log10],[0,200], Red)
         t.line_type = LINE_TYPE_SOLID
         t.show_polyline(xs2,ys3,Purple)
-        t.show_polyline(xs2,ys4,Crimson)
-        t.show_polyline([(4.32E-4).log10,(0.1).log10],[18,18], Purple)
-        t.show_polyline([(4.32E-4).log10,(0.1).log10],[60,60], Crimson)
+        t.show_polyline(xs2,ys4,Green)
+
 
         }
         
