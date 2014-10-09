@@ -101,6 +101,7 @@
       !namelist
       real :: p_ext_start
       real :: n_b_start
+      real :: Y_sum
       logical :: have_mu_table
       logical :: do_numerical_jacobian
       integer :: which_decsol_in, decsol    
@@ -277,22 +278,26 @@
          allocate(equ(nvar,nz), x(nvar,nz), xold(nvar,nz), dx(nvar,nz), xscale(nvar,nz), y(ldy, nsec), stat=ierr)
          if (ierr /= 0) stop 1
          
-         A_average = 0.
-         Z_average = 0.
-         ! get average mass number of distribution 
-         do j=1,qt% Ntable
-         Z_average = (qt% Y(j))*real(qt% Z(j)) + Z_average
-         A_average = (qt% Y(j))*real(qt% A(j)) + A_average
-         enddo
+	  A_average = 0.
+	  Z_average = 0.
+	  Y_sum = 0. 
+      ! get average mass number of distribution 
+      do j=1,qt% Ntable
+      Y_sum = (qt% Y(j))+Y_sum
+      Z_average = (qt% Y(j))*real(qt% Z(j)) + Z_average
+      A_average = (qt% Y(j))*real(qt% A(j)) + A_average
+      enddo
                   
          ! xold is the initial guess for nuclei chemical potentials         
 		 ! sets mass fractions to 1d-20 for unpopulated nuclei
 		 do j=1,qt% Ntable
-		 mass_frac(j) = real(qt% A(j))*(qt% Y(j))/A_average
+!		 mass_frac(j) = real(qt% A(j))*(qt% Y(j))/A_average
 		 m_star = mn_n-mp_n-me_n
 		 m_nuc = real(qt% A(j))*amu_n
          mterm = g*(m_nuc*kT/(twopi*hbarc_n**2))**(1.5)
-         fac1(j) = real(qt% A(j))/n_b/A_average 
+!         fac1(j) = real(qt% A(j))/n_b/A_average 
+ !		 fac1(j) = real(qt% A(j))/n_b
+ 		 fac1(j) = 1./n_b
          fac2(j) = mterm	
          ! set mass fractions from abundance fractions	 
 		 xold(j,1) = log((qt% Y(j))/fac1(j)/fac2(j))*kT-qt%BE(j)
