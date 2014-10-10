@@ -808,6 +808,7 @@
 	  integer, parameter :: ineg = 1, ipos = 2
 	  integer, parameter :: max_iterations = 100
 	  integer, parameter :: qt_temp = 100000
+	  integer, parameter :: pycno_thresh_Z = 4
 	  logical, save :: dt_table_used = .false.
       logical, dimension(max_iterations) :: neutron_capture, dineutron_capture
 	  logical, dimension(max_iterations) :: neutron_emission, dineutron_emission
