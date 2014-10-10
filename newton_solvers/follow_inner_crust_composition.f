@@ -883,6 +883,19 @@
       write(*,*) 'need to allocate more space for qse_table_type'
       stop
       end if
+      
+      !check for pycnonuclear reactions
+      if (Z .le. pycno_thresh_Z) then
+	  Zr = 2.0*Z ; Ar = 2.0*A
+	  Nr = Ar-Zr
+	  call get_nucleus_properties(Zr,Ar,id,Br,Snr,S2nr,Spr,S2pr, &
+	  		& ecthreshr,bthreshr,VNr,ierr)
+	  if (ierr /= 0) exit	  
+	  rxn = 'pyc'
+	  call print_reaction_check
+	  A = Ar ; Z = Zr
+	  cycle      
+      end if
 
       ! check for weak reactions                 
       ! electron capture
