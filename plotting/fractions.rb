@@ -68,7 +68,7 @@ class MyPlots
 	    @Z2 = Dvector.new
 	    @equil = [@pressure4, @nb3, @N2, @Z2]
               
-        t.def_figure("accreted_crust_only") { plot1 }
+        t.def_figure("fractions") { plot1 }
 
         t.model_number = -1
         
@@ -123,33 +123,37 @@ EOD
 #     end
     
   def plot_boundaries(xs, ys, ymin=nil, ymax=nil)
-    xmin = -6.0 #xs.min
+    xmin = -4.0 #xs.min
     xmax = xs.max
     ymin = 0.0 #ys.min if ymin == nil
-    ymax = 200.0 #ys.max if ymax == nil
+    ymax = 1.0 #ys.max if ymax == nil
     width = (xmax == xmin)? 1 : xmax - xmin
     height = (ymax == ymin)? 1 : ymax - ymin
-    left_boundary = xmin-1.5
-    right_boundary = xmax+0.5
-    top_boundary = ymax+0.5
-    bottom_boundary = ymin-1.5
+    left_boundary = xmin #-1.5
+    right_boundary = xmax #+0.5
+    top_boundary = ymax #+0.5
+    bottom_boundary = ymin #-1.5
     return [left_boundary,right_boundary,top_boundary,bottom_boundary]
   end
 
     
     def plot1
         read_data
-        t.do_box_labels('', 'pressure [MeV fm$^{-3}$]', 'nucleon number')
+        t.do_box_labels('', 'pressure [MeV fm$^{-3}$]', 'fraction')
         xs_in = @pressure
         xs = (xs_in).log10
         ys = @Z
         ys2 = @A
         ys_n = (@A).minus(@Z)
+        ye1 = @Ye
+        yn1 = @Yn
         
         xs_outer = @pressure2
         xs2 = (xs_outer).log10
         ys3 = @Z_outer
         ys4 = @A_outer
+        ye2 = @Ye2
+        yn2 = @Yn2
         
         xs_outer2 = @pressure3
         xs3 = (xs_outer2).log10
@@ -170,27 +174,14 @@ EOD
 		t.line_width = 0.5
 
         t.show_plot(plot_boundaries(xs,ys,@margin)){
- #       t.show_polyline(xs,ys,Blue)
- #       t.show_polyline(xs,ys2,Red)
-        #t.show_polyline(xs,ys_n,Green)
-#        t.show_polyline(xs4, ys7, Black)
-#        t.show_polyline(xs4,ys8, Black)
-            
-        t.line_type = LINE_TYPE_DASH
-#        t.show_polyline([(4.32E-4).log10,(4.32E-4).log10],[0,200], Red)
-        t.line_type = LINE_TYPE_SOLID
-        t.show_polyline(xs2,ys3,Blue)
-        t.show_polyline(xs2,ys4,Red)
-
-		t.show_polyline([(2.14748E-004).log10,(4.32E-4).log10],[25.990047906816265 ,25.990047906816265 ],Blue)
-		t.show_polyline([(2.14748E-004).log10,(4.32E-4).log10],[78.903966512629793,78.903966512629793 ],Red)
-
+		t.show_polyline(xs,ye1,Black)
+		t.show_polyline(xs,yn1,Blue)
         }
         
-        t.show_label('text' => '$<$Z$>$', 'x' => -5.5 , 'y' => 45, 
-            'justification' => CENTERED, 'color' => Black, 'scale' => 1.0) 
-        t.show_label('text' => '$<$A$>$', 'x' => -5.5 , 'y' => 95, 
-            'justification' => CENTERED, 'color' => Black, 'scale' => 1.0)
+#         t.show_label('text' => '$<$Z$>$', 'x' => -5.5 , 'y' => 45, 
+#             'justification' => CENTERED, 'color' => Black, 'scale' => 1.0) 
+#         t.show_label('text' => '$<$A$>$', 'x' => -5.5 , 'y' => 95, 
+#             'justification' => CENTERED, 'color' => Black, 'scale' => 1.0)
     end
     
 
