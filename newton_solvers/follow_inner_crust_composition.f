@@ -102,10 +102,10 @@
       real :: p_ext_start
       real :: n_b_start
       real :: Y_sum
+      real :: eps_const
       logical :: have_mu_table
       logical :: do_numerical_jacobian
-      integer :: which_decsol_in, decsol    
- 
+      integer :: which_decsol_in, decsol     
  	  ! for crust
  	  character(len=*), parameter :: dist_table_name = 'ash_final.data'
 	  character(len=*), parameter :: mass_table_name = 'moe95_converted.data'
@@ -360,6 +360,14 @@
              
 		 if (nonconv .eqv. .FALSE.) then
 		 write(*,*) 'converged'
+		 if (mu_n > 0.) then
+         x1=0.0
+         x2=10.
+         xacc=1.d-15
+         kn=root_bisection(kn_solve,x1,x2,xacc,ierr,hist) !returns in fm**-1
+         if (io_failure(ierr,'Error in bisection for kn wave vector')) stop
+         n_n = 2.0*kn**3/threepisquare   		 		 		 
+		 call chem_equil_check(n_n,height,eps_const)
 		 !n_b = x(dt% Ntable+1, 1)
          write(y_output_id,'(8(es12.5,2x))') p_ext, n_b, y_e, y_n, Z_bar, A_bar, mu_e, mu_n
          write(*,'(8(es12.5,2x))') p_ext, n_b, y_e, y_n, z_bar, a_bar, mu_e, mu_n
@@ -775,20 +783,30 @@
 		 ! set bounds of variables
  		 x(qt% Ntable+1, 1) = max(n_b_prev, x(qt% Ntable+1,1))
  		 x(qt% Ntable+1, 1) = max(0.0, x(qt% Ntable+1,1))
- 		 x(qt% Ntable+2,1) = abs(x(qt% Ntable+2,1))
- 		 
+ 		 x(qt% Ntable+2,1) = abs(x(qt% Ntable+2,1)) 		 
  		 dx(qt% Ntable+1,1) = x(qt% Ntable+1,1)-xold(qt% Ntable+1,1)     
 		 dx(qt% Ntable+2,1) = x(qt% Ntable+2,1)-xold(qt% Ntable+2,1)     
  		 x(qt% Ntable+1,1) = xold(qt%Ntable+1,1)+dx(qt%Ntable+1,1)     
-		 x(qt% Ntable+2,1) = xold(qt%Ntable+2,1)+dx(qt%Ntable+2,1)     
- 		 
+		 x(qt% Ntable+2,1) = xold(qt%Ntable+2,1)+dx(qt%Ntable+2,1)     	 
 ! 		 if (x(qt% Ntable+1,1) < n_b_prev) then
 ! 		 x(qt% Ntable+1,1) = n_b_prev
 ! 		 dx(qt% Ntable+1,1) = x(qt% Ntable+1,1)-xold(qt% Ntable+1,1) 
 ! 		 x(qt% Ntable+1,1) = xold(qt% Ntable+1,1)+dx(qt% Ntable+1,1) 
 ! 		 end if
-
       end subroutine xdomain   
+      
+      subroutine chem_equil_check(n,height,eps_const)
+      real :: eps_const
+      real :: mu, phi_e, phi_g
+      real :: n, m_term
+      real, parameter :: g = 1.d0   
+      real, parameter :: grav = 10.0   
+      phi_e = 0.
+      phi_g = mn_n*grav*height
+      mterm = g*(mn_n*kT/(twopi*hbarc_n**2))**(1.5)
+	  mu = kT*log(n/m_term)
+      eps_const = mu + phi_e + phi_g
+      end subroutine chem_equil_check
       
       subroutine check_all_rxns(mu_e, mu_n)
       real, intent(in) :: mu_e, mu_n
@@ -893,6 +911,7 @@
 	  		& ecthreshr,bthreshr,VNr,ierr)
 	  if (ierr /= 0) exit	  
 	  rxn = 'pyc'
+	  write(*,*) rxn, Z, A, Zr, Ar
 	  call print_reaction_check
 	  A = Ar ; Z = Zr
 	  cycle      
