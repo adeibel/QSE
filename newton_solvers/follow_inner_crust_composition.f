@@ -346,6 +346,7 @@
             call do_newt(null_decsol, null_decsolblk, mkl_pardiso_decsols)
          end if
 
+		 ! if qse solver fails to converge
          if (nonconv) then
          write(*, *) 'failed to converge'
          write(*,*) p_ext, n_b, y_e, y_n, Z_bar, A_bar, mu_e, mu_n
@@ -357,7 +358,7 @@
             write(*, *) 'num_solves', iwork(i_num_solves)
          end if
          
-             
+         ! if qse solver converges     
 		 if (nonconv .eqv. .FALSE.) then
 		 write(*,*) 'converged'
 		 if (mu_n > 0.) then
@@ -798,11 +799,12 @@
       subroutine chem_equil_check(n,height,eps_const)
       real :: eps_const
       real :: mu, phi_e, phi_g
-      real :: n, m_term
+      real :: n, m_term, psh_n
       real, parameter :: g = 1.d0   
       real, parameter :: grav = 10.0   
+      psh_n = kT/mn_n
       phi_e = 0.
-      phi_g = mn_n*grav*height
+      phi_g = mn_n*psh_n
       mterm = g*(mn_n*kT/(twopi*hbarc_n**2))**(1.5)
 	  mu = kT*log(n/m_term)
       eps_const = mu + phi_e + phi_g
