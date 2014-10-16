@@ -364,17 +364,24 @@
          ! if qse solver converges     
 		 if (nonconv .eqv. .FALSE.) then
 		 write(*,*) 'converged'
-		 if (mu_n > 0.) then
-         x1=0.0
-         x2=10.
-         xacc=1.d-15
-         kn=root_bisection(kn_solve,x1,x2,xacc,ierr,hist) !returns in fm**-1
-         if (io_failure(ierr,'Error in bisection for kn wave vector')) stop
-         n_n = 2.0*kn**3/threepisquare   	
-         rho = n_b*amu_n	 		 		 
+  		 A_average = 0.
+	  	 Z_average = 0.
+	  	 BE_average = 0.
+	  	 Y_sum = 0. 
+      	 ! get average mass number of distribution 
+      	 do j=1,qt% Ntable
+      	 Y_sum = (qt% Y(j))+Y_sum
+         Z_average = (qt% Y(j))*real(qt% Z(j)) + Z_average
+      	 A_average = (qt% Y(j))*real(qt% A(j)) + A_average
+      	 BE_average = (qt% Y(j))*(qt% BE(j)) + BE_average
+      	 enddo
+     	 Z_average = Z_average/Y_sum
+     	 A_average = A_average/Y_sum  
+     	 BE_average = BE_average/Y_sum
+		 		 
 		 !call chem_equil_check(mu_n,p_ext,rho,eps_const)
 		 !n_b = x(dt% Ntable+1, 1)
-         call get_energy_density(Z_bar,A_bar,mu_e,mu_n,BE_bar,kT,eps_sol)
+         call get_energy_density(Z_average,A_average,mu_e,mu_n,BE_average,kT,eps_sol)
          write(y_output_id,'(8(es12.5,2x))') p_ext, n_b, y_e, y_n, Z_bar, A_bar, mu_e, mu_n
          write(*,'(8(es12.5,2x))') p_ext, n_b, y_e, y_n, z_bar, a_bar, mu_e, mu_n
 		 n_b_prev = n_b
