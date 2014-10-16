@@ -10,7 +10,8 @@
       use eos_table
       use dist_table
       use rootfind      
-      use crust_eos_lib      
+      use crust_eos_lib 
+      use eos_lib     
 
       implicit none
       
@@ -112,6 +113,7 @@
 	  character(len=*), parameter :: mass_table_name = 'moe95_converted.data'
  	  character(len=*), parameter :: eos_table_name = 'ashes_acc.txt'
 	  character(len=*), parameter :: y_output_file = 'y_output.data'
+	  character(len=*), parameter :: tov_output_file = 'tov_acc.data'
       character(len=*), parameter :: output_file = 'qse_output.data'
    	  character(len=*), parameter :: abundance_file = 'qse_abun.data'
    	  character(len=*), parameter :: default_infile = 'qse.inlist'
@@ -121,10 +123,11 @@
       integer :: i, j, ios
       integer :: inlist_id, output_id, abundance_id  
       integer :: mu_table_input_id, mu_table_output_id
-      integer :: y_output_id, ash_id
+      integer :: y_output_id, ash_id, tov_id
       logical, save :: eos_table_is_loaded = .FALSE.
       real :: mterm, m_nuc, m_star 
-      real :: Z_average, A_average
+      real :: Z_average, A_average, BE_average
+      real :: eps_sol
       real, dimension(:), pointer :: fac1, fac2, mass_frac
       real, parameter :: g = 1.d0
 
@@ -214,7 +217,14 @@
 	  y_output_id = alloc_iounit(ierr)
 	  if (io_failure(ierr, 'allocating unit for y fractions file')) stop
 	  open(unit=y_output_id, file = y_output_file, iostat=ios, status="unknown")
+	  if (io_failure(ios,'opening y_output file')) stop
 	  write(y_output_id,'(8(A12),2x)') 'Pressure', 'n_b', 'Ye', 'Yn', 'Zbar', 'Abar', 'mu_e', 'mu_n'
+	  
+	  tov_id = alloc_iounit(ierr)
+	  if (io_failure(ierr, 'allocating unit for tov file')) stop
+	  open(unit=tov_id, file=tov_output_file, iostat=ios, status="unknown")
+	  if (io_failure(ios,'opening tov file')) stop	  
+	  write(tov_id,'(5(A15),2x)') 'P[MeV*fm^-3]', 'rho[MeV*fm^-3]', 'eps[fm^-4]', 'mue[MeV]', 'mun[MeV]' 
 
 	  ! set some dimensions
 	  ! make nvar equal to number of entries in mass table + 2 (for n_b and mu_n)
@@ -382,11 +392,11 @@
 		 !call chem_equil_check(mu_n,p_ext,rho,eps_const)
 		 !n_b = x(dt% Ntable+1, 1)
          call get_energy_density(Z_average,A_average,mu_e,mu_n,BE_average,kT,eps_sol)
+         write(tov_id,'(5(es15.5,2x))') p_ext, n_b*amu_n, eps_sol, mu_e, mu_n
          write(y_output_id,'(8(es12.5,2x))') p_ext, n_b, y_e, y_n, Z_bar, A_bar, mu_e, mu_n
          write(*,'(8(es12.5,2x))') p_ext, n_b, y_e, y_n, z_bar, a_bar, mu_e, mu_n
 		 n_b_prev = n_b
 		 write(*,*) 'eps_check =', eps_const
-		 end if
 		 end if
          
          deallocate(iwork, work)
@@ -705,7 +715,7 @@
       mu = me_n*(sqrt(1.0+x**2)-1.0)     
      end function electron_chemical_potential
 
-	 function neutron_chemical_potential(k) result(mu)
+	 function neutron_chemical_potential_local(k) result(mu)
 		use phys_constants
 		real, intent(in) :: k	! (fm**-1)
 		real :: mu	! MeV
@@ -715,12 +725,12 @@
 		W = k*(cw0(0) + k*(cw0(1) + k*(cw0(2) + k*cw0(3))))
 		mu = W + onethird*  &
 				& k*(cw0(0) + k*(2.0*cw0(1) + k*(3.0*cw0(2) + 4.0*k*cw0(3))))
-	 end function neutron_chemical_potential            
+	 end function neutron_chemical_potential_local         
  
      function kn_solve(x)
       real, intent(in) :: x
       real :: kn_solve    
-      kn_solve = neutron_chemical_potential(x) - mu_n  
+      kn_solve = neutron_chemical_potential_local(x) - mu_n  
      end function kn_solve
      
      function kn_solve_pressure(x)
@@ -825,8 +835,8 @@
  !     phi_g = mn_n*p
 !      m_term = g*(mn_n*kT/(twopi*hbarc_n**2))**(1.5)
 !	  mu = kT*log(n/m_term)
-      eps_const = mu + phi_e + phi_g
-      write(*,*) 'mu =', mu, 'phi_g =', phi_g
+ !     eps_const = mu + phi_e + phi_g
+!      write(*,*) 'mu =', mu, 'phi_g =', phi_g
       end subroutine chem_equil_check
       
       subroutine check_all_rxns(mu_e, mu_n)

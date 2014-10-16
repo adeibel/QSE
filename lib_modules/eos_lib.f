@@ -34,7 +34,7 @@
 		if (ierr /= 0) then
 		write(*,*) 'Error in bisection for number density of neutrons'
 		stop
-		endif
+		endif		 		
 		rest_mass = (Z*mp_n+(A-Z)*mn_n+Z*me_n)*n_i+mn_n*n_n
 		energy_density = BE*n_i+abs(eden_drip(n_n)-mn_n*n_n) &
 				+(abs(eden_el(n_e)-Z*n_i*me_n))+rest_mass
