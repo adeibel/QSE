@@ -103,6 +103,7 @@
       real :: n_b_start
       real :: Y_sum
       real :: eps_const
+      real :: rho
       logical :: have_mu_table
       logical :: do_numerical_jacobian
       integer :: which_decsol_in, decsol     
@@ -367,12 +368,15 @@
          xacc=1.d-15
          kn=root_bisection(kn_solve,x1,x2,xacc,ierr,hist) !returns in fm**-1
          if (io_failure(ierr,'Error in bisection for kn wave vector')) stop
-         n_n = 2.0*kn**3/threepisquare   		 		 		 
-		 call chem_equil_check(n_n,height,eps_const)
+         n_n = 2.0*kn**3/threepisquare   	
+         rho = n_b*amu_n	 		 		 
+		 call chem_equil_check(mu_n,p_ext,rho,eps_const)
 		 !n_b = x(dt% Ntable+1, 1)
          write(y_output_id,'(8(es12.5,2x))') p_ext, n_b, y_e, y_n, Z_bar, A_bar, mu_e, mu_n
          write(*,'(8(es12.5,2x))') p_ext, n_b, y_e, y_n, z_bar, a_bar, mu_e, mu_n
 		 n_b_prev = n_b
+		 write(*,*) 'eps_check =', eps_const
+		 end if
 		 end if
          
          deallocate(iwork, work)
@@ -796,18 +800,23 @@
 ! 		 end if
       end subroutine xdomain   
       
-      subroutine chem_equil_check(n,height,eps_const)
+      subroutine chem_equil_check(mu,p,rho,eps_const)
       real :: eps_const
       real :: mu, phi_e, phi_g
       real :: n, m_term, psh_n
+      real :: p, rho
       real, parameter :: g = 1.d0   
-      real, parameter :: grav = 10.0   
-      psh_n = kT/mn_n
-      phi_e = 0.
-      phi_g = mn_n*psh_n
-      mterm = g*(mn_n*kT/(twopi*hbarc_n**2))**(1.5)
-	  mu = kT*log(n/m_term)
+      !real, parameter :: grav = 1.86d14 !cm/s/s   
+      real, parameter :: grav = 3.4d-18
+      !psh_n = p/rho/grav !kT/mn_n
+      !depth = 
+ !     phi_e = 0.
+      !phi_g = mn_n*depth*grav
+ !     phi_g = mn_n*p
+!      m_term = g*(mn_n*kT/(twopi*hbarc_n**2))**(1.5)
+!	  mu = kT*log(n/m_term)
       eps_const = mu + phi_e + phi_g
+      write(*,*) 'mu =', mu, 'phi_g =', phi_g
       end subroutine chem_equil_check
       
       subroutine check_all_rxns(mu_e, mu_n)
