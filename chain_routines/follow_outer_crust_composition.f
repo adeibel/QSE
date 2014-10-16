@@ -403,7 +403,6 @@ module outer_crust
       Z_average = (at% Y(j))*real(Z_final(j)) + Z_average
       A_average = (at% Y(j))*real(A_final(j)) + A_average
       enddo
-      
       Z_average = Z_average/Y_sum
       A_average = A_average/Y_sum
          

@@ -279,15 +279,17 @@
          allocate(equ(nvar,nz), x(nvar,nz), xold(nvar,nz), dx(nvar,nz), xscale(nvar,nz), y(ldy, nsec), stat=ierr)
          if (ierr /= 0) stop 1
          
-	  A_average = 0.
-	  Z_average = 0.
-	  Y_sum = 0. 
-      ! get average mass number of distribution 
-      do j=1,qt% Ntable
-      Y_sum = (qt% Y(j))+Y_sum
-      Z_average = (qt% Y(j))*real(qt% Z(j)) + Z_average
-      A_average = (qt% Y(j))*real(qt% A(j)) + A_average
-      enddo
+	   	 A_average = 0.
+	  	 Z_average = 0.
+	  	 Y_sum = 0. 
+      	 ! get average mass number of distribution 
+      	 do j=1,qt% Ntable
+      	 Y_sum = (qt% Y(j))+Y_sum
+         Z_average = (qt% Y(j))*real(qt% Z(j)) + Z_average
+      	 A_average = (qt% Y(j))*real(qt% A(j)) + A_average
+      	 enddo
+     	 Z_average = Z_average/Y_sum
+     	 A_average = A_average/Y_sum      	 
                   
          ! xold is the initial guess for nuclei chemical potentials         
 		 ! sets mass fractions to 1d-20 for unpopulated nuclei
@@ -370,8 +372,9 @@
          if (io_failure(ierr,'Error in bisection for kn wave vector')) stop
          n_n = 2.0*kn**3/threepisquare   	
          rho = n_b*amu_n	 		 		 
-		 call chem_equil_check(mu_n,p_ext,rho,eps_const)
+		 !call chem_equil_check(mu_n,p_ext,rho,eps_const)
 		 !n_b = x(dt% Ntable+1, 1)
+         call get_energy_density(Z_bar,A_bar,mu_e,mu_n,BE_bar,kT,eps_sol)
          write(y_output_id,'(8(es12.5,2x))') p_ext, n_b, y_e, y_n, Z_bar, A_bar, mu_e, mu_n
          write(*,'(8(es12.5,2x))') p_ext, n_b, y_e, y_n, z_bar, a_bar, mu_e, mu_n
 		 n_b_prev = n_b
