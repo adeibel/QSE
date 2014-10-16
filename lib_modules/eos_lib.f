@@ -11,40 +11,33 @@
 
 	! all number densities and energy density are in nuclear units
 	 subroutine get_energy_density(Z, A, mu_e, mu_n, BE, kT, energy_density)
-	    integer, intent(in) :: Z, A
-		real, intent(in) :: mu_e, mu_n
-		real :: BE
+	    real, intent(in) :: Z, A
+		real, intent(in) :: mu_e, mu_n, BE, kT
 		real :: n_n, n_p, n_i, n_e
 		real :: k_fe, k_fn, k_fp
-		real :: rest_masses
-		real :: kT
+		real :: rest_mass
 		real :: energy_density
 		real :: x1, x2, xacc
 		real :: r
 		real,dimension(:),pointer :: hist
 		real, parameter :: g=2.0
-		integer :: N, ierr 
-		N = A-Z
+		integer :: ierr 
 		!electron number density
 		k_fe = sqrt(mu_e**2-me_n**2)
 		n_e = k_fe**3/(3*pi**2) 
-		n_i = n_e/real(Z)
+		n_i = n_e/Z
 		!neutron number density rootfind
 		x1=0.0
-		x2=1.d10
-		xacc=1.d-10
+		x2=10.0
+		xacc=1.d-15
 		n_n = root_bisection(neutron_chem,x1,x2,xacc,ierr,hist) 
 		if (ierr /= 0) then
 		write(*,*) 'Error in bisection for number density of neutrons'
 		stop
 		endif
- 
-		rest_masses = abs((real(Z)*mp_n*n_i+real(N)*mn_n*n_i) &
-				+mn_n*n_n+n_i*real(Z)*me_n)
-	
+		rest_mass = (Z*mp_n+(A-Z)*mn_n+Z*me_n)*n_i+mn_n*n_n
 		energy_density = BE*n_i+abs(eden_drip(n_n)-mn_n*n_n) &
-				+(abs(eden_el(n_e)-real(Z)*n_i*me_n)) +rest_masses
-
+				+(abs(eden_el(n_e)-Z*n_i*me_n))+rest_mass
 	 contains 
  
      ! neutron chemical potential from mb77
