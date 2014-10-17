@@ -71,8 +71,7 @@
       type(qse_table_type), pointer :: qt
       real, pointer, dimension(:) :: mu_i, ni
       real,dimension(:),pointer :: hist      
-      real*8 :: mu_e, mu_n
-      real*8 :: Y_e, Y_n 
+      real*8 :: mu_e, mu_n, Y_e, Y_n 
    	  real*8 :: n_b, n_e, n_n
    	  real*8 :: p_ext
       real*8 :: ke, kn
@@ -91,24 +90,27 @@
       subroutine follow_inner_crust_composition
          use mtx_lib
          use mtx_def
-        
+     
       integer :: ierr, liwork, lwork, lid, lrd, which_decsol
+      integer :: which_decsol_in, decsol     
       integer, dimension(:), pointer :: iwork
-      real*8, dimension(:), pointer :: work 
       integer, parameter :: lrpar = 0, lipar = 0
       integer, target :: ipar(lipar)
-      real*8, target :: rpar(lrpar)
-      character (len=64) :: decsol_option_name
-      !namelist
-      real :: p_ext_start
-      real :: n_b_start
+      integer :: i, j, ios
+      integer :: inlist_id, output_id 
+      integer :: mu_table_input_id, mu_table_output_id
+      integer :: y_output_id, ash_id, tov_id      
+      real*8, dimension(:), pointer :: work 
+      real*8, target :: rpar(lrpar)   
+      real :: p_ext_start, n_b_start
       real :: Y_sum
-      real :: eps_const
+      real :: eps_const, eps_sol
       real :: rho
-      logical :: have_mu_table
-      logical :: do_numerical_jacobian
-      integer :: which_decsol_in, decsol     
- 	  ! for crust
+      real :: mterm, m_nuc, m_star 
+      real :: Z_average, A_average, BE_average
+      real, dimension(:), pointer :: fac1, fac2, mass_frac
+      real, parameter :: g = 1.d0      
+      character(len=64) :: decsol_option_name 	  
  	  character(len=*), parameter :: dist_table_name = 'ash_final.data'
 	  character(len=*), parameter :: mass_table_name = 'moe95_converted.data'
  	  character(len=*), parameter :: eos_table_name = 'ashes_acc.txt'
@@ -119,16 +121,9 @@
    	  character(len=64), parameter :: data_dir = '../../../data/crust_eos'
 	  character(len=64), parameter :: mu_table_name = 'mu_table_old.data'
       character(len=80) :: infile	
-      integer :: i, j, ios
-      integer :: inlist_id, output_id 
-      integer :: mu_table_input_id, mu_table_output_id
-      integer :: y_output_id, ash_id, tov_id
+      logical :: do_numerical_jacobian
       logical, save :: eos_table_is_loaded = .FALSE.
-      real :: mterm, m_nuc, m_star 
-      real :: Z_average, A_average, BE_average
-      real :: eps_sol
-      real, dimension(:), pointer :: fac1, fac2, mass_frac
-      real, parameter :: g = 1.d0
+
 
       namelist /range/ P_ext_start, n_b_start, kT, have_mu_table, &
       	&	do_numerical_jacobian, which_decsol_in
@@ -218,10 +213,6 @@
 	  open(unit=tov_id, file=tov_output_file, iostat=ios, status="unknown")
 	  if (io_failure(ios,'opening tov file')) stop	  
 	  write(tov_id,'(5(A15),2x)') 'P[MeV*fm^-3]', 'rho[MeV*fm^-3]', 'eps[MeV^-4]', 'mue[MeV]', 'mun[MeV]' 
-
-	  ! set some dimensions
-	  ! make nvar equal to number of entries in mass table + 2 (for n_b and mu_n)
-
       
   	  ! solve for qse distribution at each pressure	  
   	  do i=1, et% Ntable
@@ -273,6 +264,8 @@
  		 ! check stability of distribution against current chemical potentials
 		 call check_all_rxns(mu_e, mu_n)
 		 
+	     ! set some dimensions
+	     ! make nvar equal to number of entries in mass table + 2 (for n_b and mu_n)		 
 	     nvar = qt% Ntable + 2
 	     neq = nz*nvar
          m1 = (stencil_zones_subdiagonal+1)*nvar-1 ! number of subdiagonals
@@ -281,11 +274,11 @@
          		& mass_frac(qt% Ntable))
          allocate(equ(nvar,nz), x(nvar,nz), xold(nvar,nz), dx(nvar,nz), xscale(nvar,nz), y(ldy, nsec), stat=ierr)
          if (ierr /= 0) stop 1
-         
+
+      	 ! get mean properties of distribution      
 	   	 A_average = 0.
 	  	 Z_average = 0.
 	  	 Y_sum = 0. 
-      	 ! get average mass number of distribution 
       	 do j=1,qt% Ntable
       	 Y_sum = (qt% Y(j))+Y_sum
          Z_average = (qt% Y(j))*real(qt% Z(j)) + Z_average
@@ -301,8 +294,8 @@
 		 m_star = mn_n-mp_n-me_n
 		 m_nuc = real(qt% A(j))*amu_n
          mterm = g*(m_nuc*kT/(twopi*hbarc_n**2))**(1.5)
-!         fac1(j) = real(qt% A(j))/n_b/A_average 
- !		 fac1(j) = real(qt% A(j))/n_b
+!        fac1(j) = real(qt% A(j))/n_b/A_average 
+!		 fac1(j) = real(qt% A(j))/n_b
  		 fac1(j) = 1./n_b
          fac2(j) = mterm	
          ! set mass fractions from abundance fractions	 
@@ -496,8 +489,6 @@
          integer, intent(inout) :: ipar(lipar)
          integer, intent(out) :: ierr      
          real :: chi, rho      
-		 !for loop over nuclei abundances
-         real, parameter :: g=1.0d0
 		 real :: m_star 
 		 real :: m_nuc, m_nuc1
 		 real :: m_term, m_term1		 
@@ -508,17 +499,15 @@
 		 real :: Zi, Ai
 		 real :: pressure
 		 real :: Zbar, Abar
-		 ! for chi
 		 real :: n_nin
+         real, parameter :: g=1.0d0		 
 		 real, parameter :: n_0 = 1.740151d-1
 		 real, parameter :: n_1 = -1.577306d-2
-         real :: nl       
-         real :: iso    
+         real :: nl, iso    
          real :: phi, phi_sum    
          real :: R_n, R_ws
                 
          ierr = 0
-
 		 ! solve for electron wave vector 
 		 if (mu_e > 0.) then
          x1=0.0
@@ -539,7 +528,6 @@
          Y_e = n_e/n_b   
          mu_e = -mu_e
          end if
-
 	     ! solve for neutron wave vector
 		 if (mu_n > 0.) then
          x1=0.0
