@@ -115,13 +115,12 @@
 	  character(len=*), parameter :: y_output_file = 'y_output.data'
 	  character(len=*), parameter :: tov_output_file = 'tov_acc.data'
       character(len=*), parameter :: output_file = 'qse_output.data'
-   	  character(len=*), parameter :: abundance_file = 'qse_abun.data'
    	  character(len=*), parameter :: default_infile = 'qse.inlist'
    	  character(len=64), parameter :: data_dir = '../../../data/crust_eos'
 	  character(len=64), parameter :: mu_table_name = 'mu_table_old.data'
       character(len=80) :: infile	
       integer :: i, j, ios
-      integer :: inlist_id, output_id, abundance_id  
+      integer :: inlist_id, output_id 
       integer :: mu_table_input_id, mu_table_output_id
       integer :: y_output_id, ash_id, tov_id
       logical, save :: eos_table_is_loaded = .FALSE.
@@ -208,12 +207,6 @@
 	  write(output_id,'(7A13)') 'n_b [fm^-3]', 'k_e [fm^-1]', &
    			& 'k_n [fm^-1]', 'mu_e [MeV]', 'mu_n [MeV]', 'Z_bar', 'A_bar'
 
-	  abundance_id = alloc_iounit(ierr)
-	  if (io_failure(ierr, 'allocating unit for abundance file')) stop
-	  open(unit=abundance_id, file=abundance_file, iostat=ios, status="unknown")
-	  if (io_failure(ios,'opening abundance file')) stop
-	  write(abundance_id,'(A13)') 'n_i [fm^-3]'
-
 	  y_output_id = alloc_iounit(ierr)
 	  if (io_failure(ierr, 'allocating unit for y fractions file')) stop
 	  open(unit=y_output_id, file = y_output_file, iostat=ios, status="unknown")
@@ -224,7 +217,7 @@
 	  if (io_failure(ierr, 'allocating unit for tov file')) stop
 	  open(unit=tov_id, file=tov_output_file, iostat=ios, status="unknown")
 	  if (io_failure(ios,'opening tov file')) stop	  
-	  write(tov_id,'(5(A15),2x)') 'P[MeV*fm^-3]', 'rho[MeV*fm^-3]', 'eps[fm^-4]', 'mue[MeV]', 'mun[MeV]' 
+	  write(tov_id,'(5(A15),2x)') 'P[MeV*fm^-3]', 'rho[MeV*fm^-3]', 'eps[MeV^-4]', 'mue[MeV]', 'mun[MeV]' 
 
 	  ! set some dimensions
 	  ! make nvar equal to number of entries in mass table + 2 (for n_b and mu_n)

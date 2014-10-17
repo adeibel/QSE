@@ -10,6 +10,7 @@
 	 contains
 
 	! all number densities and energy density are in nuclear units
+	! result in MeV^4
 	 subroutine get_energy_density(Z, A, mu_e, mu_n, BE, kT, energy_density)
 	    real, intent(in) :: Z, A
 		real, intent(in) :: mu_e, mu_n, BE, kT
