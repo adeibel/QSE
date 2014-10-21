@@ -125,7 +125,7 @@
       logical, save :: eos_table_is_loaded = .FALSE.
 
 
-      namelist /range/ P_ext_start, n_b_start, kT, have_mu_table, &
+      namelist /range/ P_ext_start, n_b_start, kT, &
       	&	do_numerical_jacobian, which_decsol_in
       	
       qt => winvn_qse_table
@@ -141,7 +141,6 @@
       P_ext_start = 5.d-10!fm^-4
       n_b_start = 5.0d-8 !fm^-3
       kT = 1.0d-2  !MeV
-      have_mu_table = .false.
       do_numerical_jacobian = .true.
       decsol = lapack
     
@@ -391,6 +390,12 @@
          enddo 
          
         close(y_output_id)  
+        
+        do j=1,qt%Ntable
+        write(*,*) qt% Z(j)
+        write(*,*) qt% A(j)
+        write(*,*) qt% Y(j)
+        enddo
          
          contains         
                   
