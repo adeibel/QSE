@@ -392,9 +392,7 @@
         close(y_output_id)  
         
         do j=1,qt%Ntable
-        write(*,*) qt% Z(j)
-        write(*,*) qt% A(j)
-        write(*,*) qt% Y(j)
+        write(*,*) qt% Z(j), qt% A(j),qt% Y(j)
         enddo
          
          contains         
@@ -1110,13 +1108,6 @@
       end do  ! end of iteration loop      
       end do ! end of dt% table loop
       
-      ! take care of abundances (need to be nonzero for log space)
-      do j=1,index-1
-      if (Y_new(j) == 0.) then
-      Y_new(j) = 1.d-20
-      end if
-      end do
-	
       ! make duplicate entries zero
 	  do j=1,index-1
 	   do k=1,index-1
@@ -1130,6 +1121,13 @@
 	   end do
 	  end do
 
+      ! take care of abundances (need to be nonzero for log space)
+      do j=1,index-1
+      if (Y_new(j) == 0.) then
+      Y_new(j) = 1.d-20
+      end if
+      end do
+	
 	  ! find the number of duplicate entries
 	  index_change = 0
 	  do j = 1, index-1
