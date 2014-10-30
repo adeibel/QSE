@@ -621,11 +621,13 @@
 		  Asum = Asum + as(i) 
 		  ni_Asum = ni_Asum + m_term*exp((mu_i(i)+qt%BE(i))/kT)/n_b	
 		  Ai = Ai + as(i)/n_b
+		  der_Asum = der_Asum + m_term/kT*exp((mu_i(i)+qt%BE(i))/kT)
 		  !for charge conservation
 		  zs(i) = real(qt% Z(i))*m_term*exp((mu_i(i)+qt%BE(i))/kT)
 		  Zsum = Zsum + zs(i)
 		  ni_Zsum = ni_Zsum + m_term*exp((mu_i(i)+qt%BE(i))/kT)/n_b	
 		  Zi = Zi + zs(i)/n_b
+		  der_Zsum = der_Zsum + m_term/kT*exp((mu_i(i)+qt%BE(i))/kT)		  
 		  !detailed balance
 		  equ(i,1) = real(qt% Z(i))*(mu_n-mu_e+m_star)+(real(qt% A(i))-real(qt% Z(i)))*mu_n-mu_i(i) 
 		 enddo
