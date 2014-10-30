@@ -75,6 +75,7 @@
    	  real*8 :: n_b, n_e, n_n
    	  real*8 :: p_ext
       real*8 :: ke, kn
+      real :: lambda_baryon, lambda_charge, lambda_pressure
       real :: Z_bar, A_bar
       real :: x1, x2, xacc
  	  real, save :: zsum_save = 0.
@@ -215,6 +216,7 @@
       
   	  ! solve for qse distribution at each pressure	  
   	  do i=1, et% Ntable
+  	  	 mu_n = (et% mun(i))*hbarc_n - mn_n
   	     mu_e = (et% mue(i))*hbarc_n
   	     p_ext = (et% pr(i))*hbarc_n !p_ext_start*hbarc_n*real(i)  
 		        
@@ -250,22 +252,41 @@
         end if		 
 		 
 		n_b = n_e/(et% Ye(i))
-		 
-		 !if (n_b < 5.2d-4) cycle
-		 !if (p_ext < 4.26d-3) cycle
+		         
          if (p_ext < dt% P) cycle
-        
+        ! if (i<1500) cycle 
+                
          write(*,*) 'Pressure =', p_ext
          write(*,*) 'n_b =', n_b
-                  
-         mu_n = mu_e/1000.
- 		
+         write(*,*) 'mu_e=', mu_e         
+		 write(*,*) 'mu_n=', mu_n
+!
+!		 if (electron_pressure(ke) > p_ext) then
+!		 p_ext = electron_pressure(ke)
+!		 pn = 0.
+!		 mu_n = 1.d-20
+!		 else
+!		 pn = p_ext - electron_pressure(ke)
+!		
+!         x1=0.0
+!         x2=10.
+!         xacc=1.d-15
+!         kn=root_bisection(kn_solve_pressure,x1,x2,xacc,ierr,hist) !returns in fm**-1     	 
+!     	 write(*,*) 'neutron pressure =', neutron_pressure(kn), pn
+!		 write(*,*) 'electron pressure =', electron_pressure(ke)
+!		 
+!		 write(*,*) p_ext, electron_pressure(ke)+neutron_pressure(kn)
+!		 write(*,*) p_ext-electron_pressure(ke)-neutron_pressure(kn)	 
+!		 !stop
+!		 end if		 
+
  		 ! check stability of distribution against current chemical potentials
 		 call check_all_rxns(mu_e, mu_n)
-		 
+		 	 
 	     ! set some dimensions
-	     ! make nvar equal to number of entries in mass table + 2 (for n_b and mu_n)		 
-	     nvar = qt% Ntable + 2
+	     ! make nvar equal to number of entries in mass table + 3 for 3
+	     ! lagrange multipliers and constraint equations		 
+	     nvar = qt% Ntable +3 
 	     neq = nz*nvar
          m1 = (stencil_zones_subdiagonal+1)*nvar-1 ! number of subdiagonals
          m2 = (stencil_zones_superdiagonal+1)*nvar-1  ! number of superdiagonals
@@ -299,11 +320,14 @@
          fac2(j) = mterm	
          ! set mass fractions from abundance fractions	 
 		 xold(j,1) = log((qt% Y(j))/fac1(j)/fac2(j))*kT-qt%BE(j)
+		 !doesnt seem to matter
+		 ! try dividing up y equally between all isotopes
+		 !xold(j,1) = log((1./(qt% Ntable))/fac1(j)/fac2(j))*kT-qt%BE(j)
 		 end do          
          
   		 ! initial values of additional variables 
-		 xold(qt% Ntable + 1,1) = n_b
-		 xold(qt% Ntable + 2,1) = mu_n 
+		! xold(qt% Ntable + 1,1) = n_b
+		 xold(qt% Ntable + 1,1) = mu_n 
 		
          dx = 0 ! a not very good starting "guess" for the solution
          x = xold
@@ -373,13 +397,32 @@
      	 Z_average = Z_average/Y_sum
      	 A_average = A_average/Y_sum  
      	 BE_average = BE_average/Y_sum
+     	 
+     	 write(*,*) Y_sum, Z_average, A_average
+     	 
+     	 !pressure check
+         x1=0.0
+         x2=10.
+         xacc=1.d-15
+         kn=root_bisection(kn_solve,x1,x2,xacc,ierr,hist) !returns in fm**-1     	 
+     	 write(*,*) 'neutron pressure =', neutron_pressure(kn)
+         x1=0.0
+         x2=10.
+         xacc=1.d-15
+         ke=root_bisection(ke_solve,x1,x2,xacc,ierr,hist) !returns in fm**-1
+		 write(*,*) 'electron pressure =', electron_pressure(ke)
+		 
+		 write(*,*) p_ext, electron_pressure(ke)+neutron_pressure(kn)
+		 write(*,*) p_ext-electron_pressure(ke)-neutron_pressure(kn)	 
+		! stop		 
 		 		 
 		 !call chem_equil_check(mu_n,p_ext,rho,eps_const)
 		 !n_b = x(dt% Ntable+1, 1)
-         call get_energy_density(Z_average,A_average,mu_e,mu_n,BE_average,kT,eps_sol)
+         !call get_energy_density(Z_average,A_average,mu_e,mu_n,BE_average,kT,eps_sol)
+         eps_sol = 0.
          write(tov_id,'(5(es15.5,2x))') p_ext, n_b*amu_n, eps_sol, mu_e, mu_n
-         write(y_output_id,'(8(es12.5,2x))') p_ext, n_b, y_e, y_n, Z_bar, A_bar, mu_e, mu_n
-         write(*,'(8(es12.5,2x))') p_ext, n_b, y_e, y_n, z_bar, a_bar, mu_e, mu_n
+         write(y_output_id,'(8(es12.5,2x))') p_ext, n_b, y_e, y_n, Z_average, A_average, mu_e, mu_n
+         write(*,'(8(es12.5,2x))') p_ext, n_b, y_e, y_n, z_average, a_average, mu_e, mu_n
 		 n_b_prev = n_b
 		 write(*,*) 'eps_check =', eps_const
 		 end if
@@ -391,9 +434,9 @@
          
         close(y_output_id)  
         
-        do j=1,qt%Ntable
-        write(*,*) qt% Z(j), qt% A(j),qt% Y(j)
-        enddo
+!        do j=1,qt%Ntable
+!        write(*,*) qt% Z(j), qt% A(j),qt% Y(j)
+!        enddo
          
          contains         
                   
@@ -436,8 +479,9 @@
 		 do j = 1, qt% Ntable
 		 mu_i(j) = x(j,1)
 		 enddo	 
-		 n_b = x(qt% Ntable + 1,1)			 
-		 mu_n = x(qt% Ntable + 2,1)
+		 lambda_baryon = x(qt% Ntable+1, 1)
+		 lambda_charge = x(qt% Ntable+2, 1)
+		 lambda_pressure = x(qt% Ntable+3, 1)
       end subroutine set_primaries
       
 
@@ -591,10 +635,10 @@
  		 chi = phi_sum 
 	     Y_n = n_n*(1.-chi)/n_b   
   		 !baryon and charge conservation 
-         equ(qt% Ntable+1,1) = Zsum - n_e
-         equ(qt% Ntable+2,1) = Asum - n_b + n_n*(1.0-chi)  
+         !equ(qt% Ntable+1,1) = Zsum - n_e
+         !equ(qt% Ntable+1,1) = Asum - n_b + n_n*(1.0-chi)  
       end subroutine eval_equ
-          
+               
       subroutine eval_jacobian(ldA, A, idiag, lrpar, rpar, lipar, ipar, ierr)
          integer, intent(in) :: ldA ! leading dimension of A
          real*8 :: A(ldA, nvar*nz) ! the jacobian matrix
@@ -790,13 +834,14 @@
          integer, intent(out) :: ierr
          ierr = 0
 		 ! set bounds of variables
- 		 x(qt% Ntable+1, 1) = max(n_b_prev, x(qt% Ntable+1,1))
- 		 x(qt% Ntable+1, 1) = max(0.0, x(qt% Ntable+1,1))
- 		 x(qt% Ntable+2,1) = abs(x(qt% Ntable+2,1)) 		 
- 		 dx(qt% Ntable+1,1) = x(qt% Ntable+1,1)-xold(qt% Ntable+1,1)     
-		 dx(qt% Ntable+2,1) = x(qt% Ntable+2,1)-xold(qt% Ntable+2,1)     
- 		 x(qt% Ntable+1,1) = xold(qt%Ntable+1,1)+dx(qt%Ntable+1,1)     
-		 x(qt% Ntable+2,1) = xold(qt%Ntable+2,1)+dx(qt%Ntable+2,1)     	 
+! 		 x(qt% Ntable+1, 1) = max(n_b_prev, x(qt% Ntable+1,1))
+ !		 x(qt% Ntable+1, 1) = max(1.d-7, x(qt% Ntable+1,1))
+! 		 x(qt% Ntable+2,1) = abs(x(qt% Ntable+2,1)) 		 
+! 		 dx(qt% Ntable+1,1) = x(qt% Ntable+1,1)-xold(qt% Ntable+1,1)     
+!		 dx(qt% Ntable+2,1) = x(qt% Ntable+2,1)-xold(qt% Ntable+2,1)     
+ !		 x(qt% Ntable+1,1) = xold(qt%Ntable+1,1)+dx(qt%Ntable+1,1)     
+!		 x(qt% Ntable+2,1) = xold(qt%Ntable+2,1)+dx(qt%Ntable+2,1)     	 
+
 ! 		 if (x(qt% Ntable+1,1) < n_b_prev) then
 ! 		 x(qt% Ntable+1,1) = n_b_prev
 ! 		 dx(qt% Ntable+1,1) = x(qt% Ntable+1,1)-xold(qt% Ntable+1,1) 
@@ -1009,7 +1054,7 @@
       if (Zr < mt% Zmin .or. Zr > mt% Zmax) exit  
       call get_nucleus_properties(Zr,Ar,id,Br,Snr,S2nr,Spr,S2pr,ecthreshr,bthreshr,VNr,ierr)
       if (ierr /= 0) exit
-      gamma(ineg) = -mu_n + (B-Br)
+      gamma(ineg) = -mu_n + (B-Br) 
       if (gamma(ineg) < 0) then
          neutron_capture(iter) = .TRUE.
          rxn = '(n,)'
@@ -1026,7 +1071,7 @@
       if (Zr < mt% Zmin .or. Zr > mt% Zmax) exit     
       call get_nucleus_properties(Zr,Ar,id,Br,Snr,S2nr,Spr,S2pr,ecthreshr,bthreshr,VNr,ierr)
       if (ierr /= 0) exit
-      gamma(ipos) = mu_n + (B-Br)
+      gamma(ipos) = mu_n + (B-Br) 
       if (gamma(ipos) < 0) then
          neutron_emission(iter) = .TRUE.
          rxn = '(,n)'
@@ -1043,7 +1088,7 @@
       if (Zr < mt% Zmin .or. Zr > mt% Zmax) exit      
       call get_nucleus_properties(Zr,Ar,id,Br,Snr,S2nr,Spr,S2pr,ecthreshr,bthreshr,VNr,ierr)
       if (ierr /= 0) exit
-      delta(ineg) = -2.0*mu_n + (B-Br)
+      delta(ineg) = -2.0*mu_n + (B-Br) 
       if (delta(ineg) < 0) then
       	 dineutron_capture(iter) = .TRUE.
          rxn = '(2n,)'
@@ -1060,7 +1105,7 @@
       if (Zr < mt% Zmin .or. Zr > mt% Zmax) exit     
       call get_nucleus_properties(Zr,Ar,id,Br,Snr,S2nr,Spr,S2pr,ecthreshr,bthreshr,VNr,ierr)
       if (ierr /= 0) exit
-      delta(ipos) = 2.0*mu_n + (B-Br)
+      delta(ipos) = 2.0*mu_n + (B-Br) 
       if (delta(ipos) < 0) then
          dineutron_emission(iter) = .TRUE.
          rxn = '(,2n)'
@@ -1077,7 +1122,7 @@
       if (Zr < mt% Zmin .or. Zr > mt% Zmax) exit 
       call get_nucleus_properties(Zr,Ar,id,Br,Snr,S2nr,Spr,S2pr,ecthreshr,bthreshr,VNr,ierr)
       if (ierr /= 0) exit
-      epsilon(ineg) = mu_e - mu_n - del_m + (B-Br)
+      epsilon(ineg) = mu_e - mu_n - del_m + (B-Br) 
       if (epsilon(ineg) < 0) then
       	 ne_rxn(iter) = .TRUE.
          rxn = '(n,e)'
@@ -1094,7 +1139,7 @@
       if (Zr < mt% Zmin .or. Zr > mt% Zmax) exit   
       call get_nucleus_properties(Zr,Ar,id,Br,Snr,S2nr,Spr,S2pr,ecthreshr,bthreshr,Vnr,ierr)
       if (ierr /= 0) exit
-      epsilon(ipos) = mu_e - 2.0*mu_n - del_m + (B-Br)
+      epsilon(ipos) = mu_e - 2.0*mu_n - del_m + (B-Br) 
       if (epsilon(ipos) < 0) then
       	 nne_rxn(iter) = .TRUE.
       	 rxn = '(2n,e)'
