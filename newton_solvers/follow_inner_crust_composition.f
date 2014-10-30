@@ -286,7 +286,7 @@
 	     ! set some dimensions
 	     ! make nvar equal to number of entries in mass table + 3 for 3
 	     ! lagrange multipliers and constraint equations		 
-	     nvar = qt% Ntable +3 
+	     nvar = qt% Ntable + 2 
 	     neq = nz*nvar
          m1 = (stencil_zones_subdiagonal+1)*nvar-1 ! number of subdiagonals
          m2 = (stencil_zones_superdiagonal+1)*nvar-1  ! number of superdiagonals
@@ -326,8 +326,9 @@
 		 end do          
          
   		 ! initial values of additional variables 
-		! xold(qt% Ntable + 1,1) = n_b
-		 xold(qt% Ntable + 1,1) = mu_n 
+		 xold(qt% Ntable + 1,1) = 0.0
+		 xold(qt% Ntable + 2,1) = 0.0 
+		 !xold(qt% Ntable + 3,1) = 0.0 
 		
          dx = 0 ! a not very good starting "guess" for the solution
          x = xold
@@ -481,7 +482,7 @@
 		 enddo	 
 		 lambda_baryon = x(qt% Ntable+1, 1)
 		 lambda_charge = x(qt% Ntable+2, 1)
-		 lambda_pressure = x(qt% Ntable+3, 1)
+		 !lambda_pressure = x(qt% Ntable+3, 1)
       end subroutine set_primaries
       
 
@@ -601,6 +602,7 @@
 		 Ai = 0. ; Zi = 0.
 		 ni_Asum = 0. ; ni_Zsum = 0.
 		 phi_sum=0.
+		 der_Asum = 0. ; der_Zsum = 0.
 		
 		 do i = 1, qt% Ntable
 		  iso = 1.0-(2.*real(qt% Z(i))/real(qt% A(i)))
@@ -634,9 +636,14 @@
 		 A_bar = Abar
  		 chi = phi_sum 
 	     Y_n = n_n*(1.-chi)/n_b   
-  		 !baryon and charge conservation 
-         !equ(qt% Ntable+1,1) = Zsum - n_e
-         !equ(qt% Ntable+1,1) = Asum - n_b + n_n*(1.0-chi)  
+  		 !baryon conservation 
+         equ(qt% Ntable+1,1) = (1.+lambda_baryon*(der_Asum))**2. + &
+         			& (Asum+(1.-chi)*n_n-n_b)**2.
+         !charge conservations
+         equ(qt% Ntable+2,1) = (1.+lambda_charge*(der_Zsum))**2. + &
+     				& (Zsum-n_e)**2
+     	 !pressure constraint
+     	 ! add later
       end subroutine eval_equ
                
       subroutine eval_jacobian(ldA, A, idiag, lrpar, rpar, lipar, ipar, ierr)
