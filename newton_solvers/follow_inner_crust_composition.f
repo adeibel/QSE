@@ -76,6 +76,7 @@
    	  real*8 :: p_ext
       real*8 :: ke, kn
       real :: lambda_baryon, lambda_charge, lambda_pressure
+      real :: lambda_y
       real :: Z_bar, A_bar
       real :: x1, x2, xacc
  	  real, save :: zsum_save = 0.
@@ -219,6 +220,7 @@
   	  	 mu_n = (et% mun(i))*hbarc_n - mn_n
   	     mu_e = (et% mue(i))*hbarc_n
   	     p_ext = (et% pr(i))*hbarc_n !p_ext_start*hbarc_n*real(i)  
+  	     n_b = (et% nb(i))
 		        
          which_decsol = which_decsol_in
          call decsol_option_str(which_decsol, decsol_option_name, ierr)
@@ -251,7 +253,7 @@
         mu_e = -mu_e
         end if		 
 		 
-		n_b = n_e/(et% Ye(i))
+		!n_b = n_e/(et% Ye(i))
 		         
          if (p_ext < dt% P) cycle
         ! if (i<1500) cycle 
@@ -286,7 +288,7 @@
 	     ! set some dimensions
 	     ! make nvar equal to number of entries in mass table + 3 for 3
 	     ! lagrange multipliers and constraint equations		 
-	     nvar = qt% Ntable + 2 
+	     nvar = qt% Ntable + 3 
 	     neq = nz*nvar
          m1 = (stencil_zones_subdiagonal+1)*nvar-1 ! number of subdiagonals
          m2 = (stencil_zones_superdiagonal+1)*nvar-1  ! number of superdiagonals
@@ -326,9 +328,9 @@
 		 end do          
          
   		 ! initial values of additional variables 
-		 xold(qt% Ntable + 1,1) = 0.0
-		 xold(qt% Ntable + 2,1) = 0.0 
-		 !xold(qt% Ntable + 3,1) = 0.0 
+		 xold(qt% Ntable + 1,1) = -1.0
+		 xold(qt% Ntable + 2,1) = -1.0 
+		 xold(qt% Ntable + 3,1) = -1.0
 		
          dx = 0 ! a not very good starting "guess" for the solution
          x = xold
@@ -375,7 +377,8 @@
          write(*,*) p_ext, n_b, y_e, y_n, Z_bar, A_bar, mu_e, mu_n
          n_b_prev = n_b
 	     end if
-
+		 WRITE(*,*) equ(qt% Ntable+1,1), equ(qt% Ntable+2,1)
+		 write(*,*) lambda_baryon, lambda_charge
          if (iwork(i_debug) /= 0) then
             write(*, *) 'num_jacobians', iwork(i_num_jacobians)
             write(*, *) 'num_solves', iwork(i_num_solves)
@@ -483,6 +486,7 @@
 		 lambda_baryon = x(qt% Ntable+1, 1)
 		 lambda_charge = x(qt% Ntable+2, 1)
 		 !lambda_pressure = x(qt% Ntable+3, 1)
+		 lambda_y = x(qt% Ntable+3, 1)
       end subroutine set_primaries
       
 
@@ -541,7 +545,7 @@
 		 real :: m_nuc, m_nuc1
 		 real :: m_term, m_term1		 
 		 real :: ni_Zsum, ni_Asum
-		 real :: der_Zsum, der_Asum
+		 real :: der_Zsum, der_Asum, der_Ysum
 		 real :: Asum, Zsum
 		 real :: As(nvar), Zs(nvar)
 		 real :: Zi, Ai
@@ -554,6 +558,7 @@
          real :: nl, iso    
          real :: phi, phi_sum    
          real :: R_n, R_ws
+         real :: y_sum
                 
          ierr = 0
 		 ! solve for electron wave vector 
@@ -601,8 +606,8 @@
 		 Asum = 0. ; Zsum = 0. 
 		 Ai = 0. ; Zi = 0.
 		 ni_Asum = 0. ; ni_Zsum = 0.
-		 phi_sum=0.
-		 der_Asum = 0. ; der_Zsum = 0.
+		 phi_sum=0. ; y_sum = 0.
+		 der_Asum = 0. ; der_Zsum = 0. ; der_Ysum = 0. 
 		
 		 do i = 1, qt% Ntable
 		  iso = 1.0-(2.*real(qt% Z(i))/real(qt% A(i)))
@@ -621,15 +626,18 @@
 		  Asum = Asum + as(i) 
 		  ni_Asum = ni_Asum + m_term*exp((mu_i(i)+qt%BE(i))/kT)/n_b	
 		  Ai = Ai + as(i)/n_b
-		  der_Asum = der_Asum + m_term/kT*exp((mu_i(i)+qt%BE(i))/kT)
+		  der_Asum = der_Asum + real(qt% A(i))*m_term/kT*exp((mu_i(i)+qt%BE(i))/kT)
 		  !for charge conservation
 		  zs(i) = real(qt% Z(i))*m_term*exp((mu_i(i)+qt%BE(i))/kT)
 		  Zsum = Zsum + zs(i)
 		  ni_Zsum = ni_Zsum + m_term*exp((mu_i(i)+qt%BE(i))/kT)/n_b	
 		  Zi = Zi + zs(i)/n_b
-		  der_Zsum = der_Zsum + m_term/kT*exp((mu_i(i)+qt%BE(i))/kT)		  
+		  der_Zsum = der_Zsum + real(qt% Z(i))*m_term/kT*exp((mu_i(i)+qt%BE(i))/kT)		  
 		  !detailed balance
 		  equ(i,1) = real(qt% Z(i))*(mu_n-mu_e+m_star)+(real(qt% A(i))-real(qt% Z(i)))*mu_n-mu_i(i) 
+		  der_ysum = der_Ysum + ni(i)/kT
+		  qt% Y(i) = ni(i)/n_b
+		  y_sum = y_sum + qt%Y(i)
 		 enddo
 
 		 Zbar = Zi/ni_Zsum
@@ -640,10 +648,21 @@
 	     Y_n = n_n*(1.-chi)/n_b   
   		 !baryon conservation 
          equ(qt% Ntable+1,1) = (1.+lambda_baryon*(der_Asum))**2. + &
-         			& (Asum+(1.-chi)*n_n-n_b)**2.
+         			& (Asum+(1.-chi)*n_n-n_b)**2. 
+         			
+!         write(*,*) '1', (1.+lambda_baryon*(der_Asum))**2.
+!         write(*,*) '2', (Asum+(1.-chi)*n_n-n_b)**2.
+!         write(*,*) der_Asum, Asum
+         
+         !equ(qt% Ntable+1, 1) = sqrt( equ(qt% Ntable+1, 1))
          !charge conservations
          equ(qt% Ntable+2,1) = (1.+lambda_charge*(der_Zsum))**2. + &
-     				& (Zsum-n_e)**2
+     				& (Zsum-n_e)**2.
+     	 !write(*,*) lambda_charge, lambda_baryon
+     	 !equ(qt% Ntable+2, 1) = sqrt( equ(qt% Ntable+2, 1))
+     	 !abundance constraint
+     	 equ(qt% Ntable+3,1) = (der_ysum/n_b+(lambda_y/n_b)*(der_ysum-1.))**2. + &
+     	 		& (y_sum - 1.)**2.
      	 !pressure constraint
      	 ! add later
       end subroutine eval_equ
