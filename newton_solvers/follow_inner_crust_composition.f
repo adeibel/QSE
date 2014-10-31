@@ -965,7 +965,7 @@
 	  A_temp = A
 	  B_temp = B	 
 	  Y_temp = Yr 
-!      index = index+1
+      index = index+1
       	 
       ! loop over rxns 
       do iter = 1, max_iterations
@@ -975,7 +975,6 @@
 !	  if (Z/=Z_new(index) .and. A/=A_new(index) .and. ierr==0 &
 !	  	& .and. Z/=Z_temp .or. A/=A_temp) then      
 	  if (Z/=Z_temp .or. A/=A_temp) then
-	  index = index+1
 	  Z_new(index) = Z
 	  A_new(index) = A
 	  B_new(index) = B
@@ -984,6 +983,7 @@
 	  A_temp = A
 	  B_temp = B
 	  Y_temp = 0.
+	  index = index+1
       end if
 
       if (index > qt_temp) then
@@ -1210,20 +1210,28 @@
 	  end do
 
 	  ! allocate memory without space for duplicates
-      index_temp = 0
       if (dt_table_used .eqv. .false.) then
       qt% Ntable = index-1-index_change	  	
 	  allocate(qt% Z(qt% Ntable), qt% A(qt% Ntable), qt% BE(qt% Ntable), &
 	  			& qt% Y(qt% Ntable))
 	  else
-!	  if (index-1-index_change < qt% Ntable) then
-!	  write(*,*) 'new table smaller!?!'
-!	  stop
-!	  end i
       call alloc_qse_table(qt% Ntable, index-1-index_change)
 	  qt% Ntable = index-1-index_change
 	  end if
+
+!	  write(*,*) '-------'
+!	  write(*,*) qt% Ntable, index-1-index_change, index_change
+!	  do j=1,qt% Ntable
+!	  write(*,*)  Z_new(j),  A_new(j)
+!	  end do
+!
+!	  if (index-1-index_change < qt% Ntable) then
+!	  write(*,*) 'new table smaller!?!'
+!	  stop
+!	  end if	  
 	  
+	  
+	  index_temp = 0
 	  do j=1,index-1
 	   if (Z_new(j) == 0) then
 	   cycle
@@ -1232,7 +1240,8 @@
 	   qt% Z(index_temp) = Z_new(j)
 	   qt% A(index_temp) = A_new(j)
  	   qt% BE(index_temp) = B_new(j)
- 	   qt% Y(index_temp) = Y_new(j)	   
+ 	   qt% Y(index_temp) = Y_new(j)	 
+ 	   qt% Ntable = index_temp  
 	   end if
 	  end do  
 
@@ -1244,12 +1253,7 @@
 	  call dist_table_shutdown
 	  end if
 	  
-!	  write(*,*) '-------'
-!	  write(*,*) qt% Ntable
-!	  do j=1,qt% Ntable
-!	  write(*,*) qt% Z(j), qt% A(j)
-!	  end do
-!	  stop
+
 
       end subroutine check_all_rxns       
 
