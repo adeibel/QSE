@@ -288,7 +288,7 @@
 	     ! set some dimensions
 	     ! make nvar equal to number of entries in mass table + 3 for 3
 	     ! lagrange multipliers and constraint equations		 
-	     nvar = qt% Ntable + 3 
+	     nvar = qt% Ntable + 2 !3 
 	     neq = nz*nvar
          m1 = (stencil_zones_subdiagonal+1)*nvar-1 ! number of subdiagonals
          m2 = (stencil_zones_superdiagonal+1)*nvar-1  ! number of superdiagonals
@@ -328,9 +328,9 @@
 		 end do          
          
   		 ! initial values of additional variables 
-		 xold(qt% Ntable + 1,1) = -1.0
-		 xold(qt% Ntable + 2,1) = -1.0 
-		 xold(qt% Ntable + 3,1) = -1.0
+		 xold(qt% Ntable + 1,1) = 0.0
+		 xold(qt% Ntable + 2,1) = 0.0 
+!		 xold(qt% Ntable + 3,1) = -1.0
 		
          dx = 0 ! a not very good starting "guess" for the solution
          x = xold
@@ -486,7 +486,7 @@
 		 lambda_baryon = x(qt% Ntable+1, 1)
 		 lambda_charge = x(qt% Ntable+2, 1)
 		 !lambda_pressure = x(qt% Ntable+3, 1)
-		 lambda_y = x(qt% Ntable+3, 1)
+!		 lambda_y = x(qt% Ntable+3, 1)
       end subroutine set_primaries
       
 
@@ -647,7 +647,7 @@
  		 chi = phi_sum 
 	     Y_n = n_n*(1.-chi)/n_b   
   		 !baryon conservation 
-         equ(qt% Ntable+1,1) = (1.+lambda_baryon*(der_Asum))**2. + &
+         equ(qt% Ntable+1,1) = (-1.+lambda_baryon*(der_Asum))**2. + &
          			& (Asum+(1.-chi)*n_n-n_b)**2. 
          			
 !         write(*,*) '1', (1.+lambda_baryon*(der_Asum))**2.
@@ -656,13 +656,13 @@
          
          !equ(qt% Ntable+1, 1) = sqrt( equ(qt% Ntable+1, 1))
          !charge conservations
-         equ(qt% Ntable+2,1) = (1.+lambda_charge*(der_Zsum))**2. + &
+         equ(qt% Ntable+2,1) = (-1.+lambda_charge*(der_Zsum))**2. + &
      				& (Zsum-n_e)**2.
      	 !write(*,*) lambda_charge, lambda_baryon
      	 !equ(qt% Ntable+2, 1) = sqrt( equ(qt% Ntable+2, 1))
      	 !abundance constraint
-     	 equ(qt% Ntable+3,1) = (der_ysum/n_b+(lambda_y/n_b)*(der_ysum-1.))**2. + &
-     	 		& (y_sum - 1.)**2.
+!     	 equ(qt% Ntable+3,1) = (1.+(lambda_y/n_b)*(der_ysum-1.))**2. + &
+!     	 		& (y_sum - 1.)**2.
      	 !pressure constraint
      	 ! add later
       end subroutine eval_equ
@@ -1216,7 +1216,12 @@
 	  allocate(qt% Z(qt% Ntable), qt% A(qt% Ntable), qt% BE(qt% Ntable), &
 	  			& qt% Y(qt% Ntable))
 	  else
+!	  if (index-1-index_change < qt% Ntable) then
+!	  write(*,*) 'new table smaller!?!'
+!	  stop
+!	  end i
       call alloc_qse_table(qt% Ntable, index-1-index_change)
+	  qt% Ntable = index-1-index_change
 	  end if
 	  
 	  do j=1,index-1
@@ -1277,20 +1282,20 @@
 	 	real, dimension(:), allocatable :: BEi_temp, Yi_temp
 		integer, dimension(:), allocatable :: Zi_temp, Ai_temp
 		integer :: Ntable, Ntable_new	
-		allocate(Zi_temp(Ntable), Ai_temp(Ntable), &
-				& BEi_temp(Ntable), Yi_temp(Ntable))
-		Zi_temp(1:Ntable) = qt% Z(1:Ntable)
-		Ai_temp(1:Ntable) = qt% A(1:Ntable)
-		BEi_temp(1:Ntable) = qt% BE(1:Ntable)
-		Yi_temp(1:Ntable) = qt% Y(1:Ntable)
+!		allocate(Zi_temp(Ntable), Ai_temp(Ntable), &
+!				& BEi_temp(Ntable), Yi_temp(Ntable))
+!		Zi_temp(1:Ntable) = qt% Z(1:Ntable)
+!		Ai_temp(1:Ntable) = qt% A(1:Ntable)
+!		BEi_temp(1:Ntable) = qt% BE(1:Ntable)
+!		Yi_temp(1:Ntable) = qt% Y(1:Ntable)
 		deallocate(qt% Z, qt% A, qt% BE, qt% Y)
 		allocate(qt% Z(Ntable_new), qt% A(Ntable_new), &
 				& qt% BE(Ntable_new), qt% Y(Ntable_new))
-		qt% Z(1:Ntable) = Zi_temp(1:Ntable)
-		qt% A(1:Ntable) = Ai_temp(1:Ntable)
-		qt% BE(1:Ntable) = BEi_temp(1:Ntable)
-		qt% Y(1:Ntable) = Yi_temp(1:Ntable)
-		deallocate(Zi_temp, Ai_temp, BEi_temp, Yi_temp)
+!		qt% Z(1:Ntable) = Zi_temp(1:Ntable)
+!		qt% A(1:Ntable) = Ai_temp(1:Ntable)
+!		qt% BE(1:Ntable) = BEi_temp(1:Ntable)
+!		qt% Y(1:Ntable) = Yi_temp(1:Ntable)
+!		deallocate(Zi_temp, Ai_temp, BEi_temp, Yi_temp)
 	 end subroutine
           
     end module inner_crust
