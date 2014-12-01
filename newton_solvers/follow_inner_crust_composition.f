@@ -69,9 +69,9 @@
       type(eos_table_type), pointer :: et
       type(dist_table_type), pointer :: dt
       type(qse_table_type), pointer :: qt
-      real, pointer, dimension(:) :: mu_i, ni
+      real, pointer, dimension(:) :: mu_i, ni, lambda
       real,dimension(:),pointer :: hist      
-      real*8 :: mu_e, mu_n, Y_e, Y_n 
+      real*8 :: mu_e, mu_n, mu_n_in, Y_e, Y_n 
    	  real*8 :: n_b, n_e, n_n
    	  real*8 :: p_ext
       real*8 :: ke, kn
@@ -256,6 +256,7 @@
 		!n_b = n_e/(et% Ye(i))
 		         
          if (p_ext < dt% P) cycle
+         !if (mu_n < 0.) cycle
         ! if (i<1500) cycle 
                 
          write(*,*) 'Pressure =', p_ext
@@ -288,12 +289,13 @@
 	     ! set some dimensions
 	     ! make nvar equal to number of entries in mass table + 3 for 3
 	     ! lagrange multipliers and constraint equations		 
-	     nvar = qt% Ntable + 2 !3 
+	     nvar = qt% Ntable + 2 !+  3 
 	     neq = nz*nvar
          m1 = (stencil_zones_subdiagonal+1)*nvar-1 ! number of subdiagonals
          m2 = (stencil_zones_superdiagonal+1)*nvar-1  ! number of superdiagonals
          allocate(fac1(qt% Ntable), fac2(qt% Ntable), mu_i(qt% Ntable), ni(qt% Ntable), &
-         		& mass_frac(qt% Ntable))
+         &  lambda(qt% Ntable)) !, &
+         		!& mass_frac(qt% Ntable), mu_n_in(qt% Ntable))
          allocate(equ(nvar,nz), x(nvar,nz), xold(nvar,nz), dx(nvar,nz), xscale(nvar,nz), y(ldy, nsec), stat=ierr)
          if (ierr /= 0) stop 1
 
@@ -308,29 +310,37 @@
       	 enddo
      	 Z_average = Z_average/Y_sum
      	 A_average = A_average/Y_sum      	 
-                  
+                                    
          ! xold is the initial guess for nuclei chemical potentials         
 		 ! sets mass fractions to 1d-20 for unpopulated nuclei
 		 do j=1,qt% Ntable
+!		 xold(j,1) = n_b*qt%Y(j)/(real(qt% A(j)))
+!		 xold(j,1) = (-(qt% BE(j)) - real(qt%Z(j))*(mu_n-mu_e+m_star)) &
+!		 	&	/real(qt%A(j)-qt%Z(j))
 !		 mass_frac(j) = real(qt% A(j))*(qt% Y(j))/A_average
-		 m_star = mn_n-mp_n-me_n
-		 m_nuc = real(qt% A(j))*amu_n
-         mterm = g*(m_nuc*kT/(twopi*hbarc_n**2))**(1.5)
+!		 m_star = mn_n-mp_n-me_n
+!		 m_nuc = real(qt% A(j))*amu_n
+!         mterm = g*(m_nuc*kT/(twopi*hbarc_n**2))**(1.5)
 !        fac1(j) = real(qt% A(j))/n_b/A_average 
 !		 fac1(j) = real(qt% A(j))/n_b
- 		 fac1(j) = 1./n_b
-         fac2(j) = mterm	
+! 		 fac1(j) = 1./n_b
+!         fac2(j) = mterm	
          ! set mass fractions from abundance fractions	 
-		 xold(j,1) = log((qt% Y(j))/fac1(j)/fac2(j))*kT-qt%BE(j)
+!		 xold(j,1) = log((qt% Y(j))/(real(qt%A(j)))/fac1(j)/fac2(j))*kT-qt%BE(j)
 		 !doesnt seem to matter
 		 ! try dividing up y equally between all isotopes
 		 !xold(j,1) = log((1./(qt% Ntable))/fac1(j)/fac2(j))*kT-qt%BE(j)
-		 end do          
+		 !xold(j,1) = 0.
+		 lambda(j) = 1.0
+		 qt% Y(j) = 1.0/(qt% Ntable)
+		 end do        
+		! xold(qt%Ntable,1) = n_b/real(qt%A(qt%ntable))  
          
   		 ! initial values of additional variables 
-		 xold(qt% Ntable + 1,1) = 0.0
-		 xold(qt% Ntable + 2,1) = 0.0 
-!		 xold(qt% Ntable + 3,1) = -1.0
+		 xold(qt% Ntable + 1,1) = 1.0 !n_b
+		 xold(qt% Ntable + 2,1) = 1.0 
+!		 xold(qt% Ntable + 2,1) = 1.
+!		 xold(qt% Ntable + 3,1) = 1.
 		
          dx = 0 ! a not very good starting "guess" for the solution
          x = xold
@@ -376,8 +386,10 @@
          write(*, *) 'failed to converge'
          write(*,*) p_ext, n_b, y_e, y_n, Z_bar, A_bar, mu_e, mu_n
          n_b_prev = n_b
+         !default_force_another_iter(200, 100, lrpar, rpar, lipar, ipar)
+	     
 	     end if
-		 WRITE(*,*) equ(qt% Ntable+1,1), equ(qt% Ntable+2,1)
+!		 WRITE(*,*) equ(qt% Ntable+1,1), equ(qt% Ntable+2,1)
 		 write(*,*) lambda_baryon, lambda_charge
          if (iwork(i_debug) /= 0) then
             write(*, *) 'num_jacobians', iwork(i_num_jacobians)
@@ -387,6 +399,7 @@
          ! if qse solver converges     
 		 if (nonconv .eqv. .FALSE.) then
 		 write(*,*) 'converged'
+		 stop
   		 A_average = 0.
 	  	 Z_average = 0.
 	  	 BE_average = 0.
@@ -429,6 +442,8 @@
          write(*,'(8(es12.5,2x))') p_ext, n_b, y_e, y_n, z_average, a_average, mu_e, mu_n
 		 n_b_prev = n_b
 		 write(*,*) 'eps_check =', eps_const
+		
+		 
 		 end if
          
          deallocate(iwork, work)
@@ -481,11 +496,11 @@
          integer, intent(out) :: ierr
          ierr = 0
 		 do j = 1, qt% Ntable
-		 mu_i(j) = x(j,1)
+		 lambda(j) = x(j,1)
 		 enddo	 
 		 lambda_baryon = x(qt% Ntable+1, 1)
 		 lambda_charge = x(qt% Ntable+2, 1)
-		 !lambda_pressure = x(qt% Ntable+3, 1)
+!		 !lambda_pressure = x(qt% Ntable+3, 1)
 !		 lambda_y = x(qt% Ntable+3, 1)
       end subroutine set_primaries
       
@@ -544,7 +559,7 @@
 		 real :: m_star 
 		 real :: m_nuc, m_nuc1
 		 real :: m_term, m_term1		 
-		 real :: ni_Zsum, ni_Asum
+		 real :: ni_Zsum, ni_Asum, ni_sum
 		 real :: der_Zsum, der_Asum, der_Ysum
 		 real :: Asum, Zsum
 		 real :: As(nvar), Zs(nvar)
@@ -559,6 +574,14 @@
          real :: phi, phi_sum    
          real :: R_n, R_ws
          real :: y_sum
+         real :: l_term
+         real :: con_1, con_2, con_3
+         real :: con_total
+         !real :: mu_n_in, kn_in
+         real :: kn_in
+         real :: lambda_sum       
+         real :: z_average, a_average
+         real :: AZ
                 
          ierr = 0
 		 ! solve for electron wave vector 
@@ -605,50 +628,105 @@
 		 ! zero out secondary variables
 		 Asum = 0. ; Zsum = 0. 
 		 Ai = 0. ; Zi = 0.
-		 ni_Asum = 0. ; ni_Zsum = 0.
-		 phi_sum=0. ; y_sum = 0.
+		 ni_Asum = 0. ; ni_Zsum = 0. ; ni_sum = 0.
+		 phi_sum=0. ; y_sum = 0. ; chi = 0. 
 		 der_Asum = 0. ; der_Zsum = 0. ; der_Ysum = 0. 
+		 lambda_sum = 0.  ; AZ = 0. 
 		
 		 do i = 1, qt% Ntable
+		 ni(i) = (qt% Y(i))/real(qt% A(i))/n_b
 		  iso = 1.0-(2.*real(qt% Z(i))/real(qt% A(i)))
-		  n_nin = (n_0+n_1*iso**2)*(1.0+0.9208*iso)/2.	
+		  n_nin = (n_0+n_1*iso**2)*(1.0+0.9208*iso)/2.			  
+!		  kn_in = (n_nin*threepisquare/2.0)**onethird
+!		  mu_n_in = neutron_chemical_potential_local(kn_in)		  
+!		  !mu_i(i) = real(qt% Z(i))*(mu_n-mu_e+m_star)+(real(qt% A(i))-real(qt% Z(i)))*mu_n_in
 		  R_n = ((real(qt% A(i))-real(qt% Z(i)))/n_nin/pi*0.75)**onethird 
-		  R_ws = (real(qt% Z(i))/n_e/pi*0.75)**onethird		 
-          !number density of isotopes
-		  m_star = mn_n-mp_n-me_n !does not contain m_e because mu_e has rest mass in definition 
-		  m_nuc = real(qt%A(i))*amu_n 
-     	  m_term = g*(twopi*hbarc_n**2/(m_nuc*kT))**(-3.0/2.0)
-     	  ni(i) = m_term*exp((mu_i(i)+qt%BE(i))/kT)
-     	  phi = 1.25*pi*R_n**3*ni(i)
-     	  phi_sum = phi+phi_sum
-		  !for baryon conservation
-		  as(i) = real(qt% A(i))*m_term*exp((mu_i(i)+qt%BE(i))/kT)	 
-		  Asum = Asum + as(i) 
-		  ni_Asum = ni_Asum + m_term*exp((mu_i(i)+qt%BE(i))/kT)/n_b	
-		  Ai = Ai + as(i)/n_b
-		  der_Asum = der_Asum + real(qt% A(i))*m_term/kT*exp((mu_i(i)+qt%BE(i))/kT)
-		  !for charge conservation
-		  zs(i) = real(qt% Z(i))*m_term*exp((mu_i(i)+qt%BE(i))/kT)
-		  Zsum = Zsum + zs(i)
-		  ni_Zsum = ni_Zsum + m_term*exp((mu_i(i)+qt%BE(i))/kT)/n_b	
-		  Zi = Zi + zs(i)/n_b
-		  der_Zsum = der_Zsum + real(qt% Z(i))*m_term/kT*exp((mu_i(i)+qt%BE(i))/kT)		  
+!		  R_ws = (real(qt% Z(i))/n_e/pi*0.75)**onethird		 
+!          !number density of isotopes
+!		 
+!		  m_star = mn_n-mp_n-me_n !does not contain m_e because mu_e has rest mass in definition 
+!		  m_nuc = real(qt%A(i))*amu_n 
+!     	  m_term = g*(twopi*hbarc_n**2/(m_nuc*kT))**(-3.0/2.0)
+!		  mu_i(i) = real(qt% Z(i))*(mu_n-mu_e+m_star)+(real(qt% A(i))-real(qt% Z(i)))*mu_n     	  
+!     	  ni(i) = m_term*exp((mu_i(i)+qt%BE(i))/kT)
+!     	  !mu_i(i) = log(ni(i)/m_term/(real(qt%A(i))))*kT - qt% BE(i)
+!     	 
+    	  ni_sum = ni_sum + ni(i)
+    	  phi = 1.25*pi*R_n**3*ni(i)
+    	  phi_sum = phi+phi_sum
+!		  !for baryon conservation
+!		  as(i) = real(qt% A(i))*m_term*exp((mu_i(i)+qt%BE(i))/kT)	 
+		  Asum = Asum + real(qt% A(i))*ni(i)
+!		  ni_Asum = ni_Asum + m_term*exp((mu_i(i)+qt%BE(i))/kT)/n_b	
+!		  Ai = Ai + as(i)/n_b
+		  AZ = AZ + real(qt% Z(i))/real(qt% A(i))
+!		  der_Asum = der_Asum + real(qt% A(i))*m_term/kT*exp((mu_i(i)+qt%BE(i))/kT)
+!		  !for charge conservation
+!		  zs(i) = real(qt% Z(i))*m_term*exp((mu_i(i)+qt%BE(i))/kT)
+		  Zsum = Zsum + real(qt% Z(i))*ni(i)
+!		  ni_Zsum = ni_Zsum + m_term*exp((mu_i(i)+qt%BE(i))/kT)/n_b	
+!		  Zi = Zi + zs(i)/n_b
+!		  der_Zsum = der_Zsum + real(qt% Z(i))*m_term/kT*exp((mu_i(i)+qt%BE(i))/kT)		  
 		  !detailed balance
-		  equ(i,1) = real(qt% Z(i))*(mu_n-mu_e+m_star)+(real(qt% A(i))-real(qt% Z(i)))*mu_n-mu_i(i) 
-		  der_ysum = der_Ysum + ni(i)/kT
-		  qt% Y(i) = ni(i)/n_b
+!		  der_ysum = der_Ysum + real(qt%A(i))*ni(i)/kT/n_b
+!		  qt% Y(i) = real(qt%A(i))*ni(i)/n_b
 		  y_sum = y_sum + qt%Y(i)
+		  lambda_sum = lambda(i) + lambda_sum
+		  !write(*,*) qt% Z(i), qt% A(i), ni(i)
+		  !write(*,*) mu_n_in
 		 enddo
+		 
+		 
+		! equ(:,1) = (1. - lambda_sum -lambda_baryon - AZ*lambda_charge)**2 &
+		! 	& + (1.0 - y_sum)**2
 
-		 Zbar = Zi/ni_Zsum
-		 Abar = Ai/ni_Asum
-		 Z_bar = Zbar
-		 A_bar = Abar
- 		 chi = phi_sum 
-	     Y_n = n_n*(1.-chi)/n_b   
+
+		do j=1,qt%Ntable
+	  l_term = (1.-lambda(j)-lambda_baryon - AZ*lambda_charge)
+		!equ(j,1) = (1.-lambda(j))**2. + (1.0-y_sum)**2.
+		 equ(j,1) = l_term**2. + (1.0-y_sum)**2.
+		 equ(j,1) = sqrt(equ(j,1))
+		 ! try from Arfken
+		 equ(j,1) = l_term
+		 enddo
+		 equ(qt% Ntable+1, 1) = (1.0 - lambda_baryon)**2. + &
+		 	& (1.0-y_sum-(1.-chi)*n_n/n_b)**2.
+		 equ(qt% Ntable+2, 1) = (1.0 - AZ*lambda_charge)**2. + &
+		    & (n_e/n_b - AZ*y_sum)**2.
+		 
+		 equ(qt% Ntable+1,1)=sqrt(equ(qt% Ntable+1,1))
+		 equ(qt% Ntable+2,1)=sqrt(equ(qt% Ntable+2,1))   
+		    
+		write(*,*) equ(1,1), equ(qt% Ntable+1,1), equ(qt% Ntable+2,1)
+
+      	 do j=1,qt% Ntable
+      	 !Y_sum = (qt% Y(j))+Y_sum
+         Z_average = (qt% Y(j))*real(qt% Z(j)) + Z_average
+      	 A_average = (qt% Y(j))*real(qt% A(j)) + A_average
+      	 !BE_average = lambda(j)*(qt% Y(j))*(qt% BE(j)) + BE_average
+      	 enddo
+      	 
+      	 write(*,*) Z_average, A_average
+
+		!stop
+
+
+!		 Zbar = Zi/ni_Zsum
+!		 Abar = Ai/ni_Asum
+!		 Z_bar = Zbar
+!		 A_bar = Abar
+! 		 chi = phi_sum 
+!	     Y_n = n_n*(1.-chi)/n_b   
+	     
+	   !  write(*,*) y_sum
+	     
   		 !baryon conservation 
-         equ(qt% Ntable+1,1) = (-1.+lambda_baryon*(der_Asum))**2. + &
-         			& (Asum+(1.-chi)*n_n-n_b)**2. 
+!         equ(qt% Ntable+1,1) = (1.+lambda_baryon*(der_Asum))**2. + &
+!         			& (Asum+(1.-chi)*n_n-n_b)**2. 
+ 	!	l_term = 
+ 
+	!	equ(qt% Ntable+1,1)=(Ai-lambda_baryon*Asum/kT)**2 + &
+ 	!	  		& (Asum+(1.-chi)*n_n-n_b)**2
          			
 !         write(*,*) '1', (1.+lambda_baryon*(der_Asum))**2.
 !         write(*,*) '2', (Asum+(1.-chi)*n_n-n_b)**2.
@@ -656,15 +734,39 @@
          
          !equ(qt% Ntable+1, 1) = sqrt( equ(qt% Ntable+1, 1))
          !charge conservations
-         equ(qt% Ntable+2,1) = (-1.+lambda_charge*(der_Zsum))**2. + &
-     				& (Zsum-n_e)**2.
+!         equ(qt% Ntable+2,1) = (1.+lambda_charge*(der_Zsum))**2. + &
+!     				& (Zsum-n_e)**2.
+	
+	!	 equ(qt% Ntable+2, 1) = (1.+lambda_charge*Zsum/kT+lambda_baryon*Asum/kT)**2 + &
+	!	 		& (Zsum-n_e)**2
+
+		 		
+!		 write(*,*) equ(qt% Ntable+1, 1), equ(qt% Ntable+2,1), lambda_baryon, lambda_charge
+!		 write(*,*) (ni_sum/kT+lambda_baryon*Asum/kT)**2, (Asum+(1.-chi)*n_n-n_b)**2
+!		 write(*,*) (ni_sum/kT+lambda_charge*Zsum/kT)**2, (Zsum-n_e)**2
+!		write(*,*) ni_sum, mu_i(1)
+		
      	 !write(*,*) lambda_charge, lambda_baryon
      	 !equ(qt% Ntable+2, 1) = sqrt( equ(qt% Ntable+2, 1))
      	 !abundance constraint
-!     	 equ(qt% Ntable+3,1) = (1.+(lambda_y/n_b)*(der_ysum-1.))**2. + &
+!    	 equ(qt% Ntable+3,1) = (1.+lambda_y*(der_ysum-1.))**2. + &
 !     	 		& (y_sum - 1.)**2.
      	 !pressure constraint
      	 ! add later
+     	 
+     	 !COUPLED lagrange multipliers
+!    	 l_term = 1.0+(1.0/kT)*(lambda_baryon*Asum+lambda_charge*Zsum+lambda_y*y_sum)
+!    	 con_1 = Asum+(1.-chi)*n_n-n_b
+!    	 con_2 = Zsum-n_e
+!    	 con_3 = y_sum - 1.
+!    	 !con_total = con_1**2 + con_2**2 + con_3**2
+!     	 equ(qt% Ntable+1,1) = (l_term)**2 + con_1**2
+!     	 equ(qt% Ntable+2,1) = (l_term)**2 + con_2**2
+!     	 equ(qt% Ntable+3,1) = (l_term)**2 + con_3**2
+     	 
+     	 !write(*,*) equ(qt% Ntable+1,1), equ(qt% Ntable+2,1) !, equ(qt% Ntable+3,1)
+		 !write(*,*) mu_n, mu_n_in
+     	 
       end subroutine eval_equ
                
       subroutine eval_jacobian(ldA, A, idiag, lrpar, rpar, lipar, ipar, ierr)
@@ -956,6 +1058,8 @@
 	  Yr = qt% Y(j)
 	  end if
 	  
+!	  write(*,*) Z, A
+	  
 	  ! add nucleus to new table before it's checked for rxns 
 	  Z_new(index) = Z
 	  A_new(index) = A
@@ -992,18 +1096,18 @@
       end if
       
       !check for pycnonuclear reactions
-      if (Z .le. pycno_thresh_Z) then
-	  Zr = 2.0*Z ; Ar = 2.0*A
-	  Nr = Ar-Zr
-	  call get_nucleus_properties(Zr,Ar,id,Br,Snr,S2nr,Spr,S2pr, &
-	  		& ecthreshr,bthreshr,VNr,ierr)
-	  if (ierr /= 0) exit	  
-	  rxn = 'pyc'
-	  write(*,*) rxn, Z, A, Zr, Ar
-	  call print_reaction_check
-	  A = Ar ; Z = Zr
-	  cycle      
-      end if
+!      if (Z .le. pycno_thresh_Z) then
+!	  Zr = 2.0*Z ; Ar = 2.0*A
+!	  Nr = Ar-Zr
+!	  call get_nucleus_properties(Zr,Ar,id,Br,Snr,S2nr,Spr,S2pr, &
+!	  		& ecthreshr,bthreshr,VNr,ierr)
+!	  if (ierr /= 0) exit	  
+!	  rxn = 'pyc'
+!	  write(*,*) rxn, Z, A, Zr, Ar
+!	  call print_reaction_check
+!	  A = Ar ; Z = Zr
+!	  cycle      
+!      end if
 
       ! check for weak reactions                 
       ! electron capture
@@ -1183,6 +1287,7 @@
       
       ! make duplicate entries zero
 	  do j=1,index-1
+!	  write(*,*) Z_new(j), A_new(j)
 	   do k=1,index-1
 	    if (Z_new(k) == Z_new(j) .and. A_new(k) == A_new(j)  &
 	    	& .and. j/=k .and. Y_new(j) == 0.) then
@@ -1212,11 +1317,15 @@
 	  ! allocate memory without space for duplicates
       if (dt_table_used .eqv. .false.) then
       qt% Ntable = index-1-index_change	  	
+	  ! qt% have yet to be allocated
 	  allocate(qt% Z(qt% Ntable), qt% A(qt% Ntable), qt% BE(qt% Ntable), &
 	  			& qt% Y(qt% Ntable))
 	  else
-      call alloc_qse_table(qt% Ntable, index-1-index_change)
-	  qt% Ntable = index-1-index_change
+	  qt% Ntable = index-1-index_change	  
+      deallocate(qt% Z, qt% A, qt% BE, qt% Y)
+	  allocate(qt% Z(qt% Ntable), qt% A(qt% Ntable), qt% BE(qt% Ntable), &
+	  			& qt% Y(qt% Ntable))
+      !call alloc_qse_table(qt% Ntable, index-1-index_change)
 	  end if
 
 !	  write(*,*) '-------'
@@ -1241,7 +1350,6 @@
 	   qt% A(index_temp) = A_new(j)
  	   qt% BE(index_temp) = B_new(j)
  	   qt% Y(index_temp) = Y_new(j)	 
- 	   qt% Ntable = index_temp  
 	   end if
 	  end do  
 
@@ -1252,8 +1360,6 @@
 	  dt_table_used = .true.
 	  call dist_table_shutdown
 	  end if
-	  
-
 
       end subroutine check_all_rxns       
 
@@ -1301,5 +1407,32 @@
 !		qt% Y(1:Ntable) = Yi_temp(1:Ntable)
 !		deallocate(Zi_temp, Ai_temp, BEi_temp, Yi_temp)
 	 end subroutine
+         
+    subroutine set_xscale(nvar, nz, xold, xscale, lrpar, rpar, lipar, ipar, ierr)
+         integer, intent(in) :: nvar, nz
+         real, pointer :: xold(:,:) ! (nvar, nz)
+         real, pointer :: xscale(:,:) ! (nvar, nz)
+         integer, intent(in) :: lrpar, lipar
+         real, intent(inout) :: rpar(:) ! (lrpar)
+         integer, intent(inout) :: ipar(:) ! (lipar)
+         integer, intent(out) :: ierr
+         ! for example, 
+          xscale = max(0d0, abs(xold))
+      end subroutine set_xscale
+
+      subroutine sizeB(iter, nvar, nz, x, B, xscale, max_correction, correction_norm, lrpar, rpar, lipar, ipar, ierr)
+        
+         integer, intent(in) :: iter, nvar, nz
+         real, pointer, dimension(:,:) :: x, B, xscale ! (nvar, nz)
+         real, intent(out) :: correction_norm ! a measure of the average correction
+         real, intent(out) :: max_correction ! magnitude of the max correction
+         integer, intent(in) :: lrpar, lipar
+         real, intent(inout) :: rpar(:) ! (lrpar)
+         integer, intent(inout) :: ipar(:) ! (lipar)
+         integer, intent(out) :: ierr
+         ! for example, 
+          max_correction = maxval(abs(b))
+          correction_norm = sum(abs(b)/(nvar*nz))
+      end subroutine sizeB      
           
     end module inner_crust
