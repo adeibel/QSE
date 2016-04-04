@@ -118,17 +118,12 @@ program follow_chain
   
 	   !main loop over pressure (pushes nucleus to higher pressures)   
    
-		! make table of nuclei the first initial nuclei array 
-		!Z_int =  Z !mt% Z
-		!A_int =  A !mt% A
 		! allocate size of arrays equal to the distribution of nuclei compressed 
    		allocate(Z_int(size(Z)), A_int(size(A)), Z_fin(size(Z)), A_fin(size(A)))
    
 	   do i = 1,1000
-		pressure = pressure_start*real(i) !*hbarc_n	! MeV fm**-3
+		pressure = pressure_start*real(i) ! MeV fm**-3
 	
-		write(*,*) i !, pressure 
-
 		! end of last cascade is moved up in pressure 
 		if (i >= 1 .and. Z_fin(1) > 0) then
 		Z_int = Z_fin
@@ -145,10 +140,7 @@ program follow_chain
 		  mu_e = st% mu_e(j)
 		  mu_n = st% mu_n(j)
 		  end if
-		
-	!	 mu_e = 30.71474
-	!	 mu_n = 1.75668	
-  
+
 		 mu_e = 30.383329
 		 mu_n = 2.4670114897d-8
 	
