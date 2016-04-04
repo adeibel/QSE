@@ -173,18 +173,17 @@ module outer_crust
    	  !get properties of nucleus that is being pushed deeper
 	  call get_nucleus_properties(Z,A,id,B,Sn,S2n,Sp,S2p,ecthresh,bthresh,VN,ierr)
 	 
-      ! check for weak reactions                 
-      ! electron capture
+      
+      !! check for weak reactions
+       
+      ! electron capture                 
       Ar = A; Zr = Z-1
       Nr = Ar-Zr
-!      index= Zr - mt%Zmin + 1
-!      if (Nr < mt% Nmin(index) .or. Nr > mt% Nmax(index)) exit
       if (Zr < mt% Zmin .or. Zr > mt% Zmax) exit
       call get_nucleus_properties(Zr,Ar,id,Br,Snr,S2nr,Spr,S2pr, &
       		&	ecthreshr,bthreshr,VNr,ierr)
       if (ierr /= 0) then
          write(error_unit,'((a,2x),2(i4,2x))') 'unable to find nucleus', Zr, Ar
-!         stop
          exit
       end if
       alpha(ineg) = del_m - mu_e + (B-Br)
@@ -198,13 +197,10 @@ module outer_crust
       ! electron emission
       Ar = A; Zr = Z+1
       Nr = Ar-Zr
-!      index= Zr - mt%Zmin + 1
-!      if (Nr < mt% Nmin(index) .or. Nr > mt% Nmax(index)) exit
       if (Zr < mt% Zmin .or. Zr > mt% Zmax) exit
       call get_nucleus_properties(Zr,Ar,id,Br,Snr,S2nr,Spr,S2pr,ecthreshr,bthreshr,VNr,ierr)
       if (ierr /= 0) then
          write(error_unit,'((a,2x),2(i4,2x))') 'unable to find nucleus', Zr, Ar
-!         stop
          exit
       end if
       alpha(ipos) = mu_e - del_m + (B - Br)
@@ -215,16 +211,13 @@ module outer_crust
          cycle
       end if
       
-      ! electron capture followed by neutron emission 
+      ! electron capture + neutron emission 
       Ar = A-1; Zr = Z-1
       Nr = Ar-Zr
-!      index= Zr - mt%Zmin + 1
-!      if (Nr < mt% Nmin(index) .or. Nr > mt% Nmax(index)) exit
       if (Zr < mt% Zmin .or. Zr > mt% Zmax) exit    
       call get_nucleus_properties(Zr,Ar,id,Br,Snr,S2nr,Spr,S2pr,ecthreshr,bthreshr,VNr,ierr)
       if (ierr /= 0) then
          write(error_unit,'((a,2x),2(i4,2x))') 'unable to find nucleus', Zr, Ar
-!         stop
          exit
       end if
       beta(ineg) = mu_n - mu_e + del_m + (B - Br)
@@ -236,16 +229,13 @@ module outer_crust
          cycle
       end if
             
-      ! electron capture followed by dineutron emission
+      ! electron capture + dineutron emission
       Ar = A-2; Zr = Z-1
       Nr = Ar-Zr
-!      index= Zr - mt%Zmin + 1
-!      if (Nr < mt% Nmin(index) .or. Nr > mt% Nmax(index)) exit
       if (Zr < mt% Zmin .or. Zr > mt% Zmax) exit
       call get_nucleus_properties(Zr,Ar,id,Br,Snr,S2nr,Spr,S2pr,ecthreshr,bthreshr,VNr,ierr)
       if (ierr /= 0) then
          write(error_unit,'((a,2x),2(i4,2x))') 'unable to find nucleus', Zr, Ar
-!         stop
          exit
       end if
       beta(ipos) = 2.0*mu_n - mu_e + del_m + (B - Br)
@@ -259,12 +249,11 @@ module outer_crust
       
       cycle
       
-      ! check for strong reactions     
+      !!! check for strong reactions     
+      
       ! neutron capture
       Ar = A+1; Zr = Z
       Nr = Ar-Zr
-!      index= Zr - mt%Zmin + 1
-!      if (Nr < mt% Nmin(index) .or. Nr > mt% Nmax(index)) exit
       if (Zr < mt% Zmin .or. Zr > mt% Zmax) exit  
       call get_nucleus_properties(Zr,Ar,id,Br,Snr,S2nr,Spr,S2pr,ecthreshr,bthreshr,VNr,ierr)
       if (ierr /= 0) then
@@ -284,13 +273,10 @@ module outer_crust
       ! neutron emission
       Ar = A-1; Zr = Z
       Nr = Ar-Zr
-!      index= Zr - mt%Zmin + 1
-!      if (Nr < mt% Nmin(index) .or. Nr > mt% Nmax(index)) exit
       if (Zr < mt% Zmin .or. Zr > mt% Zmax) exit     
       call get_nucleus_properties(Zr,Ar,id,Br,Snr,S2nr,Spr,S2pr,ecthreshr,bthreshr,VNr,ierr)
       if (ierr /= 0) then
          write(error_unit,'((a,2x),2(i4,2x))') 'unable to find nucleus', Zr, Ar
-!         stop
          exit
       end if
       gamma(ipos) = mu_n + (B-Br)
@@ -305,13 +291,10 @@ module outer_crust
       ! dineutron capture
       Ar = A+2; Zr = Z
       Nr = Ar-Zr
-!      index= Zr - mt%Zmin + 1
-!      if (Nr < mt% Nmin(index) .or. Nr > mt% Nmax(index)) exit
       if (Zr < mt% Zmin .or. Zr > mt% Zmax) exit      
       call get_nucleus_properties(Zr,Ar,id,Br,Snr,S2nr,Spr,S2pr,ecthreshr,bthreshr,VNr,ierr)
       if (ierr /= 0) then
          write(error_unit,'((a,2x),2(i4,2x))') 'unable to find nucleus', Zr, Ar
-!         stop
          exit
       end if
       delta(ineg) = -2.0*mu_n + (B-Br)
@@ -326,13 +309,10 @@ module outer_crust
       ! dineutron emission
       Ar = A-2; Zr = Z
       Nr = Ar-Zr
-!      index= Zr - mt%Zmin + 1
-!      if (Nr < mt% Nmin(index) .or. Nr > mt% Nmax(index)) exit
       if (Zr < mt% Zmin .or. Zr > mt% Zmax) exit     
       call get_nucleus_properties(Zr,Ar,id,Br,Snr,S2nr,Spr,S2pr,ecthreshr,bthreshr,VNr,ierr)
       if (ierr /= 0) then
          write(error_unit,'((a,2x),2(i4,2x))') 'unable to find nucleus', Zr, Ar
-!         stop
          exit
       end if
       delta(ipos) = 2.0*mu_n + (B-Br)
@@ -344,16 +324,13 @@ module outer_crust
          cycle
       end if      
          
-      ! neutron capture followed by electron emission
+      ! neutron capture + electron emission
       Ar = A+1; Zr = Z+1
       Nr = Ar-Zr
-!      index= Zr - mt%Zmin + 1
-!      if (Nr < mt% Nmin(index) .or. Nr > mt% Nmax(index)) exit
       if (Zr < mt% Zmin .or. Zr > mt% Zmax) exit 
       call get_nucleus_properties(Zr,Ar,id,Br,Snr,S2nr,Spr,S2pr,ecthreshr,bthreshr,VNr,ierr)
       if (ierr /= 0) then
          write(error_unit,'((a,2x),2(i4,2x))') 'unable to find nucleus', Zr, Ar
- !        stop
          exit
       end if
       epsilon(ineg) = mu_e - mu_n - del_m + (B-Br)
@@ -365,16 +342,13 @@ module outer_crust
          cycle
       end if
       
-      !dineutron capture followed by electron emission
+      !dineutron capture + electron emission
       Ar = A+2; Zr = Z+1
       Nr = Ar-Zr
-!      index= Zr - mt%Zmin + 1
-!      if (Nr < mt% Nmin(index) .or. Nr > mt% Nmax(index)) exit
       if (Zr < mt% Zmin .or. Zr > mt% Zmax) exit   
       call get_nucleus_properties(Zr,Ar,id,Br,Snr,S2nr,Spr,S2pr,ecthreshr,bthreshr,Vnr,ierr)
       if (ierr /= 0) then
       	 write(error_unit, '((a,2x),2(i4,2x))') 'unable to find nucleus', Zr, Ar
-!      	 stop
       	 exit
       end if
       epsilon(ipos) = mu_e - 2.0*mu_n - del_m + (B-Br)
@@ -397,6 +371,7 @@ module outer_crust
 	  A_average = 0.
 	  Z_average = 0.
 	  Y_sum = 0. 
+      
       ! get average mass number of distribution 
       do j=1,at% Ntable
       Y_sum = (at% Y(j))+Y_sum
@@ -409,6 +384,7 @@ module outer_crust
       write(*,*) pressure, Z_average, A_average
 
       end do	! end of pressure loop       
+      
       ! print final ash file
       write(final_id,'(e10.5)') pressure !add final pressure reached by outer crust solver
   	  do l= 1, at% Ntable
